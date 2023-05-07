@@ -9,6 +9,18 @@ from itertools import product
 import numpy as np
 from ctypes import *
 import minimaxC
+import socket
+import pickle
+
+HEADER = 64
+PORT = 5050
+FORMAT = 'utf-8'
+DISCONNECT_MESSAGE = "!DISCONNECT"
+INIT_MESSAGE = "INIT"
+SERVER = "192.168.0.105"
+ADDR = (SERVER, PORT)
+
+
 
 libCalc = CDLL("./libCalc.so")
 libCalc.evaluate.restype = ctypes.c_double
@@ -2406,323 +2418,227 @@ for i in range(0, 8):
 pygame.display.flip()
 
 #display waiting for connection
-#color, board, id = server.init_game("INIT")
-#if color == 1: opponent = 2 else: opponent = 1
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client.connect(ADDR)
+
+init = "INIT"
+send_init = init.encode(FORMAT)
+client.send(send_init)
+
+client2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client2.bind(("192.168.0.105", 5052))
+client2.listen()
+
+conn, addr = client2.accept()
+serialized_msg = conn.recv(10000)
+msg = pickle.loads(serialized_msg)
+
+color = msg["color"]
+board_layout = msg["board_layout"]
+room_id = msg["room_id"]
+opponent_addr = msg["opponent_addr"]
+
+if color == 1:
+    opponent = 2
+else:
+    opponent = 1
 
 #inloop:
 #if turn == opponent:
-#   board = server.get_move()
+#   board = server.get_move(room_id)
 #else:
 #   #play your move
 #   server.send_move(board, id)
 #turn switch
 #
 
-
 while running:
     clock.tick(30)
     screen.fill((255, 255, 255))
     screen.blit(board.surf,(0, 0))
     
-    #black ai move 
-    if False and turn == 1:
-        current_board_layout = deepcopy(board.layout)
-        calculations = 0
-        positions_seen = 0
 
-        try:
-            game_history[str(current_board_layout)]+=1
-        except:
-            game_history[str(current_board_layout)]=1
+    #client stuff
+    if turn == opponent:
+        client.listen()
+        while True:
+            conn, addr = client.accept() #get move from server
+            serialized_msg = conn.recv(10000)
+            board_layout = pickle.loads(serialized_msg)
 
-
-        ai_played = False
-        #1 forced move
-        force_list1 = check_for_force(board.layout, 1)
-
-        if len(force_list1) == 1:
-            forced_piece = force_list1[0]
-            valid_moves2, parent_list3 = get_valid_moves2(board.layout, forced_piece, board.layout[forced_piece[0]][forced_piece[1]])
-
-            if len(valid_moves2) == 1:
-                forced_move = valid_moves2[0]
-                new_board_layout = board.layout.copy()
-                move_piece(forced_piece, forced_move, new_board_layout, parent_list3, board.layout[forced_piece[0]][forced_piece[1]])
-                board.layout = deepcopy2(new_board_layout)
-                turn = 2
-                time.sleep(0.5)
-                ai_played = True
-                value = 690
-
-        start = time.time()
-
-        if not ai_played:
-
-            if (count_pieces(current_board_layout, 1) + count_pieces(current_board_layout, 2)<7):
-                value, new_board_layout = deepcopy(minimax_pro2(6, True, current_board_layout, float('-inf'), float('inf'), 0, True, True, {}))
-            else:
-                #value, new_board_layout = deepcopy(minimax(5, True, current_board_layout, float('-inf'), float('inf'), 5, 50000))
-                #value, new_board_layout = deepcopy(classic_minimax(6, True, current_board_layout, float('-inf'), float('inf')))
-                value, new_board_layout = deepcopy(minimax_pro2(5, True, current_board_layout, float('-inf'), float('inf'), 0, True, True, {}))
-            
-            if False:
-                value2 = -1000000
-                current_board_layout2 = deepcopy(board.layout)
-                value2, new_board_layout2 = deepcopy(minimax_depth1_black(screen, False, current_board_layout2, 0, float('-inf'), float('inf'), {}))
-                print("value2: ", value2)
-
-                
-                if value2>value and abs(value2-value)>99:
-                    value = value2
-                    new_board_layout = new_board_layout2
-            board.layout = deepcopy(new_board_layout)
-
-        clickSound.play()
-        end = time.time()
-        try:
-            game_history[str(new_board_layout)]+=1
-        except:
-            game_history[str(new_board_layout)]=1
-
-        try:
-             row_save, col_save = check_for_move(current_board_layout, new_board_layout, 1)
-        except:
-            pass
-
-        print(f"evaluation: {value/100 : .2f}")
-        print(f"positions seen: {positions_seen}")
-        print(f"time: {end - start : .2f} sec")
-        if end-start != 0:
-            print(f"positions/sec: {positions_seen/(end-start) : .0f}")
-        print("calculations: ", calculations)
-
-        print()
-        print()
+    else:
+        #play move
         
 
-        turn = 2
-
-    
-    #red ai move
-    if turn == 2:
-        current_board_layout = deepcopy(board.layout)
-        calculations = 0
-        positions_seen = 0
-
-        try:
-            game_history[str(current_board_layout)]+=1
-        except:
-            game_history[str(current_board_layout)]=1
-        
-        start = time.time()
-
-        if False and not dama_in_board(current_board_layout) and (count_pieces(current_board_layout, 1) + count_pieces(current_board_layout, 2)<10):
-            print("hi")
-            value, new_board_layout = deepcopy(minimax(6, False, current_board_layout, float('-inf'), float('inf'), 6, 0))
-        else:
-            #value, new_board_layout = deepcopy(classic_minimax(5, False, current_board_layout, float('-inf'), float('inf')))
-            #value, new_board_layout = minimax(4, False, current_board_layout, float('-inf'), float('inf'), 4, 50000)
-            #value, new_board_layout = minimax_depth1(screen, False, current_board_layout, 0, float('-inf'), float('inf'), {})
-            value, new_board_layout = deepcopy(minimax_pro2(5, False, current_board_layout, float('-inf'), float('inf'), 0, False, False, {}))
-
-        if False:
-            value2, new_board_layout2 = minimax_depth1(screen, False, current_board_layout, 0, float('-inf'), float('inf'), {})
-
-            if value2<value and abs(value - value2)>99:
-                value = value2
-                new_board_layout = new_board_layout2
-                print("hi")
-
-        end = time.time()
-        try:
-            game_history[str(new_board_layout)]+=1
-        except:
-            game_history[str(new_board_layout)]=0
-
-        try:
-            row_save, col_save = check_for_move(board.layout, new_board_layout, 2)
-        except:
-            pass
-        clickSound.play()
-
-        #test time
-
-        print("calculations: ", calculations)
-        print("evaluation: ", value)
-        print("positions seen: ", positions_seen)
-        print("time: ", end - start)
-        print()
-        print()
-        board.layout = deepcopy(new_board_layout)
-        
-        turn = 1
-        
-
-    for  event in pygame.event.get():
-        if event.type == KEYDOWN:
-            if event.key == K_ESCAPE:
+        for  event in pygame.event.get():
+            if event.type == KEYDOWN:
+                if event.key == K_ESCAPE:
+                    running = False
+            elif event.type == pygame.QUIT:
                 running = False
-        elif event.type == pygame.QUIT:
-            running = False
 
-        if event.type == pygame.MOUSEBUTTONDOWN and selected == True:
-            pos = pygame.mouse.get_pos()
-            c = pos[0]//100
-            r = pos[1]//100
+            if event.type == pygame.MOUSEBUTTONDOWN and selected == True:
+                pos = pygame.mouse.get_pos()
+                c = pos[0]//100
+                r = pos[1]//100
 
-            aux_list = []
-            savedPiece = board.layout[row][col]
-            
-            if (r, c) in valid_moves:
-                clickSound.play()
-                row_save = row
-                col_save = col
-                if parent_list!=[] and parent_list!=None:
-                    for value in parent_list:
-                        if (r,c) in value:
-                            z=0
-                            for z in range(0, len(value)):
-                                if z+1 >= len(value):
-                                    break
-                                
-                                old_row = value[z][0]
-                                old_col = value[z][1]
-                                new_row = value[z+1][0]
-                                new_col = value[z+1][1]
-
-                                aux = board.layout[old_row][old_col]
-                                board.layout[old_row][old_col]=board.layout[new_row][new_col]
-                                board.layout[new_row][new_col]=aux
-                                
-                                eating_direction = eat_piece_if_possible(board.layout, old_row, old_col, new_row, new_col, color)[1]
-                                
-                                screen.fill((255, 255, 255))
-                                screen.blit(board.surf,(0, 0))
-
-                                for i in range(0, 8):
-                                    for j in range(0, 8):
-                                        if board.layout[i][j]==1:
-                                            screen.blit(blackpiece.surf, (10+j*100, 10 + i*100))
-                                        elif board.layout[i][j]==2:
-                                            screen.blit(whitepiece.surf, (10+j*100, 10 + i*100))
-                                        elif board.layout[i][j]==3:
-                                            screen.blit(blackDama, (10+j*100, 10 + i*100))
-                                        elif board.layout[i][j]==4:
-                                            screen.blit(redDama, (10+j*100, 10 + i*100))
-                                
-                                if value[z+1] == (r, c):
-                                    break
-                                
-                                pygame.display.update()
-                                time.sleep(0.3)
-                            break
-                else:
-                    eating_direction = eat_piece_if_possible(board.layout, row, col, r, c, color)[1]
+                aux_list = []
+                savedPiece = board.layout[row][col]
                 
-                board.layout[r][c] = savedPiece
-                board.layout[row][col] = 0
+                if (r, c) in valid_moves:
+                    clickSound.play()
+                    row_save = row
+                    col_save = col
+                    if parent_list!=[] and parent_list!=None:
+                        for value in parent_list:
+                            if (r,c) in value:
+                                z=0
+                                for z in range(0, len(value)):
+                                    if z+1 >= len(value):
+                                        break
+                                    
+                                    old_row = value[z][0]
+                                    old_col = value[z][1]
+                                    new_row = value[z+1][0]
+                                    new_col = value[z+1][1]
 
-                #check if dama
-                if r == 0 and color==2:
-                    board.layout[r][c]=4
-                if r == 7 and color==1:
-                    board.layout[r][c]=3
-                selected=False
-                valid_moves=[]
+                                    aux = board.layout[old_row][old_col]
+                                    board.layout[old_row][old_col]=board.layout[new_row][new_col]
+                                    board.layout[new_row][new_col]=aux
+                                    
+                                    eating_direction = eat_piece_if_possible(board.layout, old_row, old_col, new_row, new_col, color)[1]
+                                    
+                                    screen.fill((255, 255, 255))
+                                    screen.blit(board.surf,(0, 0))
 
-                played_extra_turn = False
-                if (r,c) in valid_moves_end or parent_list==[]:
-                    if turn==1:
-                        turn = 2
+                                    for i in range(0, 8):
+                                        for j in range(0, 8):
+                                            if board.layout[i][j]==1:
+                                                screen.blit(blackpiece.surf, (10+j*100, 10 + i*100))
+                                            elif board.layout[i][j]==2:
+                                                screen.blit(whitepiece.surf, (10+j*100, 10 + i*100))
+                                            elif board.layout[i][j]==3:
+                                                screen.blit(blackDama, (10+j*100, 10 + i*100))
+                                            elif board.layout[i][j]==4:
+                                                screen.blit(redDama, (10+j*100, 10 + i*100))
+                                    
+                                    if value[z+1] == (r, c):
+                                        break
+                                    
+                                    pygame.display.update()
+                                    time.sleep(0.3)
+                                break
                     else:
-                        turn = 1
-                else:
-                    played_extra_turn = True
-                
-            else:
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    selected = False
-                    #valid_moves=[]
-        
-        if event.type == pygame.MOUSEBUTTONDOWN and selected == False:
-            surf4=None
-            valid_moves=[]
-            valid_moves_end = []
-            pos = pygame.mouse.get_pos()
-            col = pos[0]//100
-            row = pos[1]//100
+                        eating_direction = eat_piece_if_possible(board.layout, row, col, r, c, color)[1]
+                    
+                    board.layout[r][c] = savedPiece
+                    board.layout[row][col] = 0
 
-            if board.layout[row][col] != 0:
-                color = board.layout[row][col]
-                if (board.layout[row][col] == turn) or (board.layout[row][col]==3 and turn==1) or (board.layout[row][col]==4 and turn==2):
-                    selected=True 
-                    force_list = check_for_force(board.layout, turn)
-                    if force_list!=[]:
-                        surf4 = pygame.image.load("images/frame.png")
-                        surf4 = pygame.transform.scale(surf4, (100, 100))
-                        if (row,col) not in force_list:
-                            valid_moves=[]
-                            selected=False
-                            errorSound.play()
-                            continue
+                    #check if dama
+                    if r == 0 and color==2:
+                        board.layout[r][c]=4
+                    if r == 7 and color==1:
+                        board.layout[r][c]=3
+                    selected=False
+                    valid_moves=[]
+
+                    played_extra_turn = False
+                    if (r,c) in valid_moves_end or parent_list==[]:
+                        if turn==1:
+                            turn = 2
+                        else:
+                            turn = 1
+                    else:
+                        played_extra_turn = True
+                    
+                else:
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        selected = False
+                        #valid_moves=[]
+            
+            if event.type == pygame.MOUSEBUTTONDOWN and selected == False:
+                surf4=None
+                valid_moves=[]
+                valid_moves_end = []
+                pos = pygame.mouse.get_pos()
+                col = pos[0]//100
+                row = pos[1]//100
+
+                if board.layout[row][col] != 0:
+                    color = board.layout[row][col]
+                    if (board.layout[row][col] == turn) or (board.layout[row][col]==3 and turn==1) or (board.layout[row][col]==4 and turn==2):
+                        selected=True 
+                        force_list = check_for_force(board.layout, turn)
+                        if force_list!=[]:
+                            surf4 = pygame.image.load("images/frame.png")
+                            surf4 = pygame.transform.scale(surf4, (100, 100))
+                            if (row,col) not in force_list:
+                                valid_moves=[]
+                                selected=False
+                                errorSound.play()
+                                continue
+                            else:
+                                clickSound.play()
+                                valid_moves = get_valid_moves(row, col, board.layout[row][col], 0, [], board.layout, '')[0]
+                                selected=True
                         else:
                             clickSound.play()
                             valid_moves = get_valid_moves(row, col, board.layout[row][col], 0, [], board.layout, '')[0]
                             selected=True
-                    else:
-                        clickSound.play()
-                        valid_moves = get_valid_moves(row, col, board.layout[row][col], 0, [], board.layout, '')[0]
-                        selected=True
-                    #valid_moves = get_valid_moves(row, col, board.layout[row][col], 0, [])
-                    
-                    #akel aal aktar
-                    parent_list2 = []
-                    for move in valid_moves:
-                        parent_list2.append ( [(row, col), move])
+                        #valid_moves = get_valid_moves(row, col, board.layout[row][col], 0, [])
+                        
+                        #akel aal aktar
+                        parent_list2 = []
+                        for move in valid_moves:
+                            parent_list2.append ( [(row, col), move])
 
-                    parent_list = []
+                        parent_list = []
 
-                    try:
-                        if not played_extra_turn:
+                        try:
+                            if not played_extra_turn:
+                                eating_direction = ''
+                        except:
                             eating_direction = ''
-                    except:
-                        eating_direction = ''
-                    
+                        
 
-                    if color == 3 or color == 4:
-                        temp_board_layout = deepcopy(board.layout)
-                        parent_list = eat_max2(row, col, temp_board_layout, parent_list2, board.layout[row][col], eating_direction)
-                    elif color == 1 or color == 2:
-                        parent_list = eat_max2_not_dama(row, col, board.layout, parent_list2, board.layout[row][col], eating_direction)
-                    aux_list = []
-
-                    
-                    if parent_list != [] and parent_list!=None:
-                        for value in parent_list:
-                            aux_list.append(value[-1])
-                        valid_moves_end = deepcopy(aux_list) 
-
-                    # if two akels exist
-                    if len(valid_moves_end) != len(set(valid_moves_end)):
+                        if color == 3 or color == 4:
+                            temp_board_layout = deepcopy(board.layout)
+                            parent_list = eat_max2(row, col, temp_board_layout, parent_list2, board.layout[row][col], eating_direction)
+                        elif color == 1 or color == 2:
+                            parent_list = eat_max2_not_dama(row, col, board.layout, parent_list2, board.layout[row][col], eating_direction)
                         aux_list = []
+
+                        
                         if parent_list != [] and parent_list!=None:
                             for value in parent_list:
-                                for move in value:
-                                    if move != value[0]:
-                                        aux_list.append(move)
-                            valid_moves = deepcopy(aux_list)
-                    else:
-                        if parent_list != [] and parent_list!=None:
-                            valid_moves = valid_moves_end
-                    
-                else:
-                    selected = False
-            #continue
+                                aux_list.append(value[-1])
+                            valid_moves_end = deepcopy(aux_list) 
 
-    try:
-        pygame.draw.rect(screen, (0, 255, 0), pygame.Rect(col_save*100, row_save*100, 100, 100),  2)
-    except:
-        pass
+                        # if two akels exist
+                        if len(valid_moves_end) != len(set(valid_moves_end)):
+                            aux_list = []
+                            if parent_list != [] and parent_list!=None:
+                                for value in parent_list:
+                                    for move in value:
+                                        if move != value[0]:
+                                            aux_list.append(move)
+                                valid_moves = deepcopy(aux_list)
+                        else:
+                            if parent_list != [] and parent_list!=None:
+                                valid_moves = valid_moves_end
+                        
+                    else:
+                        selected = False
+                #continue
+
+        try:
+            pygame.draw.rect(screen, (0, 255, 0), pygame.Rect(col_save*100, row_save*100, 100, 100),  2)
+        except:
+            pass
+
+        msg = {"board_layout": board_layout, "room_id":room_id, "opponent_addr": opponent_addr}
+        serialized_msg = pickle.dumps(msg)
+        client.send(serialized_data)
 
     for i in range(0, 8):
         for j in range(0, 8):
