@@ -2,7 +2,9 @@
 #include <fstream>
 #include <cstring>
 #include <time.h> 
-#include<vector>
+#include <vector>
+#include <set>
+#include <memory>
 #include <windows.h>
 using namespace std;
 
@@ -30,7 +32,7 @@ pair<vector<int*>, char> get_valid_moves(int row,int col, int color, int streak,
     {
         //right
         int i=1;
-        while( true && !ate_left)
+        while(true && !ate_left)
         {
             if (col+i >= 8)
                 break;
@@ -67,7 +69,7 @@ pair<vector<int*>, char> get_valid_moves(int row,int col, int color, int streak,
 
         //left
         i=1;
-        while( true && !ate_right)
+        while(true && !ate_right)
         {
             if (col-i < 0 || col>7 || row>7)
                 break;
@@ -105,7 +107,7 @@ pair<vector<int*>, char> get_valid_moves(int row,int col, int color, int streak,
 
         
         i=1; //down
-        while( true && !ate_right)
+        while(true && !ate_up)
         {
             if (row+i>=8 || col>=8 || row+i<0 || col<0)
                 break;
@@ -141,7 +143,7 @@ pair<vector<int*>, char> get_valid_moves(int row,int col, int color, int streak,
         }
             
         i=1; //up
-        while( true && !ate_right)
+        while(true && !ate_down)
         {
             if (row-i<0)
                 break;
@@ -300,7 +302,7 @@ pair<vector<int*>, char> get_valid_moves(int row,int col, int color, int streak,
 
         
         i=1; //down
-        while( true && !ate_right)
+        while( true && !ate_up)
         {
             if (row+i>7)
                 break;
@@ -336,7 +338,7 @@ pair<vector<int*>, char> get_valid_moves(int row,int col, int color, int streak,
         }
             
         i=1; //up
-        while( true && !ate_right)
+        while(true && !ate_down)
         {
             if (row-i<0)
                 break;
@@ -718,128 +720,128 @@ int** deepcopy2(int* board_layout[8])
     return new_board_layout;
 }
 
-vector<vector<int*>> eat_max2_not_dama(int row, int col,int* board_layout[8],  vector<vector<int*>> parent_list, int color, char eat_direction)
-{
-    pair<vector<int*>, char> validMovesAndEatingPiece;
-    validMovesAndEatingPiece  = get_valid_moves(row, col, color, 0, {}, board_layout, eat_direction);
+// vector<vector<int*>> eat_max2_not_dama(int row, int col,int* board_layout[8],  vector<vector<int*>> parent_list, int color, char eat_direction)
+// {
+//     pair<vector<int*>, char> validMovesAndEatingPiece;
+//     validMovesAndEatingPiece  = get_valid_moves(row, col, color, 0, {}, board_layout, eat_direction);
     
-    vector<int*> valid_moves = validMovesAndEatingPiece.first;
-    char eating_piece = validMovesAndEatingPiece.second;
+//     vector<int*> valid_moves = validMovesAndEatingPiece.first;
+//     char eating_piece = validMovesAndEatingPiece.second;
 
-    bool fff = (eating_piece != 0);
+//     bool fff = (eating_piece != 0);
 
-    if (fff)
-    {
-        vector <int*> new_list;
-        vector <vector<int*>> big_dama_list = vector <vector<int*>>();
-        for(auto move : valid_moves)
-        {
-            eat_direction = get_eat_direction(move[0], move[1], row, col);
-            eating_piece = get_valid_moves(move[0], move[1], color, 0, {}, board_layout, eat_direction).second;
+//     if (fff)
+//     {
+//         vector <int*> new_list;
+//         vector <vector<int*>> big_dama_list = vector <vector<int*>>();
+//         for(auto move : valid_moves)
+//         {
+//             eat_direction = get_eat_direction(move[0], move[1], row, col);
+//             eating_piece = get_valid_moves(move[0], move[1], color, 0, {}, board_layout, eat_direction).second;
 
-            fff = (eating_piece != 0);
+//             fff = (eating_piece != 0);
 
-            if(fff)
-            {
-                int parent[2];
-                parent[0] = row; parent[1] = col;
-                //global malloc move
-                int* move2 = (int*)malloc(sizeof(int)*2);
-                move2[0] = move[0]; move2[1] = move[1];
+//             if(fff)
+//             {
+//                 int parent[2];
+//                 parent[0] = row; parent[1] = col;
+//                 //global malloc move
+//                 int* move2 = (int*)malloc(sizeof(int)*2);
+//                 move2[0] = move[0]; move2[1] = move[1];
 
-                new_list.push_back(move2);
-                for(auto value : parent_list)
-                {
-                    if (parent[0] == value[int(value.size())-1][0] && parent[1] == value[int(value.size())-1][1])
-                    {
-                        vector<int*> new_value = vector<int*>((int)value.size());
+//                 new_list.push_back(move2);
+//                 for(auto value : parent_list)
+//                 {
+//                     if (parent[0] == value[int(value.size())-1][0] && parent[1] == value[int(value.size())-1][1])
+//                     {
+//                         vector<int*> new_value = vector<int*>((int)value.size());
 
-                        //copy value
-                        int i=0;
-                        for(i=0; i<(int)value.size(); i++)
-                            new_value[i] = value[i];
-                        new_value.push_back(move2); //add move
+//                         //copy value
+//                         int i=0;
+//                         for(i=0; i<(int)value.size(); i++)
+//                             new_value[i] = value[i];
+//                         new_value.push_back(move2); //add move
                 
-                        big_dama_list.push_back(new_value);
-                    }
-                }
-            }
-        }
-        if (!big_dama_list.empty())
-        {
-            //parent_list = big_dama_list;
-            parent_list = vector<vector<int*>>((int)big_dama_list.size());
-            for (int i=0; i<(int)big_dama_list.size(); i++)
-                parent_list[i] = big_dama_list[i];
-        }
-        if (new_list.empty())
-        {
-            vector <vector<int*>> aux_list2 = vector <vector<int*>>();
-            for(auto value : parent_list)
-            {
-                int* last = value[int(value.size())-1];
-                int* pre_last = value[int(value.size())-2];
+//                         big_dama_list.push_back(new_value);
+//                     }
+//                 }
+//             }
+//         }
+//         if (!big_dama_list.empty())
+//         {
+//             //parent_list = big_dama_list;
+//             parent_list = vector<vector<int*>>((int)big_dama_list.size());
+//             for (int i=0; i<(int)big_dama_list.size(); i++)
+//                 parent_list[i] = big_dama_list[i];
+//         }
+//         if (new_list.empty())
+//         {
+//             vector <vector<int*>> aux_list2 = vector <vector<int*>>();
+//             for(auto value : parent_list)
+//             {
+//                 int* last = value[int(value.size())-1];
+//                 int* pre_last = value[int(value.size())-2];
 
-                eat_direction = get_eat_direction(last[0], last[1], pre_last[0], pre_last[1]);
+//                 eat_direction = get_eat_direction(last[0], last[1], pre_last[0], pre_last[1]);
 
-                pair<vector<int*>, char> validMovesAndEatingPiece;
-                validMovesAndEatingPiece  = get_valid_moves(last[0], last[1], color, 0, {}, board_layout, eat_direction);
+//                 pair<vector<int*>, char> validMovesAndEatingPiece;
+//                 validMovesAndEatingPiece  = get_valid_moves(last[0], last[1], color, 0, {}, board_layout, eat_direction);
     
-                vector<int*> valid_moves2 = validMovesAndEatingPiece.first;
-                char eating_piece = validMovesAndEatingPiece.second;
+//                 vector<int*> valid_moves2 = validMovesAndEatingPiece.first;
+//                 char eating_piece = validMovesAndEatingPiece.second;
 
-                fff = (eating_piece !=0);
+//                 fff = (eating_piece !=0);
 
-                if(fff)
-                {
-                    for(auto move : valid_moves2)
-                    {
-                        //global malloc move
-                        int* move2 = (int*)malloc(sizeof(int)*2);
-                        move2[0] = move[0]; move2[1] = move[1];
+//                 if(fff)
+//                 {
+//                     for(auto move : valid_moves2)
+//                     {
+//                         //global malloc move
+//                         int* move2 = (int*)malloc(sizeof(int)*2);
+//                         move2[0] = move[0]; move2[1] = move[1];
 
-                        vector<int*> new_value = vector<int*>((int)value.size());
+//                         vector<int*> new_value = vector<int*>((int)value.size());
 
-                        //copy value
-                        int i=0;
-                        for(i=0; i<(int)value.size(); i++)
-                            new_value[i] = value[i];
-                        new_value.push_back(move2); //add move
+//                         //copy value
+//                         int i=0;
+//                         for(i=0; i<(int)value.size(); i++)
+//                             new_value[i] = value[i];
+//                         new_value.push_back(move2); //add move
 
-                        aux_list2.push_back(new_value);
-                    }
-                }
-            }
-            return aux_list2;
-        }
-        else
-        {
-            vector <vector<int*>> maxp = vector <vector<int*>>();
-            valid_moves = new_list;
-            for (auto move : valid_moves)
-            {
-                int **new_board_layout = deepcopy2(board_layout);
-                pair<int**, char> layoutAndDirection;
+//                         aux_list2.push_back(new_value);
+//                     }
+//                 }
+//             }
+//             return aux_list2;
+//         }
+//         else
+//         {
+//             vector <vector<int*>> maxp = vector <vector<int*>>();
+//             valid_moves = new_list;
+//             for (auto move : valid_moves)
+//             {
+//                 int **new_board_layout = deepcopy2(board_layout);
+//                 pair<int**, char> layoutAndDirection;
 
-                layoutAndDirection = eat_piece_if_possible(new_board_layout, row, col, move[0], move[1], color);
+//                 layoutAndDirection = eat_piece_if_possible(new_board_layout, row, col, move[0], move[1], color);
                 
-                new_board_layout = layoutAndDirection.first; //new
-                eat_direction = layoutAndDirection.second; //new
+//                 new_board_layout = layoutAndDirection.first; //new
+//                 eat_direction = layoutAndDirection.second; //new
                 
-                vector<vector<int*>> p2 = vector<vector<int*>>();
-                p2 = eat_max2_not_dama(move[0], move[1], board_layout, parent_list, color, eat_direction);
-                if(maxp.empty() || p2[0].size() > maxp[0].size())
-                {
-                    maxp = p2;
-                }
-            }
-            return maxp;
-        }
-    }
-    else
-        return {};
-    return {};
-}
+//                 vector<vector<int*>> p2 = vector<vector<int*>>();
+//                 p2 = eat_max2_not_dama(move[0], move[1], board_layout, parent_list, color, eat_direction);
+//                 if(maxp.empty() || p2[0].size() > maxp[0].size())
+//                 {
+//                     maxp = p2;
+//                 }
+//             }
+//             return maxp;
+//         }
+//     }
+//     else
+//         return {};
+//     return {};
+// }
 
 bool equals(vector<int*> a, vector<int*> b)
 {
@@ -856,7 +858,237 @@ bool doesnt_have(vector <vector<int*>> a, vector<int*> b){
     return true;
 }
 
-vector<vector<int*>> eat_max2(int row, int col,int* board_layout[8],  vector<vector<int*>> parent_list, int color, char eat_direction)
+std::vector<std::vector<int*>> eat_max2(int row, int col,int* board_layout[8],  vector<vector<int*>> parent_list, int color, char eat_direction) {
+    
+    // Call get_valid_moves function
+    auto [valid_moves, eating_piece] = get_valid_moves(row, col, color, 0, {}, board_layout, eat_direction);
+
+    bool dama_nom = (eating_piece == 'd');
+
+    if (dama_nom) {
+        std::vector<int*> new_list;
+        std::vector<std::vector<int*>> big_dama_list;
+        big_dama_list.clear();
+        new_list.clear();
+        for (auto move : valid_moves) {
+            dama_nom = false;
+            
+            if (move[1] == col) {
+                if (move[0] > row) {
+                    eat_direction = 'd';
+                } else {
+                    eat_direction = 'u';
+                }
+            } else {
+                if (move[1] > col) {
+                    eat_direction = 'r';
+                } else {
+                    eat_direction = 'l';
+                }
+            }
+    
+            // Call get_valid_moves function
+            auto  eating_piece = get_valid_moves(move[0], move[1], color, 0, {}, board_layout, eat_direction).second;
+            dama_nom = (eating_piece == 'd');
+    
+            if (dama_nom) {
+                int* parent = new int[2];  parent[0] = row; parent[1] = col;
+                new_list.push_back(move);
+                for (auto value : parent_list) {
+                    if (parent[0] ==  value.back()[0] && parent[1] ==  value.back()[1]) {
+                        std::vector<int*> big_dama = value;
+                        big_dama.push_back(move);
+                        big_dama_list.push_back(big_dama);
+                    }
+                }
+            }
+        }
+
+        if (!big_dama_list.empty()) {
+            parent_list = big_dama_list;
+        } 
+        if (new_list.empty()) {
+            std::vector<std::vector<int*>> aux_list2;
+            aux_list2.clear();
+            int counter = 0;
+            for (vector<int*> value : parent_list) {
+                int* last = value.back();
+                int* pre_last = value[int(value.size())-2];
+
+                int sizeLast = int(sizeof(last)/sizeof(last[0]));
+                int sizePreLast = sizeof(pre_last)/sizeof(pre_last[0]);
+
+                if (last[1] == pre_last[1]) {
+                    if (last[0] > pre_last[0]) {
+                        eat_direction = 'd';
+                    } else {
+                        eat_direction = 'u';
+                    }
+                } else {
+                    if (last[1] > pre_last[1]) {
+                        eat_direction = 'r';
+                    } else {
+                        eat_direction = 'l';
+                    }
+                }
+
+                // Call get_valid_moves function
+                auto [valid_moves2, eating_piece] = get_valid_moves(last[0], last[1], color, 0, {}, board_layout, eat_direction);
+
+                dama_nom = (eating_piece == 'd');
+
+                if (dama_nom) {
+                    for (auto move : valid_moves2) {
+                        std::vector<int*> aux_list3 = value;
+                        aux_list3.push_back(move);
+                        aux_list2.push_back(aux_list3);
+                    }
+
+                }
+                parent_list = aux_list2;
+                return parent_list;
+            }
+            return parent_list;
+            
+        } else {
+            valid_moves = new_list;
+            std::vector<std::vector<int*>> maxp;
+            maxp.clear();
+            for (auto move : valid_moves) {
+                auto [new_board_layout, eat_direction] = eat_piece_if_possible(deepcopy2(board_layout), row, col, move[0], move[1], color);
+                auto p2 = eat_max2(move[0], move[1], new_board_layout, parent_list, color, eat_direction);
+                
+                if (maxp.empty()) {
+                    maxp = p2;
+                } else {
+                    if (!p2.empty() && p2[0].size() > maxp[0].size()) {
+                        maxp = p2;
+                    } else if (!p2.empty() && p2[0].size() == maxp[0].size()) {
+                        for (auto li : p2) {
+                            if (doesnt_have(maxp, li)) {
+                                maxp.push_back(li);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            return maxp;
+        }
+    } else {
+        return {};  // Return an empty vector
+    }
+}
+
+std::vector<std::vector<int*>> eat_max2_not_dama(int row, int col,int* board_layout[8],  vector<vector<int*>> parent_list, int color, char eat_direction) {
+    
+    // Call get_valid_moves function
+    auto [valid_moves, eating_piece] = get_valid_moves(row, col, color, 0, {}, board_layout, eat_direction);
+
+    bool dama_nom = (eating_piece != 0);
+
+    if (dama_nom) {
+        std::vector<int*> new_list;
+        std::vector<std::vector<int*>> big_dama_list;
+        big_dama_list.clear();
+        new_list.clear();
+        for (auto move : valid_moves) {
+            dama_nom = false;
+            
+            if (move[1] == col) {
+                if (move[0] > row) {
+                    eat_direction = 'd';
+                } else {
+                    eat_direction = 'u';
+                }
+            } else {
+                if (move[1] > col) {
+                    eat_direction = 'r';
+                } else {
+                    eat_direction = 'l';
+                }
+            }
+    
+            // Call get_valid_moves function
+            auto  eating_piece = get_valid_moves(move[0], move[1], color, 0, {}, board_layout, eat_direction).second;
+            dama_nom = (eating_piece != 0);
+    
+            if (dama_nom) {
+                int* parent = new int[2];  parent[0] = row; parent[1] = col;
+                new_list.push_back(move);
+                for (auto value : parent_list) {
+                    if (parent[0] ==  value.back()[0] && parent[1] ==  value.back()[1]) {
+                        std::vector<int*> big_dama = value;
+                        big_dama.push_back(move);
+                        big_dama_list.push_back(big_dama);
+                    }
+                }
+            }
+        }
+
+        if (!big_dama_list.empty()) {
+            parent_list = big_dama_list;
+        } 
+        if (new_list.empty()) {
+            std::vector<std::vector<int*>> aux_list2;
+            aux_list2.clear();
+            int counter = 0;
+            for (vector<int*> value : parent_list) {
+                int* last = value.back();
+                int* pre_last = value[int(value.size())-2];
+
+                int sizeLast = int(sizeof(last)/sizeof(last[0]));
+                int sizePreLast = sizeof(pre_last)/sizeof(pre_last[0]);
+
+                if (last[1] == pre_last[1]) {
+                    if (last[0] > pre_last[0]) {
+                        eat_direction = 'd';
+                    } else {
+                        eat_direction = 'u';
+                    }
+                } else {
+                    if (last[1] > pre_last[1]) {
+                        eat_direction = 'r';
+                    } else {
+                        eat_direction = 'l';
+                    }
+                }
+
+                // Call get_valid_moves function
+                auto [valid_moves2, eating_piece] = get_valid_moves(last[0], last[1], color, 0, {}, board_layout, eat_direction);
+
+                dama_nom = (eating_piece!=0);
+
+                if (dama_nom) {
+                    for (auto move : valid_moves2) {
+                        std::vector<int*> aux_list3 = value;
+                        aux_list3.push_back(move);
+                        aux_list2.push_back(aux_list3);
+                    }
+                }
+            }
+            parent_list = aux_list2;
+            return parent_list;
+            
+        } else {
+            valid_moves = new_list;
+            std::vector<std::vector<int*>> maxp;
+            maxp.clear();
+            for (auto move : valid_moves) {
+                auto [new_board_layout, eat_direction] = eat_piece_if_possible(deepcopy2(board_layout), row, col, move[0], move[1], color);
+                auto p2 = eat_max2_not_dama(move[0], move[1], new_board_layout, parent_list, color, eat_direction);
+                if(maxp.empty() || p2[0].size() > maxp[0].size())
+                    maxp = p2;
+            }
+            return maxp;
+        }
+    } else {
+        return {};  // Return an empty vector
+    }
+}
+
+
+vector<vector<int*>> eat_max2_me(int row, int col,int* board_layout[8],  vector<vector<int*>> parent_list, int color, char eat_direction)
 {
     pair<vector<int*>, char> validMovesAndEatingPiece;
     validMovesAndEatingPiece  = get_valid_moves(row, col, color, 0, {}, board_layout, eat_direction);
@@ -871,6 +1103,7 @@ vector<vector<int*>> eat_max2(int row, int col,int* board_layout[8],  vector<vec
         vector <int*> new_list ;
         vector <vector<int*>> big_dama_list = vector <vector<int*>>();
         // cout<<"valid moves size: "<<valid_moves.size()<<endl;
+        new_list.clear();
         for(auto move : valid_moves)
         {
             // cout<<"move: "<<move[0]<<"-"<<move[1]<<endl;
@@ -899,7 +1132,12 @@ vector<vector<int*>> eat_max2(int row, int col,int* board_layout[8],  vector<vec
                         //copy value
                         int i=0;
                         for(i=0; i<(int)value.size(); i++)
-                            new_value.push_back(value[i]);
+                        {
+                            int * temp3 = new int[2];
+                            temp3[0] = value[i][0];
+                            temp3[1] = value[i][1];
+                            new_value.push_back(temp3);
+                        }
                         new_value.push_back(move2); //add move
                 
                         big_dama_list.push_back(new_value);
@@ -919,25 +1157,18 @@ vector<vector<int*>> eat_max2(int row, int col,int* board_layout[8],  vector<vec
             vector <vector<int*>> aux_list2 = vector <vector<int*>>();
             for(vector<int*> value : parent_list)
             {
-                if(value.size()<2)
-                    continue;
                 int * last = new int[2];
                 int * pre_last = new int[2];
                 last[0] = value[int(value.size())-1][0];
                 last[1] = value[int(value.size())-1][1];
-                pre_last[0] = value[int(value.size())-2][0]; pre_last[1] = value[int(value.size())-2][1];
+                pre_last[0] = value[int(value.size())-2][0];
+                pre_last[1] = value[int(value.size())-2][1];
 
                 int sizeLast = int(sizeof(last)/sizeof(last[0]));
                 int sizePreLast = sizeof(pre_last)/sizeof(pre_last[0]);
 
-                // cout<<"last size: "<<sizeLast<<endl;
-                // cout<<"last: "<<last[0]<<"-"<<last[1]<<endl;
-                if(sizeLast>=2 && sizePreLast>= 2)
-                    eat_direction = get_eat_direction(last[0], last[1], pre_last[0], pre_last[1]);
-                else
-                    eat_direction = 0;
-                
-                
+                eat_direction = get_eat_direction(last[0], last[1], pre_last[0], pre_last[1]);
+               
                 pair<vector<int*>, char> validMovesAndEatingPiece;
                 validMovesAndEatingPiece  = get_valid_moves(last[0], last[1], color, 0, {}, board_layout, eat_direction);
     
@@ -959,10 +1190,13 @@ vector<vector<int*>> eat_max2(int row, int col,int* board_layout[8],  vector<vec
                         //copy value
                         int i=0;
                         for(i=0; i<(int)value.size(); i++)
-                            new_value[i] = value[i];
-                        // cout<<"new value size: "<<new_value[0]<<new_value[1]<<endl;
+                        {
+                            int * temp3 = new int[2];
+                            temp3[0] = value[i][0];
+                            temp3[1] = value[i][1];
+                            new_value[i] = temp3;
+                        }
                         new_value.push_back(move2); //add move
-
                         aux_list2.push_back(new_value);
                     }
                     parent_list = aux_list2;
@@ -1005,14 +1239,18 @@ vector<vector<int*>> eat_max2(int row, int col,int* board_layout[8],  vector<vec
                 if(maxp.empty())
                     maxp = p2;
                 else{
-                    if (p2.size()>0 && int(p2[0].size())>int(maxp[0].size()))
+                    if (int(p2[0].size())>int(maxp[0].size()))
                         maxp = p2;
-                    else if (p2.size()>0 && int(p2[0].size())==int(maxp[0].size()))
+                    else if (int(p2[0].size())==int(maxp[0].size()))
                         for (auto li : p2)
                             if (doesnt_have(maxp, li))
                                 maxp.push_back(li);
                 }
             }
+            // for(auto l : maxp)
+            //     for(auto value : l)
+            //         std::cout<<value[0]<<"-"<<value[1]<<endl;
+            // std::cout<<endl;
             return maxp;
         }
     }
@@ -1274,6 +1512,9 @@ int** move_piece(int* piece, int* move, int* board_layout[8], vector<vector<int*
 
     if(!parent_list.empty())
     {
+        // for(auto eep : parent_list)
+        //     for(auto eep2 : eep)
+        //         cout<<eep2[0]<<'-'<<eep2[1]<<endl;
         for(vector<int*> value : parent_list)
         {
             value_length = value.size();
@@ -1413,8 +1654,8 @@ pair<vector<int**>, vector<int*>> get_all_moves(int* board_layout[8], int color)
         {
             //std::cout<<move[0]<<" "<<move[1]<<endl;
             int **temp_board_layout = deepcopy2(board_layout);
-            if(!fff && ! dama_nom)
-                parent_list = {};
+            // if(!fff && ! dama_nom)
+            //     parent_list = {};
             temp_board_layout = move_piece(piece, move, temp_board_layout, parent_list, color2);
             moves.push_back(temp_board_layout);
         }
@@ -1430,9 +1671,9 @@ void printBoard(int** board)
     {
         for(int j=0;j<8; j++)
         {
-            cout<<board[i][j]<<" ";
+            std::cout<<board[i][j]<<" ";
         }
-        cout<<endl;
+        std::cout<<endl;
     }
 }
 
@@ -1440,7 +1681,8 @@ pair<int, int**> minimax_pro2(int depth, int max_player, int* board_layout[8], i
 {
     int evaluation, maxEval, minEval;
     int** best_move;
-
+    //  = (int**) malloc(sizeof(int*)*8);
+    // for(int j=0; j<8; j++) best_move[j] = (int*)malloc(sizeof(int)*8);
 
     if(depth<=0)
     {
@@ -1450,6 +1692,7 @@ pair<int, int**> minimax_pro2(int depth, int max_player, int* board_layout[8], i
         else
             turn = 2;
         
+        // cout<<evaluate_int(board_layout, turn)<<endl;
         return make_pair(evaluate_int(board_layout, turn), board_layout);
     }
 
@@ -1513,7 +1756,7 @@ pair<int, int**> minimax_pro2(int depth, int max_player, int* board_layout[8], i
                     evaluation = minimax_pro2(depth-1, true, move, alpha, beta, 0, true, false).first;
             }
 
-            if(evaluation<maxEval)
+            if(evaluation<minEval)
             {
                 minEval = evaluation;
                 best_move = move;
@@ -1586,15 +1829,15 @@ int main()
     int* test2[8];  
     int array[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     test2[0] = array;
-    int array2[8] = {1, 1, 1, 1, 1, 1, 1, 1};
+    int array2[8] = {0, 1, 1, 1, 1, 1, 1, 1};
     test2[1] = array2;
-    int array3[8] = {1, 1, 1, 1, 1, 1, 1, 1};
+    int array3[8] = {0, 0, 1, 0, 0, 1, 1, 1};
     test2[2] = array3;
-    int array4[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    int array4[8] = {1, 1, 0, 1, 0, 0, 0, 0};
     test2[3] = array4;
-    int array5[8] = {2, 0, 0, 0, 0, 0, 0, 0};
+    int array5[8] = {0, 0, 0, 2, 0, 2, 2, 2};
     test2[4] = array5;
-    int array6[8] = {0, 2, 2, 2, 2, 2, 2, 2};
+    int array6[8] = {2, 2, 2, 0, 2, 0, 0, 0};
     test2[5] = array6;
     int array7[8] = {2, 2, 2, 2, 2, 2, 2, 2};
     test2[6] = array7;
@@ -1605,29 +1848,29 @@ int main()
     pair<int, int**> minimaxResult;
     
     clock_t begin = clock();
-    minimaxResult = minimax_pro2(8, true, test2, INT_MIN, INT_MAX, 0, true, true);
+    // minimaxResult = minimax_pro2(7, true, test2, INT_MIN, INT_MAX, 0, true, false);
     clock_t end = clock();
-    std::cout<<minimaxResult.first/100.0<<endl;
-    int** boardResult = minimaxResult.second;
-    printBoard(boardResult);
-    cout<<movesSeen<<endl;
+    // std::cout<<minimaxResult.first/100.0<<endl;
+    // int** boardResult = minimaxResult.second;
+    // printBoard(boardResult);
+    // cout<<movesSeen<<endl;
 
-    std::ofstream outfile("minimaxResult.txt");
+    // std::ofstream outfile("minimaxResult.txt");
 
-    if (!outfile.is_open()) {
-        std::cout << "Failed to open file" << std::endl;
-        return 1;
-    }
+    // if (!outfile.is_open()) {
+    //     std::cout << "Failed to open file" << std::endl;
+    //     return 1;
+    // }
     
-    for(int i=0; i<8; i++)
-    {
-        for(int j=0;j<8; j++)
-        {
-            outfile << boardResult[i][j];
-            outfile<<" ";
-        }
-        outfile<<endl;
-    }
+    // for(int i=0; i<8; i++)
+    // {
+    //     for(int j=0;j<8; j++)
+    //     {
+    //         outfile << boardResult[i][j];
+    //         outfile<<" ";
+    //     }
+    //     outfile<<endl;
+    // }
     
 
     // for(int i=0; i<100000; i++)
@@ -1655,29 +1898,33 @@ int main()
     // }
 
      int piece[2], move[2];
-     piece[0] = 5; piece[1] = 1;
-     move[0] = 1; move[1] = 1;
+     piece[0] = 5; piece[1] = 4;
+     move[0] = 5; move[1] = 2;
 
-    //  std::cout<<test3[2][1]<<endl;
+    //  std::cout<<test3[1][2]<<endl;
 
      vector<int*> parent_list5;
-     int *g = new int[2], *h = new int[2], *l = new int[2];
-     g[0]=5;g[1]=1;h[0]=3;h[1]=1;l[0]=1;l[1]=1;
+     int *g = new int[2], *h = new int[2], *l = new int[2], *p = new int[2];
+     g[0]=4;g[1]=3;h[0]=2;h[1]=3;l[0]=1;l[1]=1;p[0]=1;p[1]=3;
      parent_list5.push_back(g);
      parent_list5.push_back(h);
-     parent_list5.push_back(l);
+    //  parent_list5.push_back(l);
+    //  parent_list5.push_back(p);
     
      vector<vector<int*>> parent_list6;
      parent_list6.push_back(parent_list5);
 
     //  test3 = move_piece(piece, move, test2, parent_list6, 4);
      
-    //  std::cout<<test3[2][1]<<endl;
+    //  std::cout<<test3[1][2]<<endl;
 
-    // vector<int*> force_list = check_for_force(test2, 2);
-
-    // for(auto value : force_list)
-    //     std::cout<<value[0]<<"-"<<value[1]<<endl;
+    //  vector<int*> force_list = check_for_force(test2, 2);
+     vector<vector<int*>> parent_list = eat_max2_not_dama(4, 3, test2, parent_list6, 2, 0);
+    for(auto value : parent_list){
+        for(auto l : value)
+            std::cout<<l[0]<<"-"<<l[1]<<endl;
+        cout<<endl;
+    }
 
     // for(int j=0; j<(int)valid_moves.size(); j++)
     // {

@@ -1916,7 +1916,37 @@ def move_piece(piece, move, board_layout, parent_list, color):
     return board_layout
 
 iter_count = 0
-def get_all_moves(board_layout, color):
+
+def get_all_moves(board_layout, color, iter_count):
+    moves = []
+    parent_list = []
+    force_list = check_for_force(board_layout, color)
+    if not force_list:
+        force_list = get_all_pieces(board_layout, color)
+
+    for piece in force_list:
+        color2 = board_layout[piece[0]][piece[1]]
+        valid_moves, eating_piece = get_valid_moves(piece[0], piece[1], color2, 0, [], board_layout, '')
+
+        if eating_piece != '':
+            parent_list2 = [[(piece[0], piece[1]), move] for move in valid_moves]
+            parent_list = eat_max2_not_dama(piece[0], piece[1], board_layout, parent_list2, color2, '') if color2 in {1, 2} else eat_max2(piece[0], piece[1], board_layout, parent_list2, color2, '')
+
+            if parent_list:
+                valid_moves = [value[-1] for value in parent_list]
+
+        for move in valid_moves:
+            iter_count += 1
+            temp_board_layout = move_piece(piece, move, deepcopy2(board_layout), parent_list, color2)
+
+            if parent_list:
+                while check_end_of_parent_list(parent_list, move):
+                    moves.append(move_piece(piece, move, deepcopy2(board_layout), parent_list, color2))
+            moves.append(temp_board_layout)
+
+    return moves, force_list, iter_count
+
+def get_all_moves2(board_layout, color):
     global iter_count
     moves = []
 
@@ -1932,15 +1962,11 @@ def get_all_moves(board_layout, color):
         pieces = get_all_pieces(board_layout, color)
 
     for piece in pieces:
-        
         color2 = board_layout[piece[0]][piece[1]]
-        
-        
         if color2 == 1 or color2 == 2:
 
             valid_moves, eating_piece = get_valid_moves(piece[0], piece[1], color2, 0, [], board_layout, '')
             fff = (eating_piece!='')
-
             if fff:
                 parent_list2 = []
                 for move in valid_moves:
@@ -2384,11 +2410,11 @@ test = [
 test2 = []
 sum = 0.1
 moves2 = []
-for i in range(100000):
+for i in range(50000):
     #get_valid_moves(0, 7, 3, 0, [], test, '')
     #deepcopy2(test)
-    # get_all_moves(test, 1)
-    #strmove = str(test)
+    get_all_moves(test, 2, 0)[0][0]
+    #strmove = str(test)d
     #move_piece((2, 0), (3, 0), test, [], 1)
     #eat_piece_if_possible(test, 7, 0, 3, 0, 3)
     #check_for_force(test, 1)

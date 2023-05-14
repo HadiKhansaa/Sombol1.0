@@ -60,15 +60,74 @@ def no_more_moves_white(b):
 def empty_square(row, col):
     pass
 
-def get_valid_moves(row, col, color, streak, valid_moves, board_layout, eat_direction):
 
+def get_valid_moves_gpt(row, col, color, streak, valid_moves, board_layout, eat_direction):
+    def is_valid_move(row, col, piece):
+        if row < 0 or row >= 8 or col < 0 or col >= 8:
+            return False
+        if board_layout[row][col] != 0:
+            return False
+        return True
+
+    def add_valid_move(row, col):
+        if (row, col) not in valid_moves:
+            valid_moves.append((row, col))
+
+    def add_eating_piece(direction):
+        return direction if not eating_piece else eating_piece
+
+    def check_directions(deltas, eating_piece):
+        for dx, dy in deltas:
+            i = 1
+            while True:
+                new_row, new_col = row + i * dx, col + i * dy
+                if not is_valid_move(new_row, new_col, board_layout[row][col]):
+                    break
+                if eating_piece:
+                    add_valid_move(new_row, new_col)
+                    eating_piece = add_eating_piece('d')
+                else:
+                    add_valid_move(new_row, new_col)
+                i += 1
+
+    deltas = {
+        'u': [(-1, 0)],
+        'd': [(1, 0)],
+        'l': [(0, -1)],
+        'r': [(0, 1)]
+    }
+
+    eating_piece = ''
+    directions = eat_direction if color in [3, 4] else ['u', 'd', 'l', 'r']
+
+    for direction in directions:
+        if direction in deltas:
+            check_directions(deltas[direction], eating_piece)
+
+    if color == 1:
+        if is_valid_move(row + 1, col, board_layout[row][col]) and streak == 0:
+            add_valid_move(row + 1, col)
+        if is_valid_move(row, col + 1, board_layout[row][col]) and streak == 0:
+            add_valid_move(row, col + 1)
+        if is_valid_move(row, col - 1, board_layout[row][col]) and streak == 0:
+            add_valid_move(row, col - 1)
+
+    elif color == 2:
+        if is_valid_move(row - 1, col, board_layout[row][col]) and streak == 0:
+            add_valid_move(row - 1, col)
+        if is_valid_move(row, col + 1, board_layout[row][col]) and streak == 0:
+            add_valid_move(row, col + 1)
+        if is_valid_move(row, col - 1, board_layout[row][col]) and streak == 0:
+            add_valid_move(row, col - 1)
+
+    return valid_moves, eating_piece
+
+def get_valid_moves(row, col, color, streak, valid_moves, board_layout, eat_direction):
     ate_up = (eat_direction == 'u')
     ate_down = (eat_direction == 'd')
     ate_left = (eat_direction == 'l')
     ate_right = (eat_direction == 'r')
-
     eating_piece = ''
-    
     #black dama
     if color == 3:
         #right
@@ -92,7 +151,6 @@ def get_valid_moves(row, col, color, streak, valid_moves, board_layout, eat_dire
                         eating_piece = 'd'
                     j+=1
             i+=1
-            
         #left
         i=1
         while True and not ate_right:
@@ -114,8 +172,6 @@ def get_valid_moves(row, col, color, streak, valid_moves, board_layout, eat_dire
                         eating_piece = 'd'
                     j+=1
             i+=1
-
-
         #down
         i=1
         while True and not ate_up:
@@ -137,7 +193,6 @@ def get_valid_moves(row, col, color, streak, valid_moves, board_layout, eat_dire
                         eating_piece = 'd'
                     j+=1
             i+=1
-            
         #up
         i=1
         while True and not ate_down:
@@ -159,30 +214,24 @@ def get_valid_moves(row, col, color, streak, valid_moves, board_layout, eat_dire
                         eating_piece = 'd'
                     j+=1
             i+=1
-        
         if eating_piece=='':
             i=1
             while col+i<8 and board_layout[row][col+i] == 0:
                 valid_moves.append((row, col+i))
                 i+=1
-            
             i=1
             while col-i>=0 and board_layout[row][col-i] == 0:
                 valid_moves.append((row, col-i))
                 i+=1
-
             i=1
             while row+i<8 and board_layout[row+i][col] == 0:
                 valid_moves.append((row+i, col))
                 i+=1
-            
             i=1
             while row-i>=0 and board_layout[row-i][col] == 0:
                 valid_moves.append((row-i, col))
                 i+=1
-
     #red dama
-      
     if color == 4:
         #right
         i=1
@@ -204,8 +253,7 @@ def get_valid_moves(row, col, color, streak, valid_moves, board_layout, eat_dire
                         valid_moves.append((row, col+i+j))
                         eating_piece = 'd'
                     j+=1
-            i+=1
-            
+            i+=1 
         #left
         i=1
         while True and not ate_right:
@@ -227,8 +275,6 @@ def get_valid_moves(row, col, color, streak, valid_moves, board_layout, eat_dire
                         eating_piece = 'd'
                     j+=1
             i+=1
-
-
         #down
         i=1
         while True and not ate_up:
@@ -250,7 +296,6 @@ def get_valid_moves(row, col, color, streak, valid_moves, board_layout, eat_dire
                         eating_piece = 'd'
                     j+=1
             i+=1
-            
         #up
         i=1
         while True and not ate_down:
@@ -272,49 +317,37 @@ def get_valid_moves(row, col, color, streak, valid_moves, board_layout, eat_dire
                         eating_piece = 'd'
                     j+=1
             i+=1
-        
         if eating_piece=='':
             i=1
             while col+i<8 and board_layout[row][col+i] == 0:
                 valid_moves.append((row, col+i))
                 i+=1
-            
             i=1
             while col-i>=0 and board_layout[row][col-i] == 0:
                 valid_moves.append((row, col-i))
                 i+=1
-
             i=1
             while row+i<8 and board_layout[row+i][col] == 0:
                 valid_moves.append((row+i, col))
                 i+=1
-            
             i=1
             while row-i>=0 and board_layout[row-i][col] == 0:
                 valid_moves.append((row-i, col))
                 i+=1
-    
     if color == 1:
         #streak
         if row+2<8 and (board_layout[row+1][col]==2 or board_layout[row+1][col]==4) and board_layout[row+2][col]==0 and streak>=0:
             streak+=1
             valid_moves.append((row+2, col))
             eating_piece = 'n'
-            
-
         if col+2<8 and (board_layout[row][col+1]==2 or board_layout[row][col+1]==4) and board_layout[row][col+2]==0 and streak>=0 and not ate_left:
             streak+=1
             valid_moves.append((row, col+2))
             eating_piece = 'n'
-            
-
         if col-2>=0 and (board_layout[row][col-1]==2 or board_layout[row][col-1]==4) and board_layout[row][col-2]==0 and streak>=0 and not ate_right:
             streak+=1
             valid_moves.append((row, col-2))
             eating_piece = 'n'
-            
-        
-
         if row+1<8 and board_layout[row+1][col]==0 and streak==0:
             valid_moves.append((row+1, col))
         if col+1<8 and board_layout[row][col+1]==0 and streak==0:
@@ -323,29 +356,24 @@ def get_valid_moves(row, col, color, streak, valid_moves, board_layout, eat_dire
             valid_moves.append((row, col-1))
     elif color == 2:
         #streak
-        
         if row-2>=0 and (board_layout[row-1][col]==1 or board_layout[row-1][col]==3) and board_layout[row-2][col]==0 and streak>=0:
             streak+=1
             valid_moves.append((row-2, col))
             eating_piece = 'n'
-
         if col+2<8 and (board_layout[row][col+1]==1 or board_layout[row][col+1]==3) and board_layout[row][col+2]==0 and streak>=0 and not ate_left:
             streak+=1
             valid_moves.append((row, col+2))
             eating_piece = 'n'
-
         if col-2>=0 and (board_layout[row][col-1]==1 or board_layout[row][col-1]==3) and board_layout[row][col-2]==0 and streak>=0 and not ate_right:
             streak+=1
             valid_moves.append((row, col-2))
             eating_piece = 'n'
-
         if row-1>=0 and board_layout[row-1][col]==0 and streak==0:
             valid_moves.append((row-1, col))
         if col+1<8 and board_layout[row][col+1]==0 and streak ==0:
             valid_moves.append((row, col+1))
         if col-1>=0 and board_layout[row][col-1]==0 and streak ==0:
             valid_moves.append((row, col-1))
-    
     return valid_moves, eating_piece
 
 def check_for_piece_akel(row, col, color, board_layout):
@@ -2297,13 +2325,6 @@ def eat_max2(row, col, board_layout, parent_list,  color, eat_direction):
                 new_board_layout , eat_direction = eat_piece_if_possible(new_board_layout, row, col, move[0], move[1], color)
 
                 p2 = eat_max2(move[0], move[1], new_board_layout, parent_list, color, eat_direction)
-                #if maxp==[] or len(p2[0]) >= len(maxp[0]):
-                #    if maxp!=[] and len(p2[0]) == len(maxp[0]):
-                #        for li in p2:
-                 #           if li not in maxp:
-                #                maxp.append(li)
-                    #else:
-                    #    maxp = p2
                 
                 if maxp==[]:
                     maxp = p2
@@ -2360,19 +2381,19 @@ turn = 2
 start2 = time.time()
 test = [
                 [0, 0, 0, 0, 0, 0, 0, 0],   
+                [1, 0, 1, 0, 1, 0, 1, 1],
                 [1, 1, 1, 1, 1, 1, 1, 1],
-                [1, 1, 1, 1, 1, 1, 1, 1],
-                [0, 0, 2, 0, 2, 0, 2, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0],
-                [2, 2, 2, 2, 2, 2, 2, 2],
+                [0, 0, 1, 1, 0, 0, 0, 0],
+                [0, 1, 0, 0, 0, 1, 0, 0],
+                [2, 4, 2, 2, 2, 4, 2, 2],
                 [2, 2, 2, 2, 2, 2, 2, 2],
                 [0, 0, 0, 0, 0, 0, 0, 0]
             ]
 test2 = []
 sum = 0.1
 moves2 = []
-for i in range(100000):
-    #get_valid_moves(0, 7, 3, 0, [], test, '')
+for i in range(1):
+    # print(get_valid_moves_gpt(5, 0, 2, 0, [], test, ''))
     #deepcopy2(test)
     # get_all_moves(test, 1)
     #strmove = str(test)
@@ -2382,7 +2403,7 @@ for i in range(100000):
     #check_for_piece_akel(3, 0, 1, test)
     #moves2.append(test)
     #evaluate_int(test, 2)
-    # eat_max2(7, 0, test, [[(7, 0), (4, 0)]], 3, '')
+    print(eat_max2(5, 1, test, [[(5, 1), (3, 1)]], 4, ''))
     pass
 end2 = time.time()
 
