@@ -7,8 +7,8 @@
 #include <memory>
 #include <windows.h>
 using namespace std;
-
 int movesSeen = 0;
+
 pair<vector<int*>, char> get_valid_moves(int row,int col, int color, int streak, vector<int*> valid_moves,  int* board_layout[8], char eat_direction)
 {
     if(row>7 || col>7 || row<0 || col<0)
@@ -709,14 +709,16 @@ pair<int**, char> eat_piece_if_possible(int* board_layout[8], int row, int col, 
 int** deepcopy2(int* board_layout[8])
 {   
     int** new_board_layout = new int*[8];
-    for (int i = 0; i < 8; i++)
+    // for (int i = 0; i < 8; i++)
+    //     new_board_layout[i] = new int[8];
+    for (int i = 0; i < 8; i++) {
         new_board_layout[i] = new int[8];
-        
-    
+        std::memcpy(new_board_layout[i], board_layout[i], 8 * sizeof(int));
+    }
     //memcpy(new_board_layout, board_layout, 8*8*sizeof(int));
-    for(int i=0; i<8; i++)
-        for(int j=0; j<8; j++)
-            new_board_layout[i][j] = board_layout[i][j];
+    // for(int i=0; i<8; i++)
+    //     for(int j=0; j<8; j++)
+    //         new_board_layout[i][j] = board_layout[i][j];
     return new_board_layout;
 }
 
@@ -1134,6 +1136,80 @@ vector<vector<int*>> eat_max2_me(int row, int col,int* board_layout[8],  vector<
     return {};
 }
 
+bool passage_is_clear(int* board_layout[8], int row, int col, int turn) {
+    if (turn == 1) {
+        if (col == 7) {
+            if (board_layout[6][7] != 2 && board_layout[6][6] != 2 && board_layout[6][7] != 4 && board_layout[6][6] != 4) {
+                return true;
+            }
+            return false;
+        }
+
+        if (col == 0) {
+            if (board_layout[6][0] != 2 && board_layout[6][1] != 2 && board_layout[6][0] != 4 && board_layout[6][1] != 4) {
+                return true;
+            }
+            return false;
+        }
+
+        if ((board_layout[row + 1][col + 1] == 2 || board_layout[row + 1][col + 1] == 4) ^
+            (board_layout[row + 1][col - 1] == 2 || board_layout[row + 1][col - 1] == 4)) {
+            return false;
+        }
+
+        for (int j = -2; j <= 2; j++) {
+            if (col + j < 0) {
+                continue;
+            }
+            if (col + j > 7) {
+                break;
+            }
+            if (board_layout[row + 2][col + j] == 2 || board_layout[row + 2][col + j] == 4) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    if (turn == 2) {
+        if (col == 7) {
+            if (board_layout[1][7] != 1 && board_layout[1][6] != 1 && board_layout[1][7] != 3 && board_layout[1][6] != 3) {
+                return true;
+            }
+            return false;
+        }
+
+        if (col == 0) {
+            if (board_layout[1][0] != 1 && board_layout[1][1] != 1 && board_layout[1][0] != 3 && board_layout[1][1] != 3) {
+                return true;
+            }
+            return false;
+        }
+
+        if ((board_layout[row - 1][col + 1] == 1 || board_layout[row - 1][col + 1] == 3) ^
+            (board_layout[row - 1][col - 1] == 1 || board_layout[row - 1][col - 1] == 3)) {
+            return false;
+        }
+
+        for (int j = -2; j <= 2; j++) {
+            if (col + j < 0) {
+                continue;
+            }
+            if (col + j > 7) {
+                break;
+            }
+            if (board_layout[row - 2][col + j] == 1 || board_layout[row - 2][col + j] == 3) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    return false; // Return false for any other turn value
+}
+
 int evaluate_int(int* board_layout[8], int turn)
 {
     movesSeen++;
@@ -1181,6 +1257,10 @@ int evaluate_int(int* board_layout[8], int turn)
                     if (i == 6 and turn == 1)
                         sum+=50;
                 }
+
+                //if on 5th row and passage is clear the piece is dangerous
+                if (i==4 && turn==1 && passage_is_clear(board_layout, i, j, turn))
+                    sum+=70;
                 
             }
             else if(piece == 2)
@@ -1222,6 +1302,10 @@ int evaluate_int(int* board_layout[8], int turn)
                     if (i == 1 and turn == 2)
                         sum-=50;
                 }
+
+                //if on 5th row and passage is clear the piece is dangerous
+                if(i==3 && turn==2 && passage_is_clear(board_layout, i, j, turn))
+                    sum-=70;
             }
             else if(piece==3)
             {
@@ -1351,20 +1435,43 @@ vector<int*> get_all_pieces(int* board_layout[8], int color)
     vector<int*> pieces = vector<int*>();
     
     int i, j;
-    for(i=0; i<8; i++)
-    {
-        for(j=0; j<8; j++)
-        {
-            if( (color == 1 && (board_layout[i][j]==1 || board_layout[i][j] == 3)) || (color == 2 && (board_layout[i][j] == 2 || board_layout[i][j] == 4)) )
-                {
-                    //make piece
-                    int* piece = (int*)malloc(sizeof(int)*2);
-                    piece[0] = i;
-                    piece[1] = j;
-                    pieces.push_back(piece);
-                    //cout<<"j: "<<pieces[i][j]<<endl;
 
-                }
+    if(color == 1 || color == 3)
+    {
+        for(i=7; i>=0; i--)
+        {
+            for(j=0; j<8; j++)
+            {
+                if(board_layout[i][j]==1 || board_layout[i][j] == 3)
+                    {
+                        //make piece
+                        int* piece = (int*)malloc(sizeof(int)*2);
+                        piece[0] = i;
+                        piece[1] = j;
+                        pieces.push_back(piece);
+                        //cout<<"j: "<<pieces[i][j]<<endl;
+
+                    }
+            }
+        }
+    }
+    else
+    {
+        for(i=0; i<8; i++)
+        {
+            for(j=0; j<8; j++)
+            {
+                if(board_layout[i][j] == 2 || board_layout[i][j] == 4)
+                    {
+                        //make piece
+                        int* piece = (int*)malloc(sizeof(int)*2);
+                        piece[0] = i;
+                        piece[1] = j;
+                        pieces.push_back(piece);
+                        //cout<<"j: "<<pieces[i][j]<<endl;
+
+                    }
+            }
         }
     }
     return pieces;
@@ -1511,8 +1618,7 @@ pair<vector<int**>, vector<int*>> get_all_moves(int* board_layout[8], int color)
 
         for(int* move : valid_moves)
         {
-            int **temp_board_layout = move_piece(piece, move, deepcopy2(board_layout), parent_list, color2);
-            moves.push_back(temp_board_layout);
+            moves.push_back(move_piece(piece, move, deepcopy2(board_layout), parent_list, color2));
         }
     }
 
@@ -1572,9 +1678,6 @@ pair<int, int**> minimax_pro2(int depth, int max_player, int* board_layout[8], i
         pair<vector <int**>, vector<int*> > allandForce = get_all_moves(board_layout, 1);
         vector <int**> all_moves;
         all_moves = allandForce.first;
-        if(all_moves.empty()){
-            printBoard(board_layout);
-        }
         vector<int*> force_list = allandForce.second;
 
         for (auto move : all_moves)
@@ -1612,9 +1715,6 @@ pair<int, int**> minimax_pro2(int depth, int max_player, int* board_layout[8], i
         pair<vector <int**>, vector<int*> > allandForce = get_all_moves(board_layout, 2);
         vector <int**> all_moves;
         all_moves = allandForce.first;
-        if(all_moves.empty()){
-            printBoard(board_layout);
-        }
         vector<int*> force_list = allandForce.second;
 
         for (auto move : all_moves)
@@ -1629,6 +1729,82 @@ pair<int, int**> minimax_pro2(int depth, int max_player, int* board_layout[8], i
                     evaluation = minimax_pro2(depth-1, true, move, alpha, beta, 0, true, false).first;
             }
 
+            if(evaluation<minEval)
+            {
+                minEval = evaluation;
+                best_move = move;
+            }
+
+            beta = min(beta, minEval);
+            if(beta<=alpha)
+                break;
+        }
+        return make_pair(minEval, best_move);
+    }
+}
+
+pair<int, int**> normal_minimax(int depth, int max_player, int* board_layout[8], int alpha, int beta)
+{
+    int evaluation, maxEval, minEval;
+    int** best_move;
+
+    if(depth<=0 || playerWon(board_layout))
+    {
+        int turn;
+        if(max_player)
+            turn = 1;
+        else
+            turn = 2;
+        return make_pair(evaluate_int(board_layout, turn), board_layout);
+    }
+
+    if(max_player)
+    {
+        // printBoard(board_layout);
+        // cout<<endl;
+        // Sleep(500);
+
+        best_move = NULL;
+        maxEval = INT_MIN;
+        pair<vector <int**>, vector<int*> > allandForce = get_all_moves(board_layout, 1);
+        vector <int**> all_moves;
+        all_moves = allandForce.first;
+        vector<int*> force_list = allandForce.second;
+
+        for (auto move : all_moves)
+        {
+
+            evaluation = normal_minimax(depth-1, false, move, alpha, beta).first;
+            
+            if(evaluation>maxEval)
+            {
+                maxEval = evaluation;
+                best_move = move;
+            }
+
+            alpha = max(alpha, maxEval);
+            if(beta<=alpha)
+                break;
+        }
+        return make_pair(maxEval, best_move);
+    }
+    else
+    {
+        // printBoard(board_layout);
+        // cout<<endl;
+        // Sleep(500);
+
+        best_move = NULL;
+        minEval = INT_MAX;
+        pair<vector <int**>, vector<int*> > allandForce = get_all_moves(board_layout, 2);
+        vector <int**> all_moves;
+        all_moves = allandForce.first;
+        vector<int*> force_list = allandForce.second;
+
+        for (auto move : all_moves)
+        {
+
+            evaluation = normal_minimax(depth-1, true, move, alpha, beta).first;
             if(evaluation<minEval)
             {
                 minEval = evaluation;
@@ -1689,26 +1865,27 @@ int main()
     int* test2[8];  
     int array[8] =  {0, 0, 0, 0, 0, 0, 0, 0};
     test2[0] = array;
-    int array2[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    int array2[8] = {1, 1, 1, 1, 1, 1, 1, 1};
     test2[1] = array2;
-    int array3[8] = {1, 0, 1, 0, 0, 0, 1, 1};
+    int array3[8] = {1, 1, 1, 1, 1, 1, 1, 0};
     test2[2] = array3;
-    int array4[8] = {1, 0, 1, 0, 0, 0, 0, 1};
+    int array4[8] = {0, 0, 0, 0, 0, 0, 0, 1};
     test2[3] = array4;
-    int array5[8] = {2, 0, 1, 0, 0, 2, 0, 2};
+    int array5[8] = {2, 0, 0, 0, 0, 0, 0, 0};
     test2[4] = array5;
-    int array6[8] = {2, 2, 0, 0, 0, 0, 0, 2};
+    int array6[8] = {0, 2, 2, 2, 2, 2, 2, 2};
     test2[5] = array6;
-    int array7[8] = {0, 0, 2, 0, 0, 0, 0, 2};
+    int array7[8] = {2, 2, 2, 2, 2, 2, 2, 2};
     test2[6] = array7;
-    int array8[8] = {0, 0, 0, 0, 0, 0, 3, 0};
+    int array8[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     test2[7] = array8;
     int** test3 = deepcopy2(test2);
     
     pair<int, int**> minimaxResult;
     
     clock_t begin = clock();
-    minimaxResult = minimax_pro2(7, false, test2, INT_MIN, INT_MAX, 0, true, false);
+    minimaxResult = minimax_pro2(6, false, test2, INT_MIN, INT_MAX, 0, true, false);
+    // minimaxResult = normal_minimax(8, false, test2, INT_MIN, INT_MAX);
     clock_t end = clock();
     std::cout<<minimaxResult.first/100.0<<endl;
     int** boardResult = minimaxResult.second;

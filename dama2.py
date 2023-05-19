@@ -664,7 +664,7 @@ class Board:
     testSurf = pygame.image.load("positionBoard.jpeg").convert()
     testSurf = pygame.transform.scale(testSurf, (800, 800))
 
-    layout3 = [
+    layout = [
                 [0, 0, 0, 0, 0, 0, 0, 0],
                 [1, 1, 1, 1, 1, 1, 1, 1],
                 [1, 1, 1, 1, 1, 1, 1, 1],
@@ -676,7 +676,7 @@ class Board:
                ]
                                             
               
-    layout = [
+    layout3 = [
                 [0, 0, 0, 0, 0, 0, 0, 0],   
                 [0, 0, 0, 0, 0, 0, 0, 1],
                 [1, 1, 0, 1, 0, 0, 0, 1],
@@ -2393,9 +2393,9 @@ test = [
 test2 = []
 sum = 0.1
 moves2 = []
-for i in range(1):
+for i in range(1500000):
     # print(get_valid_moves_gpt(5, 0, 2, 0, [], test, ''))
-    #deepcopy2(test)
+    # deepcopy2(test)
     # get_all_moves(test, 1)
     #strmove = str(test)
     #move_piece((2, 0), (3, 0), test, [], 1)
@@ -2404,7 +2404,7 @@ for i in range(1):
     #check_for_piece_akel(3, 0, 1, test)
     #moves2.append(test)
     #evaluate_int(test, 2)
-    print(eat_max2(5, 1, test, [[(5, 1), (3, 1)]], 4, ''))
+    # print(eat_max2(5, 1, test, [[(5, 1), (3, 1)]], 4, ''))
     pass
 end2 = time.time()
 
@@ -2447,7 +2447,7 @@ while running:
     screen.blit(board.surf,(0, 0))
     
     #black ai move 
-    if False and turn == 1:
+    if turn == 1:
         current_board_layout = deepcopy(board.layout)
         calculations = 0
         positions_seen = 0
@@ -2526,7 +2526,7 @@ while running:
 
     
     #red ai move
-    if turn == 2:
+    if False and turn == 2:
         current_board_layout = deepcopy(board.layout)
         calculations = 0
         positions_seen = 0
