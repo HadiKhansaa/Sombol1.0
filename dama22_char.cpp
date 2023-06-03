@@ -16,6 +16,12 @@ const char BLACK_PIECE = '1';
 const char RED_PIECE = '2';
 const char EMPTY_SQUARE = '0';
 
+
+typedef struct foo
+{
+    unsigned x:3;
+} foo;
+
 pair<vector<char*>, char> get_valid_moves(int row,int col, char color, int streak, vector<char*> valid_moves,  char* board_layout[8], char eat_direction)
 {
     if(row>7 || col>7 || row<0 || col<0)
@@ -25,10 +31,10 @@ pair<vector<char*>, char> get_valid_moves(int row,int col, char color, int strea
         validMovesAndEatingPiece.second = 0;
         return validMovesAndEatingPiece;
     }
-    bool ate_up = (eat_direction == 'u');
-    bool ate_down = (eat_direction == 'd');
-    bool ate_left = (eat_direction == 'l');
-    bool ate_right = (eat_direction == 'r');
+    int ate_up = (eat_direction == 'u');
+    int ate_down = (eat_direction == 'd');
+    int ate_left = (eat_direction == 'l');
+    int ate_right = (eat_direction == 'r');
 
     char *v_move= new char[2];
 
@@ -39,7 +45,7 @@ pair<vector<char*>, char> get_valid_moves(int row,int col, char color, int strea
     {
         //right
         int i=1;
-        while(true && !ate_left)
+        while(1 && !ate_left)
         {
             if (col+i >= 8)
                 break;
@@ -48,7 +54,7 @@ pair<vector<char*>, char> get_valid_moves(int row,int col, char color, int strea
             if (col+i<8 && board_layout[row][col+i] == RED_DAMA || board_layout[row][col+i] == RED_PIECE)
             {
                 int j=1;
-                while(true)
+                while(1)
                 {
                     if (col+i+j>=8)
                     {
@@ -76,7 +82,7 @@ pair<vector<char*>, char> get_valid_moves(int row,int col, char color, int strea
 
         //left
         i=1;
-        while(true && !ate_right)
+        while(1 && !ate_right)
         {
             if (col-i < 0 || col>7 || row>7)
                 break;
@@ -85,7 +91,7 @@ pair<vector<char*>, char> get_valid_moves(int row,int col, char color, int strea
             if (board_layout[row][col-i] == RED_DAMA || board_layout[row][col-i] == RED_PIECE)
             {
                 int j=1;
-                while(true)
+                while(1)
                 {
                     if (col-i-j<0)
                     {
@@ -114,7 +120,7 @@ pair<vector<char*>, char> get_valid_moves(int row,int col, char color, int strea
 
         
         i=1; //down
-        while(true && !ate_up)
+        while(1 && !ate_up)
         {
             if (row+i>=8 || col>=8 || row+i<0 || col<0)
                 break;
@@ -123,7 +129,7 @@ pair<vector<char*>, char> get_valid_moves(int row,int col, char color, int strea
             if (board_layout[row+i][col] == RED_DAMA || board_layout[row+i][col] == RED_PIECE)
             {
                 int j=1;
-                while(true)
+                while(1)
                 {
                     if (row+i+j>=8)
                     {
@@ -150,7 +156,7 @@ pair<vector<char*>, char> get_valid_moves(int row,int col, char color, int strea
         }
             
         i=1; //up
-        while(true && !ate_down)
+        while(1 && !ate_down)
         {
             if (row-i<0)
                 break;
@@ -159,7 +165,7 @@ pair<vector<char*>, char> get_valid_moves(int row,int col, char color, int strea
             if (board_layout[row-i][col] == RED_DAMA || board_layout[row-i][col] == RED_PIECE)
             {
                 int j=1;
-                while(true)
+                while(1)
                 {
                     if (row-i-j<0)
                     {
@@ -234,7 +240,7 @@ pair<vector<char*>, char> get_valid_moves(int row,int col, char color, int strea
     {
         //right
         int i=1;
-        while( true && !ate_left)
+        while( 1 && !ate_left)
         {
             if (col+i >= 8)
                 break;
@@ -243,7 +249,7 @@ pair<vector<char*>, char> get_valid_moves(int row,int col, char color, int strea
             if (col+i<8 && board_layout[row][col+i] == BLACK_DAMA || board_layout[row][col+i] == BLACK_PIECE)
             {
                 int j=1;
-                while(true)
+                while(1)
                 {
                     if (col+i+j>=8)
                     {
@@ -271,7 +277,7 @@ pair<vector<char*>, char> get_valid_moves(int row,int col, char color, int strea
 
         //left
         i=1;
-        while( true && !ate_right)
+        while( 1 && !ate_right)
         {
             if (col-i < 0)
                 break;
@@ -280,7 +286,7 @@ pair<vector<char*>, char> get_valid_moves(int row,int col, char color, int strea
             if (board_layout[row][col-i] == BLACK_DAMA || board_layout[row][col-i] == BLACK_PIECE)
             {
                 int j=1;
-                while(true)
+                while(1)
                 {
                     if (col-i-j<0)
                     {
@@ -309,7 +315,7 @@ pair<vector<char*>, char> get_valid_moves(int row,int col, char color, int strea
 
         
         i=1; //down
-        while( true && !ate_up)
+        while( 1 && !ate_up)
         {
             if (row+i>7)
                 break;
@@ -318,7 +324,7 @@ pair<vector<char*>, char> get_valid_moves(int row,int col, char color, int strea
             if (board_layout[row+i][col] == BLACK_DAMA || board_layout[row+i][col] == BLACK_PIECE)
             {
                 int j=1;
-                while(true)
+                while(1)
                 {
                     if (row+i+j>=8)
                     {
@@ -345,7 +351,7 @@ pair<vector<char*>, char> get_valid_moves(int row,int col, char color, int strea
         }
             
         i=1; //up
-        while(true && !ate_down)
+        while(1 && !ate_down)
         {
             if (row-i<0)
                 break;
@@ -354,7 +360,7 @@ pair<vector<char*>, char> get_valid_moves(int row,int col, char color, int strea
             if (board_layout[row-i][col] == BLACK_DAMA || board_layout[row-i][col] == BLACK_PIECE)
             {
                 int j=1;
-                while(true)
+                while(1)
                 {
                     if (row-i-j<0)
                     {
@@ -721,19 +727,19 @@ char** deepcopy2(char* board_layout[8])
     return new_board_layout;
 }
 
-bool equals(vector<char*> a, vector<char*> b)
+int equals(vector<char*> a, vector<char*> b)
 {
     for(int i=0; i<(int)a.size(); i++)
         if(a[i][0]!=b[i][0] || a[i][1]!=b[i][1])
-            return false;
-    return true;
+            return 0;
+    return 1;
 }
 
-bool doesnt_have(vector <vector<char*>> a, vector<char*> b){
+int doesnt_have(vector <vector<char*>> a, vector<char*> b){
     for(auto element:a)
         if(equals(element, b))
-            return false;
-    return true;
+            return 0;
+    return 1;
 }
 
 std::vector<std::vector<char*>> eat_max2(int row, int col,char* board_layout[8],  vector<vector<char*>> parent_list, char color, char eat_direction) {
@@ -741,7 +747,7 @@ std::vector<std::vector<char*>> eat_max2(int row, int col,char* board_layout[8],
     // Call get_valid_moves function
     auto [valid_moves, eating_piece] = get_valid_moves(row, col, color, 0, {}, board_layout, eat_direction);
 
-    bool dama_nom = (eating_piece == 'd');
+    int dama_nom = (eating_piece == 'd');
 
     if (dama_nom) {
         std::vector<char*> new_list;
@@ -749,7 +755,7 @@ std::vector<std::vector<char*>> eat_max2(int row, int col,char* board_layout[8],
         big_dama_list.clear();
         new_list.clear();
         for (auto move : valid_moves) {
-            dama_nom = false;
+            dama_nom = 0;
 
             if (move[1]-'0' == col) {
                 if (move[0]-'0' > row) {
@@ -861,7 +867,7 @@ std::vector<std::vector<char*>> eat_max2_not_dama(int row, int col,char* board_l
     // Call get_valid_moves function
     auto [valid_moves, eating_piece] = get_valid_moves(row, col, color, 0, {}, board_layout, eat_direction);
 
-    bool dama_nom = (eating_piece != 0);
+    int dama_nom = (eating_piece != 0);
 
     if (dama_nom) {
         std::vector<char*> new_list;
@@ -869,7 +875,7 @@ std::vector<std::vector<char*>> eat_max2_not_dama(int row, int col,char* board_l
         big_dama_list.clear();
         new_list.clear();
         for (auto move : valid_moves) {
-            dama_nom = false;
+            dama_nom = 0;
             
             if (move[1]-'0' == col) {
                 if (move[0]-'0' > row) {
@@ -960,25 +966,25 @@ std::vector<std::vector<char*>> eat_max2_not_dama(int row, int col,char* board_l
     }
 }
 
-bool passage_is_clear(char* board_layout[8], int row, int col, char turn) {
+int passage_is_clear(char* board_layout[8], int row, int col, char turn) {
     if (turn == '1') {
         if (col == 7) {
             if (board_layout[6][7] != '2' && board_layout[6][6] != '2' && board_layout[6][7] != '4' && board_layout[6][6] != '4') {
-                return true;
+                return 1;
             }
-            return false;
+            return 0;
         }
 
         if (col == 0) {
             if (board_layout[6][0] != '2' && board_layout[6][1] != '2' && board_layout[6][0] != '4' && board_layout[6][1] != '4') {
-                return true;
+                return 1;
             }
-            return false;
+            return 0;
         }
 
         if ((board_layout[row + 1][col + 1] == '2' || board_layout[row + 1][col + 1] == '4') ^
             (board_layout[row + 1][col - 1] == '2' || board_layout[row + 1][col - 1] == '4')) {
-            return false;
+            return 0;
         }
 
         for (int j = -2; j <= 2; j++) {
@@ -989,31 +995,31 @@ bool passage_is_clear(char* board_layout[8], int row, int col, char turn) {
                 break;
             }
             if (board_layout[row + 2][col + j] == '2' || board_layout[row + 2][col + j] == '4') {
-                return false;
+                return 0;
             }
         }
 
-        return true;
+        return 1;
     }
 
     if (turn == '2') {
         if (col == 7) {
             if (board_layout[1][7] != '1' && board_layout[1][6] != '1' && board_layout[1][7] != '3' && board_layout[1][6] != '3') {
-                return true;
+                return 1;
             }
-            return false;
+            return 0;
         }
 
         if (col == 0) {
             if (board_layout[1][0] != '1' && board_layout[1][1] != '1' && board_layout[1][0] != '3' && board_layout[1][1] != '3') {
-                return true;
+                return 1;
             }
-            return false;
+            return 0;
         }
 
         if ((board_layout[row - 1][col + 1] == '1' || board_layout[row - 1][col + 1] == '3') ^
             (board_layout[row - 1][col - 1] == '1' || board_layout[row - 1][col - 1] == '3')) {
-            return false;
+            return 0;
         }
 
         for (int j = -2; j <= 2; j++) {
@@ -1024,14 +1030,14 @@ bool passage_is_clear(char* board_layout[8], int row, int col, char turn) {
                 break;
             }
             if (board_layout[row - 2][col + j] == '1' || board_layout[row - 2][col + j] == '3') {
-                return false;
+                return 0;
             }
         }
 
-        return true;
+        return 1;
     }
 
-    return false; // Return false for any other turn value
+    return 0; // Return 0 for any other turn value
 }
 
 vector<char*> get_all_pieces(char* board_layout[8], char color)
@@ -1040,7 +1046,7 @@ vector<char*> get_all_pieces(char* board_layout[8], char color)
     
     int i, j;
 
-    if(color == '1' || color == '3')
+    if(color == '1')
     {
         for(i=7; i>=0; i--)
         {
@@ -1049,7 +1055,7 @@ vector<char*> get_all_pieces(char* board_layout[8], char color)
                 if(board_layout[i][j]=='1' || board_layout[i][j] == '3')
                     {
                         //make piece
-                        char* piece = (char*)malloc(sizeof(char)*2);
+                        char* piece = new char[2];
                         piece[0] = i + '0';
                         piece[1] = j + '0';
                         pieces.push_back(piece);
@@ -1068,7 +1074,7 @@ vector<char*> get_all_pieces(char* board_layout[8], char color)
                 if(board_layout[i][j] == '2' || board_layout[i][j] == '4')
                     {
                         //make piece
-                        char* piece = (char*)malloc(sizeof(char)*2);
+                        char* piece = new char[2];
                         piece[0] = i + '0';
                         piece[1] = j + '0';
                         pieces.push_back(piece);
@@ -1081,74 +1087,74 @@ vector<char*> get_all_pieces(char* board_layout[8], char color)
     return pieces;
 }
 
-pair< vector<char*>, bool > check_for_possible_capture(char* board_layout[8], char turn)
+pair< vector<char*>, int > check_for_possible_capture(char* board_layout[8], char turn)
 {
     vector<char*> pieces = get_all_pieces(board_layout, turn);
     for(auto piece:pieces){
-        int row = piece[0];
-        int col = piece[1];
-        if((board_layout[row-'0'][col-'0']=='3' && turn=='1') || (board_layout[row-'0'][col-'0']=='4' && turn == '2'))
+        char row = piece[0]-'0';
+        char col = piece[1]-'0';
+        if((board_layout[row][col]=='3' && turn=='1') || (board_layout[row][col]=='4' && turn == '2'))
         {
-            char eating_piece = get_valid_moves(row-'0', col-'0', board_layout[row-'0'][col-'0'], 0, {}, board_layout, 0).second;
+            char eating_piece = get_valid_moves(row, col, board_layout[row][col], 0, {}, board_layout, 0).second;
             if(eating_piece!=0)
-                return make_pair(pieces, true);
+                return make_pair(pieces, 1);
         }
         else if(turn == '2'){
-            if(col-2-'0'>=0 && board_layout[row-'0'][col-2-'0']=='0' && (board_layout[row-'0'][col-1-'0'] =='1' || board_layout[row-'0'][col-1-'0'] == '3'))
-                return make_pair(pieces, true);
-            if(col+2-'0'<8 && board_layout[row-'0'][col+2-'0']=='0' && (board_layout[row-'0'][col+1-'0'] =='1' || board_layout[row-'0'][col+1-'0'] == '3'))
-                return make_pair(pieces, true);
-            if(row-2-'0'>=0 && board_layout[row-2-'0'][col-'0']=='0' && (board_layout[row-1-'0'][col-'0'] == '1' || board_layout[row-1-'0'][col-'0'] == '3'))
-                return make_pair(pieces, true);
+            if(col-2>=0 && board_layout[row][col-2]=='0' && (board_layout[row][col-1] =='1' || board_layout[row][col-1] == '3'))
+                return make_pair(pieces, 1);
+            if(col+2<8 && board_layout[row][col+2]=='0' && (board_layout[row][col+1] =='1' || board_layout[row][col+1] == '3'))
+                return make_pair(pieces, 1);
+            if(row-2>=0 && board_layout[row-2][col]=='0' && (board_layout[row-1][col] == '1' || board_layout[row-1][col] == '3'))
+                return make_pair(pieces, 1);
         }
         else{
-            if(col-2-'0'>=0 && board_layout[row-'0'][col-2-'0']=='0' && (board_layout[row-'0'][col-1-'0'] =='2' || board_layout[row-'0'][col-1-'0'] == '4'))
-                return make_pair(pieces, true);
-            if(col+2-'0'<8 && board_layout[row-'0'][col+2-'0']=='0' && (board_layout[row-'0'][col+1-'0'] =='2' || board_layout[row-'0'][col+1-'0'] == '4'))
-                return make_pair(pieces, true);
-            if(row+2-'0'<8 && board_layout[row+2-'0'][col-'0']==0 && (board_layout[row+1-'0'][col-'0'] == '2' || board_layout[row+1-'0'][col-'0'] == '4'))
-                return make_pair(pieces, true);
+            if(col-2>=0 && board_layout[row][col-2]=='0' && (board_layout[row][col-1] =='2' || board_layout[row][col-1] == '4'))
+                return make_pair(pieces, 1);
+            if(col+2<8 && board_layout[row][col+2]=='0' && (board_layout[row][col+1] =='2' || board_layout[row][col+1] == '4'))
+                return make_pair(pieces, 1);
+            if(row+2<8 && board_layout[row+2][col]=='0' && (board_layout[row+1][col] == '2' || board_layout[row+1][col] == '4'))
+                return make_pair(pieces, 1);
         }
     }
 
-    return make_pair(pieces, false);
+    return make_pair(pieces, 0);
 }
 
-bool check_if_piece_can_capture(int row, int col, char* board_layout[8],char turn){
-    if((board_layout[row][col]=='3' && turn=='2') || (board_layout[row][col]=='4' && turn == '2'))
+int check_if_piece_can_capture(int row, int col, char* board_layout[8],char turn){
+    if((board_layout[row][col]=='3' && turn=='1') || (board_layout[row][col]=='4' && turn == '2'))
     {
         char eating_piece = get_valid_moves(row, col, board_layout[row][col], 0, {}, board_layout, 0).second;
         if(eating_piece!=0)
-            return true;
+            return 1;
     }
     else if(turn == '2'){
         if(col-2>=0 && board_layout[row][col-2]=='0' && (board_layout[row][col-1] =='1' || board_layout[row][col-1] == '3'))
-            return true;
+            return 1;
         if(col+2<8 && board_layout[row][col+2]=='0' && (board_layout[row][col+1] =='1' || board_layout[row][col+1] == '3'))
-            return true;
+            return 1;
         if(row-2>=0 && board_layout[row-2][col]=='0' && (board_layout[row-1][col] == '1' || board_layout[row-1][col] == '3'))
-            return true;
+            return 1;
     }
     else{
         if(col-2>=0 && board_layout[row][col-2]=='0' && (board_layout[row][col-1] =='2' || board_layout[row][col-1] == '4'))
-            return true;
+            return 1;
         if(col+2<8 && board_layout[row][col+2]=='0' && (board_layout[row][col+1] =='2' || board_layout[row][col+1] == '4'))
-            return true;
+            return 1;
         if(row+2<8 && board_layout[row+2][col]=='0' && (board_layout[row+1][col] == '2' || board_layout[row+1][col] == '4'))
-            return true;
+            return 1;
     }
-    return false;
+    return 0;
 }
 
 vector<char*> check_for_force(char* board_layout[8], char turn, vector<char*> *pieces = {})
 {
     auto [pieces2, check] = check_for_possible_capture(board_layout, turn);
     *pieces = pieces2;
-    if(check == false)
+    if(check == 0)
         return {};
     
     counter++;
-    bool aktar_flag = false;
+    int aktar_flag = 0;
     vector<char*> aktar_list;
     vector<char*> force_list;
     int maxLength = 3, listSize = 0;
@@ -1156,14 +1162,14 @@ vector<char*> check_for_force(char* board_layout[8], char turn, vector<char*> *p
 
     for(char* piece : pieces2)
     {
-        int row2=piece[0]-'0', col2=piece[1]-'0';
+        char row2=piece[0]-'0', col2=piece[1]-'0';
 
         if(!check_if_piece_can_capture(row2, col2, board_layout, turn))
             continue;
         char color = board_layout[row2][col2];
         if(((color=='2' || color=='4') && turn=='2') || ((color=='1' || color=='3') && turn=='1'))
         {
-            bool fff = false;
+            int fff = 0;
             vector<vector<char*>> parent_list2;
             
             //get_valid_moves stuff
@@ -1171,7 +1177,7 @@ vector<char*> check_for_force(char* board_layout[8], char turn, vector<char*> *p
             validMovesAndEatingPiece  = get_valid_moves(row2, col2, color, 0, {}, board_layout, 0);
             
             char eating_piece = validMovesAndEatingPiece.second;
-            bool dama_nom = eating_piece == 'd';
+            int dama_nom = eating_piece == 'd';
             fff = eating_piece!=0;
 
             if(fff)
@@ -1201,7 +1207,7 @@ vector<char*> check_for_force(char* board_layout[8], char turn, vector<char*> *p
                         if(listSize>maxLength)
                             aktar_list.clear();
                         maxLength = listSize;
-                        aktar_flag = true;
+                        aktar_flag = 1;
                         for(vector<char*> value : parent_list)
                             aktar_list.push_back(value[0]);
                         
@@ -1221,7 +1227,7 @@ vector<char*> check_for_force(char* board_layout[8], char turn, vector<char*> *p
                         if(listSize>maxLength)
                             aktar_list.clear();
                         maxLength = listSize;
-                        aktar_flag = true;
+                        aktar_flag = 1;
                         for(vector<char*> value : parent_list)
                             aktar_list.push_back(value[0]);
                     }
@@ -1229,9 +1235,10 @@ vector<char*> check_for_force(char* board_layout[8], char turn, vector<char*> *p
 
                 if(!aktar_flag)
                 {
-                    char* piece = new char[2];
-                    piece[0] = row2+'0'; piece[1] = col2+'0';
-                    force_list.push_back(piece);
+                    char* piece2 = new char[2];
+                    piece2[0] = row2+'0';
+                    piece2[1] = col2+'0';
+                    force_list.push_back(piece2);
                 }
             }
         }
@@ -1261,7 +1268,7 @@ char** move_piece(char* piece, char* move, char* board_layout[8], vector<vector<
         {
             value_length = value.size();
             auto temp = value[value_length-1];
-            if((temp[0]-'0')==r && (temp[1]-'0')==c)
+            if(((temp[0]-'0')==r) && ((temp[1]-'0')==c))
             {
                 int z=0;
                 for(z = 0; z<value_length; z++)
@@ -1301,8 +1308,9 @@ int evaluate_int(char* board_layout[8], char turn)
     for(int i=0; i<8; i++)
         for(int j=0; j<8; j++)
         {
-            int piece = board_layout[i][j]-'0';
-
+            char piece = board_layout[i][j];
+            if(piece == '0')
+                continue;
             if(piece == '1')
             {
                 black_pieces+=1;
@@ -1343,7 +1351,7 @@ int evaluate_int(char* board_layout[8], char turn)
                 }
 
                 //if on 5th row and passage is clear the piece is dangerous
-                if (i==4 && turn==1 && passage_is_clear(board_layout, i, j, turn))
+                if (i==4 && turn=='1' && passage_is_clear(board_layout, i, j, turn))
                     sum+=70;
                 
             }
@@ -1366,7 +1374,7 @@ int evaluate_int(char* board_layout[8], char turn)
                 if(i == 1)
                 {
                     sum-=150;
-                    if(turn == 2)
+                    if(turn == '2')
                         sum-=40;
                 }
                 if(i==2)
@@ -1388,7 +1396,7 @@ int evaluate_int(char* board_layout[8], char turn)
                 }
 
                 //if on 5th row and passage is clear the piece is dangerous
-                if(i==3 && turn==2 && passage_is_clear(board_layout, i, j, turn))
+                if(i==3 && turn=='2' && passage_is_clear(board_layout, i, j, turn))
                     sum-=70;
             }
             else if(piece=='3')
@@ -1420,27 +1428,29 @@ int evaluate_int(char* board_layout[8], char turn)
 
 }
 
-pair<vector<char**>, vector<char*>> get_all_moves(char* board_layout[8], char color, vector<char**> *moves = {})
+pair<vector<char**>, int> get_all_moves(char* board_layout[8], char color, vector<char**> *moves = {})
 {
     vector<char *> pieces;
-
+    int forceListEmpty = 0;
     //create force list
     vector<char *> force_list;
     vector<char *> valid_moves;
     vector<vector<char *>> parent_list;
-    bool dama_nom = false, fff = false;
+    int dama_nom = 0, fff = 0;
 
     force_list = check_for_force(board_layout, color, &pieces);
 
     if(!force_list.empty())
         pieces = force_list;
+    else
+        forceListEmpty = 1;
     // else
     //     pieces = get_all_pieces(board_layout, color);
     
     for(char* piece : pieces)
     {
         char color2 = board_layout[piece[0]-'0'][piece[1]-'0'];
-        fff = dama_nom = false;
+        fff = dama_nom = 0;
         if(color2 == '1' || color2 == '2')
         {
             pair<vector<char*>, char> validMovesAndEatingPiece;
@@ -1513,7 +1523,7 @@ pair<vector<char**>, vector<char*>> get_all_moves(char* board_layout[8], char co
         }
     }
 
-    return make_pair(*moves, force_list);
+    return make_pair(*moves, forceListEmpty);
 }
 
 void printBoard(char** board)
@@ -1528,33 +1538,33 @@ void printBoard(char** board)
     }
 }
 
-bool playerWon(char* board_layout[8]){
-    bool red = false, black = false;
+int playerWon(char* board_layout[8]){
+    int red = 0, black = 0;
     for(int i=0; i<8; i++)
         for(int j=0; j<8; j++)
         {
             if(board_layout[i][j]=='1' || board_layout[i][j]=='3')
-                black = true;
+                black = 1;
             if(board_layout[i][j]=='2' || board_layout[i][j]=='4')
-                red = true;
+                red = 1;
             if(red && black)
-                return false;
+                return 0;
         }
-    return true;
+    return 1;
 }
 
-pair<int, char**> minimax_pro2(int depth, bool max_player, char* board_layout[8], int alpha, int beta, int akel_depth, int akel_player, int akling)
+pair<int, char**> minimax_pro2(int depth, int max_player, char* board_layout[8], int alpha, int beta, int akel_depth, int akel_player, int akling)
 {
     int evaluation, maxEval, minEval;
     char** best_move;
 
     if(depth<=0 || playerWon(board_layout))
     {
-        int turn;
+        char turn;
         if(max_player)
-            turn = 1;
+            turn = '1';
         else
-            turn = 2;
+            turn = '2';
         return make_pair(evaluate_int(board_layout, turn), board_layout);
     }
 
@@ -1562,24 +1572,24 @@ pair<int, char**> minimax_pro2(int depth, bool max_player, char* board_layout[8]
     {
         // printBoard(board_layout);
         // cout<<endl;
-        // Sleep(4500);
+        // Sleep(1000);
 
         best_move = NULL;
         maxEval = INT_MIN;
         vector <char**> all_moves;
-        pair<vector <char**>, vector<char*> > allandForce = get_all_moves(board_layout, '1', &all_moves);
-        vector<char*> force_list = allandForce.second;
+        pair<vector <char**>, int > allandForce = get_all_moves(board_layout, '1', &all_moves);
+        int force_list_empty = allandForce.second;
 
         for (auto move : all_moves)
         {
-            if (!force_list.empty() && akel_depth<5)
-                evaluation = minimax_pro2(depth, false, move, alpha, beta, akel_depth+1, false, true).first;
+            if (!force_list_empty && akel_depth<5)
+                evaluation = minimax_pro2(depth, 0, move, alpha, beta, akel_depth+1, 0, 1).first;
             else
             {
-                if( akel_player == false && akel_depth>2)
-                    evaluation = minimax_pro2(0, false, move, alpha, beta, 100, false, false).first;
+                if(akel_player==0 && akel_depth>2)
+                    evaluation = minimax_pro2(0, 0, move, alpha, beta, 100, 0, 0).first;
                 else
-                    evaluation = minimax_pro2(depth-1, false, move, alpha, beta, 0, false, false).first;
+                    evaluation = minimax_pro2(depth-1, 0, move, alpha, beta, 0, 0, 0).first;
             }
 
             if(evaluation>maxEval)
@@ -1598,25 +1608,25 @@ pair<int, char**> minimax_pro2(int depth, bool max_player, char* board_layout[8]
     {
         // printBoard(board_layout);
         // cout<<endl;
-        // Sleep(4500);
+        // Sleep(1000);
 
         best_move = NULL;
         minEval = INT_MAX;
         vector <char**> all_moves;
-        pair<vector <char**>, vector<char*> > allandForce = get_all_moves(board_layout, '2', &all_moves);
+        pair<vector <char**>, int > allandForce = get_all_moves(board_layout, '2', &all_moves);
         all_moves = allandForce.first;
-        vector<char*> force_list = allandForce.second;
+        int force_list_empty = allandForce.second;
 
         for (auto move : all_moves)
         {
-            if (!force_list.empty() && akel_depth<5)
-                evaluation = minimax_pro2(depth, true, move, alpha, beta, akel_depth+1, true, true).first;
+            if (!force_list_empty && akel_depth<5)
+                evaluation = minimax_pro2(depth, 1, move, alpha, beta, akel_depth+1, 1, 1).first;
             else
             {
-                if( (akel_player == true) && akel_depth>2)
-                    evaluation = minimax_pro2(0, true, move, alpha, beta, 100, true, false).first;
+                if( (akel_player == 1) && akel_depth>2)
+                    evaluation = minimax_pro2(0, 1, move, alpha, beta, 100, 1, 0).first;
                 else
-                    evaluation = minimax_pro2(depth-1, true, move, alpha, beta, 0, true, false).first;
+                    evaluation = minimax_pro2(depth-1, 1, move, alpha, beta, 0, 1, 0).first;
             }
 
             if(evaluation<minEval)
@@ -1633,81 +1643,81 @@ pair<int, char**> minimax_pro2(int depth, bool max_player, char* board_layout[8]
     }
 }
 
-pair<int, char**> normal_minimax(int depth, int max_player, char* board_layout[8], int alpha, int beta)
-{
-    int evaluation, maxEval, minEval;
-    char** best_move;
+// pair<int, char**> normal_minimax(int depth, int max_player, char* board_layout[8], int alpha, int beta)
+// {
+//     int evaluation, maxEval, minEval;
+//     char** best_move;
 
-    if(depth<=0 || playerWon(board_layout))
-    {
-        int turn;
-        if(max_player)
-            turn = 1;
-        else
-            turn = 2;
-        return make_pair(evaluate_int(board_layout, turn), board_layout);
-    }
+//     if(depth<=0 || playerWon(board_layout))
+//     {
+//         int turn;
+//         if(max_player)
+//             turn = '1';
+//         else
+//             turn = '2';
+//         return make_pair(evaluate_int(board_layout, turn), board_layout);
+//     }
 
-    if(max_player)
-    {
-        // printBoard(board_layout);
-        // cout<<endl;
-        // Sleep(500);
+//     if(max_player)
+//     {
+//         // printBoard(board_layout);
+//         // cout<<endl;
+//         // Sleep(500);
 
-        best_move = NULL;
-        maxEval = INT_MIN;
-        vector <char**> all_moves;
-        pair<vector <char**>, vector<char*> > allandForce = get_all_moves(board_layout, 1, &all_moves);
-        vector<char*> force_list = allandForce.second;
+//         best_move = NULL;
+//         maxEval = INT_MIN;
+//         vector <char**> all_moves;
+//         pair<vector <char**>, vector<char*> > allandForce = get_all_moves(board_layout, '1', &all_moves);
+//         vector<char*> force_list = allandForce.second;
 
-        for (auto move : all_moves)
-        {  
-            if(move == NULL) continue;
+//         for (auto move : all_moves)
+//         {  
+//             if(move == NULL) continue;
 
-            evaluation = normal_minimax(depth-1, false, move, alpha, beta).first;
+//             evaluation = normal_minimax(depth-1, 0, move, alpha, beta).first;
             
-            if(evaluation>maxEval)
-            {
-                maxEval = evaluation;
-                best_move = move;
-            }
+//             if(evaluation>maxEval)
+//             {
+//                 maxEval = evaluation;
+//                 best_move = move;
+//             }
 
-            alpha = max(alpha, maxEval);
-            if(beta<=alpha)
-                break;
-        }
-        return make_pair(maxEval, best_move);
-    }
-    else
-    {
-        // printBoard(board_layout);
-        // cout<<endl;
-        // Sleep(500);
+//             alpha = max(alpha, maxEval);
+//             if(beta<=alpha)
+//                 break;
+//         }
+//         return make_pair(maxEval, best_move);
+//     }
+//     else
+//     {
+//         // printBoard(board_layout);
+//         // cout<<endl;
+//         // Sleep(500);
 
-        best_move = NULL;
-        minEval = INT_MAX;
-        vector <char**> all_moves;
-        pair<vector <char**>, vector<char*> > allandForce = get_all_moves(board_layout, 2, &all_moves);
-        vector<char*> force_list = allandForce.second;
+//         best_move = NULL;
+//         minEval = INT_MAX;
+//         vector <char**> all_moves;
+//         pair<vector <char**>, vector<char*> > allandForce = get_all_moves(board_layout, '2', &all_moves);
+//         vector<char*> force_list = allandForce.second;
 
-        for (auto move : all_moves)
-        {
-            if(move == NULL) continue;
+//         for (auto move : all_moves)
+//         {
+//             if(move == NULL) continue;
 
-            evaluation = normal_minimax(depth-1, true, move, alpha, beta).first;
-            if(evaluation<minEval)
-            {
-                minEval = evaluation;
-                best_move = move;
-            }
+//             evaluation = normal_minimax(depth-1, 1, move, alpha, beta).first;
+//             if(evaluation<minEval)
+//             {
+//                 minEval = evaluation;
+//                 best_move = move;
+//             }
 
-            beta = min(beta, minEval);
-            if(beta<=alpha)
-                break;
-        }
-        return make_pair(minEval, best_move);
-    }
-}
+//             beta = min(beta, minEval);
+//             if(beta<=alpha)
+//                 break;
+//         }
+//         return make_pair(minEval, best_move);
+//     }
+// }
 
 
 int main()
@@ -1730,21 +1740,6 @@ int main()
     v.push_back(a);
     v.push_back(b);
     parent_list2.push_back(v);
-
-    // vector<int*> v2;
-    // int d[2] = {5, 2};
-    // int c[2] = {5, 0};
-    // v2.push_back(d);
-    // v2.push_back(c);
-    // parent_list2.push_back(v2);
-
-    /*
-    valid_moves = get_valid_moves(3, 2, 1, 0, {}, test2, "").first;
-    cout<<valid_moves[0][0]<<","<<valid_moves[0][1]<<endl;*/
-    // for(int i=0; i<100000; i++)
-    // {
-    //     eat_max2(7, 0, test2, parent_list2, 3, 0);
-    // }
 
     //testing
     //vector<int*> all_pieces = get_all_pieces(test2, 2);
@@ -1769,21 +1764,21 @@ int main()
     test2[6] = array7;
     char array8[8] = {'0', '0', '0', '0', '0', '0', '0', '0'};
     test2[7] = array8;
-    // char** test3 = deepcopy2(test2);
     
     pair<int, char**> minimaxResult;
     
     clock_t begin = clock();
     // for(int i=0; i<1000000; i++)
     //     deepcopy2(test2);
-    minimaxResult = minimax_pro2(7, false, test2, INT_MIN, INT_MAX, 0, true, false);
-    // minimaxResult = normal_minimax(8, false, test2, INT_MIN, INT_MAX);
+    minimaxResult = minimax_pro2(7, 0, test2, INT_MIN, INT_MAX, 0, 1, 0);
+    // minimaxResult = normal_minimax(8, 0, test2, INT_MIN, INT_MAX);
     clock_t end = clock();
-    std::cout<<minimaxResult.first/100.0<<endl;
+    std::cout<<"Evaluation: "<<minimaxResult.first/100.0<<endl;
     char** boardResult = minimaxResult.second;
     printBoard(boardResult);
-    cout<<movesSeen<<endl;
-    cout<<"counter: "<<counter<<endl;
+    cout<<"Positions Seen: "<<movesSeen<<endl;
+    
+    // cout<<"counter: "<<counter<<endl;
 
     // std::ofstream outfile("minimaxResult.txt");
     // if (!outfile.is_open()) {
@@ -1804,29 +1799,6 @@ int main()
     // {
     //     get_all_moves(test2,  1);
     // }
-
-    // for(auto move : all_moves)
-    // {
-    //     for(int i=0; i<8; i++)
-    //     {
-    //         for(int j=0; j<8; j++)
-    //             std::cout<<move[i][j]<<" ";
-    //         std::cout<<endl;
-    //     }
-
-    //     std::cout<<endl<<endl;
-    // }
-
-    // for(auto piece : all_pieces)
-    // {
-    //     cout<<piece[0]<<"-"<<piece[1]<<endl;
-    // }
-
-    //  int piece[2], move[2];
-    //  piece[0] = 5; piece[1] = 4;
-    //  move[0] = 5; move[1] = 2;
-
-    //  std::cout<<test3[1][2]<<endl;
 
     //  vector<int*> parent_list5;
     //  int *g = new int[2], *h = new int[2], *l = new int[2], *p = new int[2];
@@ -1864,8 +1836,7 @@ int main()
     // }
 
     time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
- 
-    std::cout<< time_spent;
-
+    cout<<"Positions/sec: "<<movesSeen/time_spent<<endl;
+    std::cout<<"Time: "<<time_spent;
     //valid_moves = vector<int*>(); 
 }
