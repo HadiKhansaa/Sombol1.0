@@ -9,6 +9,7 @@ from itertools import product
 import numpy as np
 from ctypes import *
 import minimaxC
+import subprocess
 
 libCalc = CDLL("./libCalc.so")
 libCalc.evaluate.restype = ctypes.c_double
@@ -664,7 +665,7 @@ class Board:
     testSurf = pygame.image.load("positionBoard.jpeg").convert()
     testSurf = pygame.transform.scale(testSurf, (800, 800))
 
-    layout = [
+    layout3 = [
                 [0, 0, 0, 0, 0, 0, 0, 0],
                 [1, 1, 1, 1, 1, 1, 1, 1],
                 [1, 1, 1, 1, 1, 1, 1, 1],
@@ -676,14 +677,14 @@ class Board:
                ]
                                             
               
-    layout3 = [
+    layout = [
                 [0, 0, 0, 0, 0, 0, 0, 0],   
-                [0, 0, 0, 0, 0, 0, 0, 1],
-                [1, 1, 0, 1, 0, 0, 0, 1],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 1, 0, 1, 0, 0, 0, 0],
                 [0, 0, 0, 0, 1, 0, 1, 1],
-                [0, 2, 0, 2, 0, 0, 0, 2],
-                [2, 0, 2, 0, 2, 0, 0, 2],
-                [2, 0, 0, 0, 0, 0, 0, 2],
+                [0, 2, 0, 2, 0, 0, 0, 0],
+                [0, 0, 2, 0, 2, 0, 0, 2],
+                [0, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 0]
                ]
 
@@ -2449,77 +2450,92 @@ while running:
     #black ai move 
     if turn == 1:
         current_board_layout = deepcopy(board.layout)
-        calculations = 0
-        positions_seen = 0
+        CPPFILE = 'dama22.cpp'
+        # Compile the C++ file
+        compile_command = ['g++', CPPFILE, '-o', 'executable']
+        subprocess.run(compile_command, check=True)
+        # Execute the compiled binary
+        execute_command = ['./executable']
+        subprocess.run(execute_command)
 
-        try:
-            game_history[str(current_board_layout)]+=1
-        except:
-            game_history[str(current_board_layout)]=1
+        board.layout = []
+        with open('minimaxResult.txt', 'r') as file:
+            for line in file:
+                row = [int(num) for num in line.strip().split()]
+                board.layout.append(row)
+
+        # current_board_layout = deepcopy(board.layout)
+        # calculations = 0
+        # positions_seen = 0
+
+        # try:
+        #     game_history[str(current_board_layout)]+=1
+        # except:
+        #     game_history[str(current_board_layout)]=1
 
 
-        ai_played = False
-        #1 forced move
-        force_list1 = check_for_force(board.layout, 1)
+        # ai_played = False
+        # #1 forced move
+        # force_list1 = check_for_force(board.layout, 1)
 
-        if len(force_list1) == 1:
-            forced_piece = force_list1[0]
-            valid_moves2, parent_list3 = get_valid_moves2(board.layout, forced_piece, board.layout[forced_piece[0]][forced_piece[1]])
+        # if len(force_list1) == 1:
+        #     forced_piece = force_list1[0]
+        #     valid_moves2, parent_list3 = get_valid_moves2(board.layout, forced_piece, board.layout[forced_piece[0]][forced_piece[1]])
 
-            if len(valid_moves2) == 1:
-                forced_move = valid_moves2[0]
-                new_board_layout = board.layout.copy()
-                move_piece(forced_piece, forced_move, new_board_layout, parent_list3, board.layout[forced_piece[0]][forced_piece[1]])
-                board.layout = deepcopy2(new_board_layout)
-                turn = 2
-                time.sleep(0.5)
-                ai_played = True
-                value = 690
+        #     if len(valid_moves2) == 1:
+        #         forced_move = valid_moves2[0]
+        #         new_board_layout = board.layout.copy()
+        #         move_piece(forced_piece, forced_move, new_board_layout, parent_list3, board.layout[forced_piece[0]][forced_piece[1]])
+        #         board.layout = deepcopy2(new_board_layout)
+        #         turn = 2
+        #         time.sleep(0.5)
+        #         ai_played = True
+        #         value = 690
 
-        start = time.time()
+        # start = time.time()
 
-        if not ai_played:
+        # if not ai_played:
 
-            if (count_pieces(current_board_layout, 1) + count_pieces(current_board_layout, 2)<7):
-                value, new_board_layout = deepcopy(minimax_pro2(6, True, current_board_layout, float('-inf'), float('inf'), 0, True, True, {}))
-            else:
-                #value, new_board_layout = deepcopy(minimax(5, True, current_board_layout, float('-inf'), float('inf'), 5, 50000))
-                #value, new_board_layout = deepcopy(classic_minimax(6, True, current_board_layout, float('-inf'), float('inf')))
-                value, new_board_layout = deepcopy(minimax_pro2(5, True, current_board_layout, float('-inf'), float('inf'), 0, True, True, {}))
+        #     if (count_pieces(current_board_layout, 1) + count_pieces(current_board_layout, 2)<7):
+        #         value, new_board_layout = deepcopy(minimax_pro2(6, True, current_board_layout, float('-inf'), float('inf'), 0, True, True, {}))
+        #     else:
+        #         #value, new_board_layout = deepcopy(minimax(5, True, current_board_layout, float('-inf'), float('inf'), 5, 50000))
+        #         #value, new_board_layout = deepcopy(classic_minimax(6, True, current_board_layout, float('-inf'), float('inf')))
+        #         value, new_board_layout = deepcopy(minimax_pro2(5, True, current_board_layout, float('-inf'), float('inf'), 0, True, True, {}))
             
-            if False:
-                value2 = -1000000
-                current_board_layout2 = deepcopy(board.layout)
-                value2, new_board_layout2 = deepcopy(minimax_depth1_black(screen, False, current_board_layout2, 0, float('-inf'), float('inf'), {}))
-                print("value2: ", value2)
+        #     if False:
+        #         value2 = -1000000
+        #         current_board_layout2 = deepcopy(board.layout)
+        #         value2, new_board_layout2 = deepcopy(minimax_depth1_black(screen, False, current_board_layout2, 0, float('-inf'), float('inf'), {}))
+        #         print("value2: ", value2)
 
                 
-                if value2>value and abs(value2-value)>99:
-                    value = value2
-                    new_board_layout = new_board_layout2
-            board.layout = deepcopy(new_board_layout)
+        #         if value2>value and abs(value2-value)>99:
+        #             value = value2
+        #             new_board_layout = new_board_layout2
+        #     board.layout = deepcopy(new_board_layout)
 
         clickSound.play()
-        end = time.time()
-        try:
-            game_history[str(new_board_layout)]+=1
-        except:
-            game_history[str(new_board_layout)]=1
+        # end = time.time()
+        # try:
+        #     game_history[str(new_board_layout)]+=1
+        # except:
+        #     game_history[str(new_board_layout)]=1
 
         try:
-             row_save, col_save = check_for_move(current_board_layout, new_board_layout, 1)
+             row_save, col_save = check_for_move(current_board_layout, board.layout, 1)
         except:
             pass
 
-        print(f"evaluation: {value/100 : .2f}")
-        print(f"positions seen: {positions_seen}")
-        print(f"time: {end - start : .2f} sec")
-        if end-start != 0:
-            print(f"positions/sec: {positions_seen/(end-start) : .0f}")
-        print("calculations: ", calculations)
+        # print(f"evaluation: {value/100 : .2f}")
+        # print(f"positions seen: {positions_seen}")
+        # print(f"time: {end - start : .2f} sec")
+        # if end-start != 0:
+        #     print(f"positions/sec: {positions_seen/(end-start) : .0f}")
+        # print("calculations: ", calculations)
 
-        print()
-        print()
+        # print()
+        # print()
         
 
         turn = 2
@@ -2597,6 +2613,7 @@ while running:
             
             if (r, c) in valid_moves:
                 clickSound.play()
+                
                 row_save = row
                 col_save = col
                 if parent_list!=[] and parent_list!=None:
@@ -2651,6 +2668,11 @@ while running:
                     board.layout[r][c]=3
                 selected=False
                 valid_moves=[]
+                #place board in minixResult.txt
+                with open('minimaxResult.txt', 'w') as file:
+                    for row in board.layout:
+                        line = ' '.join(map(str, row)) + '\n'
+                        file.write(line)
 
                 played_extra_turn = False
                 if (r,c) in valid_moves_end or parent_list==[]:
