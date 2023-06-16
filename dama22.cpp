@@ -2,6 +2,7 @@
 #include <tuple>
 #include <fstream>
 #include <cstring>
+#include <random>
 #include <time.h> 
 #include <vector>
 #include <set>
@@ -10,10 +11,114 @@
 #include <cstdlib>   // for rand() and srand()
 #include <ctime>
 #include <fstream>
+#include <string>
+#include <algorithm>
 using namespace std;
 int movesSeen = 0;
 int counter = 0;
+int cacheHits = 0;
+std::mt19937_64 rng(std::random_device{}());
+std::uniform_int_distribution<uint64_t> distribution(0, std::numeric_limits<uint64_t>::max());
+std::unordered_map<uint64_t, std::pair<char, int>> transpositionTable;
 
+const int NUM_PIECES = 4;  // Number of piece types
+const int NUM_SQUARES = 64;  // Number of squares on the board
+const int NUM_TURNS = 2;  // Number of possible turns
+
+uint64_t lookupTable[NUM_PIECES][NUM_SQUARES][NUM_TURNS];
+
+void initializeLookupTable() {
+    for (int piece = 0; piece < NUM_PIECES; ++piece) {
+        for (int square = 0; square < NUM_SQUARES; ++square) {
+            for (int turn = 0; turn < NUM_TURNS; ++turn) {
+                lookupTable[piece][square][turn] = distribution(rng);
+            }
+        }
+    }
+}
+
+uint64_t calculateHashKey(char* boardLayout[8], char turn) {
+    uint64_t hashKey = 0;
+    for (int row = 0; row < 8; ++row) {
+        for (int col = 0; col < 8; ++col) {
+            int square = row * 8 + col;
+            int piece = boardLayout[row][col];  // Assuming the board layout stores piece characters (e.g., '1', '2', '3', '4')
+
+            if (piece != ' ') {
+                hashKey ^= lookupTable[piece - 1][square][turn];
+            }
+        }
+    }
+    return hashKey;
+}
+
+// Function to save the transposition table to a file
+void saveTranspositionTable(const std::unordered_map<uint64_t, std::pair<char, int>>& transpositionTable, const std::string &filename) {
+    std::ofstream file(filename, std::ios::binary);
+    if (!file) {
+        std::cerr << "Failed to open file for writing: " << filename << std::endl;
+        return;
+    }
+
+    size_t numEntries = transpositionTable.size();
+    file.write(reinterpret_cast<const char*>(&numEntries), sizeof(size_t));
+
+    for (const auto& entry : transpositionTable) {
+        uint64_t hashKey = entry.first;
+        char depth = entry.second.first;
+        int evaluation = entry.second.second;
+
+        file.write(reinterpret_cast<const char*>(&hashKey), sizeof(uint64_t));
+        file.write(reinterpret_cast<const char*>(&depth), sizeof(char));
+        file.write(reinterpret_cast<const char*>(&evaluation), sizeof(int));
+    }
+
+    file.close();
+}
+
+// Function to load the transposition table from a file
+std::unordered_map<uint64_t, std::pair<char, int>> loadTranspositionTable(const std::string &filename) {
+    std::unordered_map<uint64_t, std::pair<char, int>> transpositionTable;
+
+    std::ifstream file(filename, std::ios::binary);
+    if (!file) {
+        std::cerr << "Failed to open file for reading: " << filename << std::endl;
+        return transpositionTable;
+    }
+
+    size_t numEntries;
+    file.read(reinterpret_cast<char*>(&numEntries), sizeof(size_t));
+
+    for (size_t i = 0; i < numEntries; ++i) {
+        uint64_t hashKey;
+        char depth;
+        int evaluation;
+
+        file.read(reinterpret_cast<char*>(&hashKey), sizeof(uint64_t));
+        file.read(reinterpret_cast<char*>(&depth), sizeof(char));
+        file.read(reinterpret_cast<char*>(&evaluation), sizeof(int));
+
+        // cout << hashKey << " " << int(depth) << " " << evaluation << endl;
+        transpositionTable[hashKey] = std::make_pair(depth, evaluation);
+    }
+
+    file.close();
+
+    return transpositionTable;
+}
+
+bool kol(char* board_layout[8], char row, char col, char color){
+    if(color==1){
+        if(row+1<8 && (row+1 == 2 || row+1 == 4) && row-1>0 && row-1==0) return true; //3am t2elo kol forwards
+        if(col+1<8 && (col+1 == 2 || col+1 == 4) && col-1>0 && col-1==0) return true; //3am t2elo kol right
+        if(col-1>0 && (col-1 == 2 || col-1 == 4) && col+1<8 && col+1==0) return true; //3am t2elo kol left
+    }else if (color==2){
+        if(row-1>0 && (row-1 == 1 || row-1 == 3) && row+1<8 && row+1==0) return true; //3am t2elo kol forwards
+        if(col+1<8 && (col+1 == 1 || col+1 == 3) && col-1>0 && col-1==0) return true; //3am t2elo kol right
+        if(col-1>0 && (col-1 == 1 || col-1 == 3) && col+1<8 && col+1==0) return true; //3am t2elo kol left
+    }
+    return false;
+}
 pair<vector<char*>, char> get_valid_moves(char row,char col, char color, char streak, vector<char*> valid_moves,  char* board_layout[8], char eat_direction)
 {
     if(row>7 || col>7 || row<0 || col<0)
@@ -511,6 +616,7 @@ pair<vector<char*>, char> get_valid_moves(char row,char col, char color, char st
                 v_move = new char[2];
                 v_move[0] = row;
                 v_move[1] = col+1;
+
                 valid_moves.push_back(v_move);
             }
             if (col-1>=0 && board_layout[row][col-1]==0 && streak==0)
@@ -528,6 +634,19 @@ pair<vector<char*>, char> get_valid_moves(char row,char col, char color, char st
                 valid_moves.push_back(v_move);
                 // valid_moves.insert(valid_moves.begin(), v_move);
             }
+
+            // if(valid_moves.size() > 1)
+            // {
+            //     char* first_move = valid_moves[0];
+            //     char* last_move = valid_moves[valid_moves.size()-1];
+            //     //if kol first and not kol last switch them
+            //     if(first_move != last_move && kol(board_layout, first_move[0], first_move[1], color) && !kol(board_layout, last_move[0], last_move[1], color)){
+            //         //switch first and last moves
+            //         valid_moves[0] = last_move;
+            //         valid_moves[valid_moves.size()-1] = first_move;
+            //     }
+            // }
+            
         }
         else{
             if (row+1<8 && board_layout[row+1][col]==0 && streak==0)
@@ -552,6 +671,19 @@ pair<vector<char*>, char> get_valid_moves(char row,char col, char color, char st
                 v_move[1] = col-1;
                 valid_moves.push_back(v_move);
             }
+
+            // if(valid_moves.size() > 1)
+            // {
+            //     char* first_move = valid_moves[0];
+            //     char* last_move = valid_moves[valid_moves.size()-1];
+            //     //if kol first and not kol last switch them
+            //     if(first_move != last_move && kol(board_layout, first_move[0], first_move[1], color) && !kol(board_layout, last_move[0], last_move[1], color)){
+            //         //switch first and last moves
+            //         valid_moves[0] = last_move;
+            //         valid_moves[valid_moves.size()-1] = first_move;
+            //     }
+            // }
+            
         }
     }
     else if (color == 2)
@@ -625,6 +757,17 @@ pair<vector<char*>, char> get_valid_moves(char row,char col, char color, char st
                 v_move[1] =  col-1;
                 valid_moves.push_back(v_move);
             }
+            // if(valid_moves.size() > 1)
+            // {
+            //     char* first_move = valid_moves[0];
+            //     char* last_move = valid_moves[valid_moves.size()-1];
+            //     //if kol first and not kol last switch them
+            //     if(first_move != last_move && kol(board_layout, first_move[0], first_move[1], color) && !kol(board_layout, last_move[0], last_move[1], color)){
+            //         //switch first and last moves
+            //         valid_moves[0] = last_move;
+            //         valid_moves[valid_moves.size()-1] = first_move;
+            //     }
+            // } 
         }
         else{
             if (col+1<8 && board_layout[row][col+1]==0 && streak==0)
@@ -650,6 +793,17 @@ pair<vector<char*>, char> get_valid_moves(char row,char col, char color, char st
                 valid_moves.push_back(v_move);
                 // valid_moves.insert(valid_moves.begin(), v_move);
             }
+            // if(valid_moves.size() > 1)
+            // {
+            //     char* first_move = valid_moves[0];
+            //     char* last_move = valid_moves[valid_moves.size()-1];
+            //     //if kol first and not kol last switch them
+            //     if(first_move != last_move && kol(board_layout, first_move[0], first_move[1], color) && !kol(board_layout, last_move[0], last_move[1], color)){
+            //         //switch first and last moves
+            //         valid_moves[0] = last_move;
+            //         valid_moves[valid_moves.size()-1] = first_move;
+            //     }
+            // }
         }
     
     }
@@ -1690,12 +1844,15 @@ int count_all_pieces(char* board_layout[8], char turn)
         }
     return sum;
 }
+
 int evaluate_int(char* board_layout[8], char turn)
 {
     movesSeen++;
     int sum = 0, balance_black = 0, balance_red = 0, all_pieces=0, red_pieces=0, black_pieces = 0;
     int all_pieces_red = count_all_pieces(board_layout, 2);
     int all_pieces_black = count_all_pieces(board_layout, 1);
+    int red_pawns = 0, black_pawns = 0;
+    int red_damas = 0, black_damas = 0;
     for(char i=0; i<8; i++)
         for(char j=0; j<8; j++)
         {
@@ -1703,12 +1860,12 @@ int evaluate_int(char* board_layout[8], char turn)
             if(piece == 0)
                 continue;
 
-            if(false && all_pieces_red + all_pieces_black <=14) //end game
+            if(false && all_pieces_red + all_pieces_black <=9) //end game
             {
                 if(piece == 1)
                 {
                     black_pieces+=1;
-
+                    black_pawns+=1;
                     sum+=100; //piece = 1 pnt
                     sum+=i; //the hiegher the better
 
@@ -1743,7 +1900,7 @@ int evaluate_int(char* board_layout[8], char turn)
                 }
                 else if(piece == 2)
                 {
-
+                    red_pawns+=1;
                     red_pieces+=1;
                     sum-=100; //piece = 1 pnt
                     sum-=(7-i); //the hiegher the better
@@ -1778,13 +1935,15 @@ int evaluate_int(char* board_layout[8], char turn)
                 }
                 else if(piece==3)
                 {
+                    black_damas+=1;
                     black_pieces+=1;
-                    sum+=450;
+                    sum+=350;
                 }
                 else if(piece==4)
                 {
+                    red_damas+=1;
                     red_pieces+=1;
-                    sum-=450;
+                    sum-=350;
                 }
             }
             else{
@@ -1917,8 +2076,16 @@ int evaluate_int(char* board_layout[8], char turn)
             }
         }
     
-    if(all_pieces_red + all_pieces_black > 14) 
-    {
+    // if(all_pieces_red + all_pieces_black <= 9){
+
+    //     if(black_damas==2 && red_damas==1 && red_pawns<=3){
+    //         sum = 0;
+    //     }
+    //     if(red_damas==2 && black_damas==1 && black_pawns<=3){
+    //         sum = 0;
+    //     }
+    // }
+
         sum = sum - 100*abs(balance_black)/20 + 100*abs(balance_red)/20;
 
         all_pieces = black_pieces + red_pieces;
@@ -1927,9 +2094,9 @@ int evaluate_int(char* board_layout[8], char turn)
             sum += all_pieces/2;
         else if (black_pieces>red_pieces)
             sum -= all_pieces/2;
-    }
+    
 
-    if (black_pieces==1 and red_pieces==1)
+    if (black_pieces==1 && red_pieces==1)
         sum = 0;
 
     return sum;
@@ -2059,173 +2226,26 @@ bool playerWon(char* board_layout[8]){
     return true;
 }
 
-pair<int, char**> minimax_pro2(char depth, char max_player, char* board_layout[8], int alpha, int beta, char akel_depth, char akel_player, char akling)
-{
-    int evaluation, maxEval, minEval;
-    char** best_move;
-
-    if(depth<=0 || playerWon(board_layout))
-    {
-        char turn;
-        if(max_player)
-            turn = 1;
-        else
-            turn = 2;
-        return make_pair(evaluate_int(board_layout, turn), board_layout);
-    }
-
-    if(max_player)
-    {
-        // printBoard(board_layout);
-        // cout<<endl;
-        // Sleep(1000);
-
-        best_move = NULL;
-        maxEval = INT_MIN;
-        vector <char**> all_moves;
-        pair<vector <char**>, bool> allandForce = get_all_moves(board_layout, 1, &all_moves);
-        bool force_list_empty = allandForce.second;
-
-        for (auto move : all_moves)
-        {
-            if (!force_list_empty && akel_depth<5)
-                evaluation = minimax_pro2(depth, false, move, alpha, beta, akel_depth+1, false, true).first;
-            else
-            {
-                if( akel_player == false && akel_depth>2)
-                    evaluation = minimax_pro2(0, false, move, alpha, beta, 100, false, false).first;
-                else
-                    evaluation = minimax_pro2(depth-1, false, move, alpha, beta, 0, false, false).first;
-            }
-
-            if(evaluation>maxEval)
-            {
-                maxEval = evaluation;
-                best_move = move;
-            }
-
-            alpha = max(alpha, maxEval);
-            if(beta<=alpha)
-                break;
-        }
-        return make_pair(maxEval, best_move);
-    }
-    else
-    {
-        // printBoard(board_layout);
-        // cout<<endl;
-        // Sleep(1000);
-
-        best_move = NULL;
-        minEval = INT_MAX;
-        vector <char**> all_moves;
-        pair<vector <char**>, bool > allandForce = get_all_moves(board_layout, 2, &all_moves);
-        all_moves = allandForce.first;
-        bool force_list_empty = allandForce.second;
-
-        for (auto move : all_moves)
-        {
-            if (!force_list_empty && akel_depth<5)
-                evaluation = minimax_pro2(depth, true, move, alpha, beta, akel_depth+1, true, true).first;
-            else
-            {
-                if( (akel_player == true) && akel_depth>2)
-                    evaluation = minimax_pro2(0, true, move, alpha, beta, 100, true, false).first;
-                else
-                    evaluation = minimax_pro2(depth-1, true, move, alpha, beta, 0, true, false).first;
-            }
-
-            if(evaluation<minEval)
-            {
-                minEval = evaluation;
-                best_move = move;
-            }
-
-            beta = min(beta, minEval);
-            if(beta<=alpha)
-                break;
-        }
-        return make_pair(minEval, best_move);
-    }
-}
-
-pair<int, char**> normal_minimax(char depth, char max_player, char* board_layout[8], int alpha, int beta)
-{
-    int evaluation, maxEval, minEval;
-    char** best_move;
-
-    if(depth<=0 || playerWon(board_layout))
-    {
-        char turn;
-        if(max_player)
-            turn = 1;
-        else
-            turn = 2;
-        return make_pair(evaluate_int(board_layout, turn), board_layout);
-    }
-
-    if(max_player)
-    {
-        // printBoard(board_layout);
-        // cout<<endl;
-        // Sleep(1000);
-
-        best_move = NULL;
-        maxEval = INT_MIN;
-        vector <char**> all_moves;
-        pair<vector <char**>, bool > allandForce = get_all_moves(board_layout, 1, &all_moves);
-        bool force_list = allandForce.second;
-
-        for (auto move : all_moves)
-        {
-            evaluation = normal_minimax(depth-1, false, move, alpha, beta).first;
-            if(evaluation>maxEval)
-            {
-                maxEval = evaluation;
-                best_move = move;
-            }
-
-            alpha = max(alpha, maxEval);
-            if(beta<=alpha)
-                break;
-
-        }
-        return make_pair(maxEval, best_move);
-    }
-    else
-    {
-        // printBoard(board_layout);
-        // cout<<endl;
-        // Sleep(1000);
-
-        best_move = NULL;
-        minEval = INT_MAX;
-        vector <char**> all_moves;
-        pair<vector <char**>, bool > allandForce = get_all_moves(board_layout, 2, &all_moves);
-        all_moves = allandForce.first;
-        bool force_list = allandForce.second;
-
-        for (auto move : all_moves)
-        {
-            evaluation = normal_minimax(depth-1, true, move, alpha, beta).first;
-            if(evaluation<minEval)
-            {
-                minEval = evaluation;
-                best_move = move;
-            }
-
-            beta = min(beta, minEval);
-            if(beta<=alpha)
-                break;
-        }
-        return make_pair(minEval, best_move);
-    }
-}
-
 pair<int, char**> normal_minimax_based(char depth, char max_player, char* board_layout[8], int alpha, int beta)
 {
     int evaluation, maxEval, minEval;
     char** best_move;
+
+    uint64_t hashKey = calculateHashKey(board_layout, max_player ? 1 : 2);
+
+    if (transpositionTable.count(hashKey) > 0) {
+        std::pair<char, int> storedValues = transpositionTable[hashKey];
+        char storedDepth = storedValues.first;
+        int storedEval = storedValues.second;
+
+        if (storedDepth >= depth)
+        {
+            // cout<<"found in hash table"<<endl;
+            cacheHits++;
+            return std::make_pair(storedEval, board_layout);
+        }
+    }
+
     if(depth<=0 || playerWon(board_layout))
     {
         char turn;
@@ -2355,7 +2375,7 @@ pair<int, char**> normal_minimax_based(char depth, char max_player, char* board_
             if(exit)
                 break;
         }
-        
+        transpositionTable[hashKey] = std::make_pair(depth, maxEval);
         return make_pair(maxEval, best_move);
     }
     else
@@ -2475,7 +2495,319 @@ pair<int, char**> normal_minimax_based(char depth, char max_player, char* board_
             if(exit)
                 break;
         }
+        transpositionTable[hashKey] = std::make_pair(depth, minEval);
+        return make_pair(minEval, best_move);
+    }
+}
 
+//function to get all moves(8x8 boards) sevaluate them using evalueate_int and sort them based on the evaluation
+void sort_moves(vector<char**> *moves, char turn)
+{
+    vector<pair<int, char**>> moves_and_eval;
+    for(char** move : *moves)
+    {
+        int eval = evaluate_int(move, turn);
+        // transpositionTable[calculateHashKey(move, turn)] = std::make_pair(1, eval);
+        moves_and_eval.push_back(make_pair(eval, move));
+    }
+    if(turn == 1)
+        sort(moves_and_eval.begin(), moves_and_eval.end(), greater<pair<int, char**>>());
+    else
+        sort(moves_and_eval.begin(), moves_and_eval.end());
+    moves->clear();
+    for(pair<int, char**> move : moves_and_eval)
+    {
+        // cout<<move.first<<" ";
+        moves->push_back(move.second);
+    }
+    // cout<<endl;
+}
+
+std::pair<int, char**> minimax_pro2_hash(char depth, char max_player, char* board_layout[8], int alpha, int beta, char akel_depth, char akel_player, char akling)
+{
+    int evaluation, maxEval, minEval;
+    char** best_move;
+
+    uint64_t hashKey = calculateHashKey(board_layout, max_player ? 1 : 2);
+
+    if (transpositionTable.count(hashKey) > 0) {
+        std::pair<char, int> storedValues = transpositionTable[hashKey];
+        char storedDepth = storedValues.first;
+        int storedEval = storedValues.second;
+
+        if (storedDepth >= depth)
+        {
+            cacheHits++;
+            // cout<<"found in hash table"<<endl;
+            return std::make_pair(storedEval, board_layout);
+        }
+    }
+
+    if (depth <= 0)
+    {
+        char turn;
+        if (max_player)
+            turn = 1;
+        else
+            turn = 2;
+        int eval = evaluate_int(board_layout, turn);
+        transpositionTable[hashKey] = std::make_pair(0, eval);
+        return std::make_pair(eval, board_layout);
+    }
+
+    if (max_player)
+    {
+        best_move = NULL;
+        maxEval = INT_MIN;
+        vector <char**> all_moves;
+        pair<vector <char**>, bool> allandForce = get_all_moves(board_layout, 1, &all_moves);
+        sort_moves(&all_moves, 1);
+        bool force_list_empty = allandForce.second;
+
+        for (auto move : all_moves)
+        {
+            if (!force_list_empty && akel_depth < 5)
+                evaluation = minimax_pro2_hash(depth, false, move, alpha, beta, akel_depth + 1, false, true).first;
+            else
+            {
+                if (akel_player == false && akel_depth > 2)
+                    evaluation = minimax_pro2_hash(0, false, move, alpha, beta, 100, false, false).first;
+                else
+                    evaluation = minimax_pro2_hash(depth - 1, false, move, alpha, beta, 0, false, false).first;
+            }
+
+            if (evaluation > maxEval)
+            {
+                maxEval = evaluation;
+                best_move = move;
+            }
+
+            alpha = std::max(alpha, maxEval);
+            if (beta <= alpha)
+                break;
+        }
+
+        transpositionTable[hashKey] = std::make_pair(depth, maxEval);
+
+        return std::make_pair(maxEval, best_move);
+    }
+    else
+    {
+        best_move = NULL;
+        minEval = INT_MAX;
+        vector <char**> all_moves;
+        pair<vector <char**>, bool > allandForce = get_all_moves(board_layout, 2, &all_moves);
+        sort_moves(&all_moves, 2);
+        all_moves = allandForce.first;
+        bool force_list_empty = allandForce.second;
+
+        for (auto move : all_moves)
+        {
+            if (!force_list_empty && akel_depth < 5)
+                evaluation = minimax_pro2_hash(depth, true, move, alpha, beta, akel_depth + 1, true, true).first;
+            else
+            {
+                if ((akel_player == true) && akel_depth > 2)
+                    evaluation = minimax_pro2_hash(0, true, move, alpha, beta, 100, true, false).first;
+                else
+                    evaluation = minimax_pro2_hash(depth - 1, true, move, alpha, beta, 0, true, false).first;
+            }
+
+            if (evaluation < minEval)
+            {
+                minEval = evaluation;
+                best_move = move;
+            }
+
+            beta = std::min(beta, minEval);
+            if (beta <= alpha)
+                break;
+        }
+
+        transpositionTable[hashKey] = std::make_pair(depth, minEval);
+
+        return std::make_pair(minEval, best_move);
+    }
+}
+
+pair<int, char**> minimax_pro2(char depth, char max_player, char* board_layout[8], int alpha, int beta, char akel_depth, char akel_player, char akling)
+{
+    int evaluation, maxEval, minEval;
+    char** best_move;
+
+    if(depth<=0 || playerWon(board_layout))
+    {
+        char turn;
+        if(max_player)
+            turn = 1;
+        else
+            turn = 2;
+        return make_pair(evaluate_int(board_layout, turn), board_layout);
+    }
+
+    if(max_player)
+    {
+        // printBoard(board_layout);
+        // cout<<endl;
+        // Sleep(1000);
+
+        best_move = NULL;
+        maxEval = INT_MIN;
+        vector <char**> all_moves;
+        pair<vector <char**>, bool> allandForce = get_all_moves(board_layout, 1, &all_moves);
+        // sort_moves(&all_moves, 1);
+        bool force_list_empty = allandForce.second;
+
+        for (auto move : all_moves)
+        {
+            if (!force_list_empty && akel_depth<5)
+                evaluation = minimax_pro2(depth, false, move, alpha, beta, akel_depth+1, false, true).first;
+            else
+            {
+                if( akel_player == false && akel_depth>2)
+                    evaluation = minimax_pro2(0, false, move, alpha, beta, 100, false, false).first;
+                else
+                    evaluation = minimax_pro2(depth-1, false, move, alpha, beta, 0, false, false).first;
+            }
+
+            if(evaluation>maxEval)
+            {
+                maxEval = evaluation;
+                best_move = move;
+            }
+
+            alpha = max(alpha, maxEval);
+            if(beta<=alpha)
+                break;
+        }
+        return make_pair(maxEval, best_move);
+    }
+    else
+    {
+        // printBoard(board_layout);
+        // cout<<endl;
+        // Sleep(1000);
+
+        best_move = NULL;
+        minEval = INT_MAX;
+        vector <char**> all_moves;
+        pair<vector <char**>, bool > allandForce = get_all_moves(board_layout, 2, &all_moves);
+        // sort_moves(&all_moves, 2);
+        all_moves = allandForce.first;
+        bool force_list_empty = allandForce.second;
+
+        for (auto move : all_moves)
+        {
+            if (!force_list_empty && akel_depth<5)
+                evaluation = minimax_pro2(depth, true, move, alpha, beta, akel_depth+1, true, true).first;
+            else
+            {
+                if( (akel_player == true) && akel_depth>2)
+                    evaluation = minimax_pro2(0, true, move, alpha, beta, 100, true, false).first;
+                else
+                    evaluation = minimax_pro2(depth-1, true, move, alpha, beta, 0, true, false).first;
+            }
+
+            if(evaluation<minEval)
+            {
+                minEval = evaluation;
+                best_move = move;
+            }
+
+            beta = min(beta, minEval);
+            if(beta<=alpha)
+                break;
+        }
+        return make_pair(minEval, best_move);
+    }
+}
+
+pair<int, char**> normal_minimax(char depth, char max_player, char* board_layout[8], int alpha, int beta)
+{
+    int evaluation, maxEval, minEval;
+    char** best_move;
+
+    uint64_t hashKey = calculateHashKey(board_layout, max_player ? 1 : 2);
+
+    if (transpositionTable.count(hashKey) > 0) {
+        std::pair<char, int> storedValues = transpositionTable[hashKey];
+        char storedDepth = storedValues.first;
+        int storedEval = storedValues.second;
+
+        if (storedDepth >= depth)
+        {
+            // cout<<"found in hash table"<<endl;
+            cacheHits++;
+            return std::make_pair(storedEval, board_layout);
+        }
+    }
+
+    if(depth<=0 || playerWon(board_layout))
+    {
+        char turn;
+        if(max_player)
+            turn = 1;
+        else
+            turn = 2;
+        return make_pair(evaluate_int(board_layout, turn), board_layout);
+    }
+
+    if(max_player)
+    {
+        // printBoard(board_layout);
+        // cout<<endl;
+        // Sleep(1000);
+
+        best_move = NULL;
+        maxEval = INT_MIN;
+        vector <char**> all_moves;
+        pair<vector <char**>, bool > allandForce = get_all_moves(board_layout, 1, &all_moves);
+        bool force_list = allandForce.second;
+
+        for (auto move : all_moves)
+        {
+            evaluation = normal_minimax(depth-1, false, move, alpha, beta).first;
+            if(evaluation>maxEval)
+            {
+                maxEval = evaluation;
+                best_move = move;
+            }
+
+            alpha = max(alpha, maxEval);
+            if(beta<=alpha)
+                break;
+
+        }
+        transpositionTable[hashKey] = std::make_pair(depth, maxEval);
+        return make_pair(maxEval, best_move);
+    }
+    else
+    {
+        // printBoard(board_layout);
+        // cout<<endl;
+        // Sleep(1000);
+
+        best_move = NULL;
+        minEval = INT_MAX;
+        vector <char**> all_moves;
+        pair<vector <char**>, bool > allandForce = get_all_moves(board_layout, 2, &all_moves);
+        all_moves = allandForce.first;
+        bool force_list = allandForce.second;
+
+        for (auto move : all_moves)
+        {
+            evaluation = normal_minimax(depth-1, true, move, alpha, beta).first;
+            if(evaluation<minEval)
+            {
+                minEval = evaluation;
+                best_move = move;
+            }
+
+            beta = min(beta, minEval);
+            if(beta<=alpha)
+                break;
+        }
+        transpositionTable[hashKey] = std::make_pair(depth, minEval);
         return make_pair(minEval, best_move);
     }
 }
@@ -2484,6 +2816,24 @@ pair<int, char**> minimax_pro2_based(char depth, char max_player, char* board_la
 {
     int evaluation, maxEval, minEval;
     char** best_move;
+
+    uint64_t hashKey = calculateHashKey(board_layout, max_player ? 1 : 2);
+
+    if (transpositionTable.count(hashKey) > 0) {
+        std::pair<char, int> storedValues = transpositionTable[hashKey];
+        char storedDepth = storedValues.first;
+        int storedEval = storedValues.second;
+
+        if (storedDepth >= depth)
+        {
+            if(depth>4)
+                cout<<depth<<endl;
+            // cout<<"found in hash table"<<endl;
+            cacheHits++;
+            return std::make_pair(storedEval, board_layout);
+        }
+    }
+
     if(depth<=0 || playerWon(board_layout))
     {
         char turn;
@@ -2592,8 +2942,7 @@ pair<int, char**> minimax_pro2_based(char depth, char max_player, char* board_la
             }
             bool exit = false;
             for(char* move : valid_moves)
-            {
-                
+            {   
                 auto current_board = move_piece(piece, move, deepcopy2(board_layout), parent_list, color2);
 
                 if (!force_list.empty() && akel_depth<5)
@@ -2623,7 +2972,7 @@ pair<int, char**> minimax_pro2_based(char depth, char max_player, char* board_la
             if(exit)
                 break;
         }
-        
+        transpositionTable[hashKey] = std::make_pair(depth, maxEval);
         return make_pair(maxEval, best_move);
     }
     else
@@ -2751,15 +3100,132 @@ pair<int, char**> minimax_pro2_based(char depth, char max_player, char* board_la
             if(exit)
                 break;
         }
-
+        transpositionTable[hashKey] = std::make_pair(depth, minEval);
         return make_pair(minEval, best_move);
     }
 }
 
+int sombolvsSombol(int nbMoves){
+    char** test2 = new char*[8];
+    for(int i=0; i<8; i++)
+        test2[i] = new char[8];
+    pair<int, char**> minimaxResult;
+    double time_spent = 0.0;
+
+    for(int i=0; i<nbMoves; i++){
+        cacheHits = 0;
+        time_spent = 0.0;
+        clock_t begin = clock();
+        if(i%2 == 0){
+            movesSeen = 0;
+            //get board from file
+            std::ifstream file("sombolBoard.txt");
+            if (file.is_open()) {
+                for (int i = 0; i < 8; ++i) {
+                    test2[i] = new char[8];
+                    for (int j = 0; j < 8; ++j) {
+                        if (!(file >> test2[i][j])) {
+                            // Handle error if unable to read a character
+                            std::cerr << "Error reading from file.\n";
+                            return 1;
+                        }
+                    }
+                }
+                file.close();
+            } else {
+                std::cerr << "Unable to open file.\n";
+                return 1;
+            }
+            for(int i=0; i<8; i++)
+                for(int j=0; j<8; j++)
+                {
+                    test2[i][j]-='0';
+                }
+            minimaxResult = minimax_pro2_hash(4, false, test2, INT_MIN, INT_MAX, 0, true, false);
+            // minimaxResult = normal_minimax_based(9, false, test2, INT_MIN, INT_MAX);
+            
+            //place board in file
+            char** boardResult = minimaxResult.second;
+            std::ofstream outfile("sombolBoard.txt");
+            if (!outfile.is_open()) {
+                std::cout << "Failed to open file" << std::endl;
+                return 1;
+            }
+
+            for(int i=0; i<8; i++)
+            {
+                for(int j=0;j<8; j++)
+                {
+                    outfile << boardResult[i][j]+'0'-'0';
+                    outfile<<" ";
+                }
+                outfile<<endl;
+            }
+
+        }else{
+            //get board from file
+            std::ifstream file("sombolBoard.txt");
+            if (file.is_open()) {
+                for (int i = 0; i < 8; ++i) {
+                    test2[i] = new char[8];
+                    for (int j = 0; j < 8; ++j) {
+                        if (!(file >> test2[i][j])) {
+                            // Handle error if unable to read a character
+                            std::cerr << "Error reading from file.\n";
+                            return 1;
+                        }
+                    }
+                }
+                file.close();
+            } else {
+                std::cerr << "Unable to open file.\n";
+                return 1;
+            }
+            for(int i=0; i<8; i++)
+                for(int j=0; j<8; j++)
+                {
+                    test2[i][j]-='0';
+                }
+            minimaxResult = minimax_pro2_hash(5, true, test2, INT_MIN, INT_MAX, 0, true, false);
+            // minimaxResult = normal_minimax_based(9, true, test2, INT_MIN, INT_MAX);
+            //place board in file
+            char** boardResult = minimaxResult.second;
+            std::ofstream outfile("sombolBoard.txt");
+            if (!outfile.is_open()) {
+                std::cout << "Failed to open file" << std::endl;
+                return 1;
+            }
+
+            for(int i=0; i<8; i++)
+            {
+                for(int j=0;j<8; j++)
+                {
+                    outfile << boardResult[i][j]+'0'-'0';
+                    outfile<<" ";
+                }
+                outfile<<endl;
+            }
+        
+        }
+        clock_t end = clock();
+        time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
+        cout<<endl;
+        std::cout<<"Evaluation: "<<minimaxResult.first/100.0<<endl;
+        char** boardResult = minimaxResult.second;
+        printBoard(boardResult);
+        std::cout<<"Positions Seen: "<<movesSeen<<endl;
+        std::cout<<"Positions/sec: "<<movesSeen/time_spent<<endl;
+        std::cout<<"cacheHits: "<<cacheHits<<endl<<endl;
+        std::cout<<"Time: "<<time_spent<<endl;
+        // Sleep(200);
+    }
+    return 1;
+}
 /////////////////////////////////////////////// AI STUFF ////////////////////////////////////////////
 
 int main()
 {
+    sombolvsSombol(100);
     double time_spent = 0.0;
     // vector<char*> valid_moves;
     //for(char i=0; i<1000000; i++)
@@ -2841,14 +3307,25 @@ int main()
         {
             test2[i][j]-='0';
         }
-    pair<char, char**> minimaxResult;
+    pair<int, char**> minimaxResult;
     
+
+    
+    //fetching TT from  file
+    // transpositionTable = loadTranspositionTable("transposition_table.txt"); //(board, turn) -> (depth, evaluation)
+
+
     clock_t begin = clock();
     // for(char i=0; i<1000000; i++)
     //     deepcopy2_char(test2);
-    // minimaxResult = minimax_pro2(6, false, test2, INT_MIN, INT_MAX, 0, true, false);
-    minimaxResult = minimax_pro2_based(6, false, test2, INT_MIN, INT_MAX, 0, true, false);
-    // minimaxResult = normal_minimax_based(7, true, test2, INT_MIN, INT_MAX);
+    // minimaxResult = minimax_pro2(6, true, test2, INT_MIN, INT_MAX, 0, true, false);
+    minimaxResult = minimax_pro2_hash(6, true, test2, INT_MIN, INT_MAX, 0, true, false);
+    // minimaxResult = minimax_pro2_based(7, true, test2, INT_MIN, INT_MAX, 0, true, false);
+    // minimaxResult = normal_minimax_based(9, true, test2, INT_MIN, INT_MAX);
+    // minimaxResult = normal_minimax(9, true, test2, INT_MIN, INT_MAX);
+
+    // saveTranspositionTable(transpositionTable, "transposition_table.txt");
+
 
     clock_t end = clock();
     std::cout<<"Evaluation: "<<minimaxResult.first/100.0<<endl;
@@ -2938,6 +3415,7 @@ int main()
     time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
     std::cout<<"Positions/sec: "<<movesSeen/time_spent<<endl;
     std::cout<<"get_all_moves: "<<counter<<endl;
+    std::cout<<"cacheHits: "<<cacheHits<<endl;
     std::cout<<"Time: "<<time_spent<<endl;
     //valid_moves = vector<char*>(); 
 }

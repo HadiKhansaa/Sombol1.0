@@ -8,20 +8,7 @@ from multiprocessing import Pool
 from itertools import product
 import numpy as np
 from ctypes import *
-import minimaxC
 import subprocess
-
-libCalc = CDLL("./libCalc.so")
-libCalc.evaluate.restype = ctypes.c_double
-
-libCalc.evaluate.argtypes =[ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
-                            ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
-                            ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
-                            ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
-                            ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
-                            ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
-                            ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
-                            ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int]
 
 from pygame.locals import (
     RLEACCEL,
@@ -678,14 +665,16 @@ class Board:
                                             
               
     layout = [
-                [0, 0, 0, 0, 0, 0, 0, 0],   
                 [0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 1, 0, 1, 0, 0, 0, 0],
-                [0, 0, 0, 0, 1, 0, 1, 1],
-                [0, 2, 0, 2, 0, 0, 0, 0],
-                [0, 0, 2, 0, 2, 0, 0, 2],
-                [0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 0, 0, 1, 0, 0, 0, 1],
+                [0, 0, 0, 1, 1, 1, 1, 1],
+                [0, 0, 0, 1, 0, 1, 0, 1],
+                [1, 0, 0, 2, 2, 2, 2, 2],
+                [0, 0, 2, 2, 2, 2, 0, 2],
+                [2, 0, 0, 0, 0, 0, 0, 2],
                 [0, 0, 0, 0, 0, 0, 0, 0]
+
+
                ]
 
     layout2 = get_layout(testSurf)
@@ -2375,9 +2364,34 @@ def readFromFile(board_layout):
             board_layout.append(row)
     return board_layout
 
+#function to get board from sombolBoard and display it on the screen
+def printBoardOnScreen(screen):
+    while True:
+        board_layout = []
+        with open('sombolBoard.txt', 'r') as f:
+            # Iterate over each line in the file
+            for line in f:
+                # Split the line into a list of integers
+                row = list(map(int, line.split()))
+                # Append the row to the board_layout array
+                board_layout.append(row)
+        screen.fill((255, 255, 255))
+        screen.blit(board.surf,(0, 0))
+        for i in range(0, 8):
+            for j in range(0, 8):
+                if board_layout[i][j]==1:
+                    screen.blit(blackpiece.surf, (10+j*100, 10 + i*100))
+                elif board_layout[i][j]==2:
+                    screen.blit(whitepiece.surf, (10+j*100, 10 + i*100))
+                elif board_layout[i][j]==3:
+                    screen.blit(blackDama, (10+j*100, 10 + i*100))
+                elif board_layout[i][j]==4:
+                    screen.blit(redDama, (10+j*100, 10 + i*100))
+        pygame.display.flip()
 #########################################################################################################
 turn = 2
 
+# printBoardOnScreen(screen)
 #time test 
 
 start2 = time.time()
@@ -2448,7 +2462,7 @@ while running:
     screen.blit(board.surf,(0, 0))
     
     #black ai move 
-    if turn == 1:
+    if False and turn == 1:
         current_board_layout = deepcopy(board.layout)
         CPPFILE = 'dama22.cpp'
         # Compile the C++ file
@@ -2463,7 +2477,6 @@ while running:
             for line in file:
                 row = [int(num) for num in line.strip().split()]
                 board.layout.append(row)
-
         # current_board_layout = deepcopy(board.layout)
         # calculations = 0
         # positions_seen = 0

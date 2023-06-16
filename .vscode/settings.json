@@ -48,7 +48,8 @@
         "typeinfo": "cpp",
         "fstream": "cpp",
         "set": "cpp",
-        "ctime": "cpp"
+        "ctime": "cpp",
+        "sstream": "cpp"
     },
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter"

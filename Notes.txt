@@ -1,0 +1,10 @@
+Minor Tasks:
+• Make sure TT is working.
+• Fix Dama Akel bug.
+• Improve move ordering.
+• Improve move ordering with TT (see discord).
+• Add case on 6 or 7 rank 2 pawns (pawn can escape to edge) to eval func.
+
+Major Tasks:
+• Multithreading
+• Bitboards
