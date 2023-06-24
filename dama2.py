@@ -2462,7 +2462,7 @@ while running:
     screen.blit(board.surf,(0, 0))
     
     #black ai move 
-    if False and turn == 1:
+    if turn == 1:
         current_board_layout = deepcopy(board.layout)
         CPPFILE = 'dama22.cpp'
         # Compile the C++ file
