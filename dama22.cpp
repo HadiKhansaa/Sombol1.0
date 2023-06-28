@@ -23,9 +23,9 @@ int cacheHits = 0;
 //hashing stuff
 std::mt19937_64 rng(std::random_device{}());
 std::uniform_int_distribution<uint64_t> distribution(0, std::numeric_limits<uint64_t>::max());
-std::unordered_map<uint64_t, std::pair<char, int>> transpositionTable;
+std::unordered_map<uint64_t, std::pair<uint64_t, int>> transpositionTable;
 
-const int NUM_PIECES = 4;  // Number of piece types
+const int NUM_PIECES = 5;  // Number of piece types
 const int NUM_SQUARES = 64;  // Number of squares on the board
 const int NUM_TURNS = 2;  // Number of possible turns
 
@@ -48,8 +48,8 @@ uint64_t calculateHashKey(char* boardLayout[8], char turn) {
             int square = row * 8 + col;
             int piece = boardLayout[row][col];  // Assuming the board layout stores piece characters (e.g., '1', '2', '3', '4')
 
-            if (piece != ' ') {
-                hashKey ^= lookupTable[piece - 1][square][turn];
+            if (true) {
+                hashKey ^= lookupTable[piece][square][turn - 1];
             }
         }
     }
@@ -3068,8 +3068,8 @@ int sombolvsSombol(int nbMoves, int strength){
                 {
                     test2[i][j]-='0';
                 }
-            minimaxResult = minimax_pro2_based(strength, false, test2, INT_MIN, INT_MAX, 0, true, false);
-            // minimaxResult = normal_minimax_based(9, false, test2, INT_MIN, INT_MAX);
+            // minimaxResult = minimax_pro2_based(strength, false, test2, INT_MIN, INT_MAX, 0, true, false);
+            minimaxResult = normal_minimax_based(9, false, test2, INT_MIN, INT_MAX);
             
             //place board in file
             char** boardResult = minimaxResult.second;
@@ -3113,8 +3113,8 @@ int sombolvsSombol(int nbMoves, int strength){
                 {
                     test2[i][j]-='0';
                 }
-            minimaxResult = minimax_pro2_based(strength, true, test2, INT_MIN, INT_MAX, 0, true, false);
-            // minimaxResult = normal_minimax_based(9, true, test2, INT_MIN, INT_MAX);
+            // minimaxResult = minimax_pro2_based(strength, true, test2, INT_MIN, INT_MAX, 0, true, false);
+            minimaxResult = normal_minimax_based(9, true, test2, INT_MIN, INT_MAX);
             //place board in file
             char** boardResult = minimaxResult.second;
             std::ofstream outfile("sombolBoard.txt");
@@ -3136,7 +3136,7 @@ int sombolvsSombol(int nbMoves, int strength){
         }
         clock_t end = clock();
         time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
-        cout<<endl;
+        std::cout<<endl;
         std::cout<<"Evaluation: "<<minimaxResult.first/100.0<<endl;
         char** boardResult = minimaxResult.second;
         printBoard(boardResult);
@@ -3153,7 +3153,8 @@ int sombolvsSombol(int nbMoves, int strength){
 
 int main()
 {
-    // sombolvsSombol(100, 6);
+    initializeLookupTable();
+    // sombolvsSombol(100, 8);
     double time_spent = 0.0;
 
     vector<vector<char*>> parent_list2;
