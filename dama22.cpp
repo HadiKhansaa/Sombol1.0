@@ -111,6 +111,7 @@ std::unordered_map<uint64_t, std::pair<char, int>> loadTranspositionTable(const 
     return transpositionTable;
 }
 
+// TODO: needs fixing its wrong
 bool kol(char* board_layout[8], char row, char col, char color){
     if(color==1){
         if(row+1<8 && (row+1 == 2 || row+1 == 4) && row-1>0 && row-1==0) return true; //3am t2elo kol forwards
@@ -1055,7 +1056,7 @@ std::vector<std::vector<char*>> eat_max2(char row, char col,char* board_layout[8
                 char* parent = new char[2];  parent[0] = row; parent[1] = col;
                 new_list.push_back(move);
                 for (auto value : parent_list) {
-                    if (parent[0] ==  value.back()[0] && parent[1] ==  value.back()[1]) {
+                    if (parent[0] == value.back()[0] && parent[1] == value.back()[1]) {
                         std::vector<char*> big_dama = value;
                         big_dama.push_back(move);
                         big_dama_list.push_back(big_dama);
@@ -1101,11 +1102,9 @@ std::vector<std::vector<char*>> eat_max2(char row, char col,char* board_layout[8
                         aux_list3.push_back(move);
                         aux_list2.push_back(aux_list3);
                     }
-
                 }
-                parent_list = aux_list2;
-                return parent_list;
             }
+            parent_list = aux_list2;
             return parent_list;
             
         } else {
@@ -2747,7 +2746,7 @@ pair<int, char**> minimax_pro2_based(char depth, char max_player, char* board_la
         if (storedDepth >= depth)
         {
             // if(depth>4)
-            //     cout<<depth<<endl;
+            //     cout<<int(depth)<<endl;
             // cout<<"found in hash table"<<endl;
             cacheHits++;
             movesSeen++;
@@ -2853,6 +2852,8 @@ pair<int, char**> minimax_pro2_based(char depth, char max_player, char* board_la
                         tempValue.push_back(piece);
                         tempValue.push_back(move);
                         parent_list2.push_back(tempValue);
+
+                        // cout<<move[0]<<" "<<move[1]<<endl;
                     }
 
                     parent_list = eat_max2(piece[0], piece[1], board_layout, parent_list2, color2, 0);
@@ -2965,7 +2966,7 @@ pair<int, char**> minimax_pro2_based(char depth, char max_player, char* board_la
                 }
             }
 
-            if (color2 ==3 || color2 == 4)
+            if (color2 == 3 || color2 == 4)
             {
                 pair<vector<char*>, char> validMovesAndEatingPiece;
                 validMovesAndEatingPiece  = get_valid_moves(piece[0], piece[1], color2, 0, {}, board_layout, 0);
@@ -3154,6 +3155,9 @@ int sombolvsSombol(int nbMoves, int strength){
 int main()
 {
     initializeLookupTable();
+
+    
+
     // sombolvsSombol(100, 8);
     double time_spent = 0.0;
 
@@ -3183,6 +3187,7 @@ int main()
         std::cerr << "Unable to open file.\n";
         return 1;
     }
+
     char** test3 = deepcopy2(test2);
     for(int i=0; i<8; i++)
         for(int j=0; j<8; j++)
@@ -3201,7 +3206,7 @@ int main()
     //     deepcopy2_char(test2);
     // minimaxResult = minimax_pro2(6, true, test2, INT_MIN, INT_MAX, 0, true, false);
     // minimaxResult = minimax_pro2_hash(6, true, test2, INT_MIN, INT_MAX, 0, true, false);
-    minimaxResult = minimax_pro2_based(6, true, test2, INT_MIN, INT_MAX, 0, true, false);
+    minimaxResult = minimax_pro2_based(7, true, test2, INT_MIN, INT_MAX, 0, true, false);
     // minimaxResult = normal_minimax_based(9, true, test2, INT_MIN, INT_MAX);
     // minimaxResult = normal_minimax(9, true, test2, INT_MIN, INT_MAX);
 

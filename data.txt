@@ -1,0 +1,27 @@
+depth 9:
+Positions Seen: 22973305
+Positions/sec: 184387
+get_all_moves: 5464471
+cacheHits: 3690178
+Time: 122.437
+
+depth 8:
+Positions Seen: 2971316
+Positions/sec: 213150
+get_all_moves: 689991
+cacheHits: 438908
+Time: 13.94
+
+depth 7:
+Positions Seen: 853981
+Positions/sec: 220212
+get_all_moves: 193699
+cacheHits: 124858
+Time: 3.878
+
+depth 6:
+Positions Seen: 63031
+Positions/sec: 231732
+get_all_moves: 13801
+cacheHits: 8325
+Time: 0.272

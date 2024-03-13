@@ -654,27 +654,25 @@ class Board:
 
     layout3 = [
                 [0, 0, 0, 0, 0, 0, 0, 0],
-                [1, 1, 1, 1, 1, 1, 1, 1],
-                [1, 1, 1, 1, 1, 1, 1, 1],
-                [0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0],
-                [2, 2, 2, 2, 2, 2, 2, 2],
-                [2, 2, 2, 2, 2, 2, 2, 2],
+                [1, 1, 1, 1, 1, 1, 0, 1],
+                [1, 0, 0, 1, 1, 1, 0, 1],
+                [1, 0, 1, 0, 0, 0, 1, 1],
+                [2, 2, 0, 2, 2, 2, 0, 0],
+                [2, 0, 2, 0, 0, 0, 2, 2],
+                [2, 0, 2, 2, 2, 2, 2, 2],
                 [0, 0, 0, 0, 0, 0, 0, 0]
                ]
                                             
               
     layout = [
                 [0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1],
                 [0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 1, 0, 1, 0, 1, 1, 1],
-                [1, 0, 1, 0, 0, 0, 1, 1],
-                [0, 0, 0, 2, 0, 2, 2, 2],
-                [0, 2, 2, 0, 0, 0, 2, 2],
-                [2, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [2, 2, 2, 2, 2, 2, 2, 2],
+                [2, 2, 2, 2, 2, 2, 2, 2],
                 [0, 0, 0, 0, 0, 0, 0, 0]
-
-
                ]
 
     layout2 = get_layout(testSurf)
@@ -2455,6 +2453,12 @@ pygame.display.flip()
 #turn switch
 #
 
+#CHANGEDDDD
+CPPFILE = 'dama_bitTest.cpp'
+# CPPFILE = 'dama22.cpp'
+# Compile the C++ file
+compile_command = ['g++','-Ofast','-faggressive-loop-optimizations', '-fstack-arrays', CPPFILE, '-o', 'executable']
+subprocess.run(compile_command, check=True)
 
 while running:
     clock.tick(30)
@@ -2464,10 +2468,7 @@ while running:
     #black ai move 
     if turn == 1:
         current_board_layout = deepcopy(board.layout)
-        CPPFILE = 'dama22.cpp'
-        # Compile the C++ file
-        compile_command = ['g++', CPPFILE, '-o', 'executable']
-        subprocess.run(compile_command, check=True)
+        
         # Execute the compiled binary
         execute_command = ['./executable']
         subprocess.run(execute_command)
