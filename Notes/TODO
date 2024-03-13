@@ -1,0 +1,9 @@
+Large:
+1. multithread it (CPU or GPU)
+2. more pruning
+3. better eval function (maybe reinforcment learning)
+4. better akel generation (eat_max, etc etc)
+5. organize code into files and Classes and functions
+
+Small:
+1. There is a bug in sombol logic, sometimes its playing fumb moves, fix it.

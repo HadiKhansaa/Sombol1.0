@@ -3012,7 +3012,7 @@ int main()
     //     deepcopy2_char(test2);
     // minimaxResult = minimax_pro2(6, true, test2, INT_MIN, INT_MAX, 0, true, false);
     // minimaxResult = minimax_pro2_hash(6, true, test2, INT_MIN, INT_MAX, 0, true, false);
-    minimaxResult = minimax_pro2_based(8, true, curr_board, INT_MIN, INT_MAX, 0, true, false);
+    minimaxResult = minimax_pro2_based(6, true, curr_board, INT_MIN, INT_MAX, 0, true, false);
     // minimaxResult = normal_minimax_based(9, true, test2, INT_MIN, INT_MAX);
     // minimaxResult = normal_minimax(9, true, test2, INT_MIN, INT_MAX);
 
@@ -3054,7 +3054,7 @@ int main()
     std::cout<<"Positions/sec: "<<movesSeen/time_spent<<endl;
     std::cout<<"get_all_moves: "<<counter<<endl;
     std::cout<<"cacheHits: "<<cacheHits<<endl;
-    std::cout<<"Time: "<<time_spent<<endl;
+    std::cout<<"Time: "<<time_spent<<endl<<endl;
     //end
 
     return 0;
