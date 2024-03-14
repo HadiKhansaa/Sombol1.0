@@ -5,5 +5,9 @@ Large:
 4. better akel generation (eat_max, etc etc)
 5. organize code into files and Classes and functions
 
+
+Medium:
+1. Fix leaks
+
 Small:
 1. There is a bug in sombol logic, sometimes its playing fumb moves, fix it.
