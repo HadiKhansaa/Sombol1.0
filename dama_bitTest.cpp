@@ -10,7 +10,7 @@ int counter = 0;
 int cacheHits = 0;
 
 //hashing stuff
-std::mt19937_64 rng(std::random_device{}());
+std::mt19937_64 rng(std::random_device{ }());
 std::uniform_int_distribution<uint64_t> distribution(0, std::numeric_limits<uint64_t>::max());
 std::unordered_map<uint64_t, std::pair<uint64_t, int>> transpositionTable;
 
@@ -303,7 +303,7 @@ std::array<std::array<uint64_t, 64>, 4> zobristTable = {{
 
 // Function to initialize Zobrist table with random values
 void initializeZobristTable() {
-    std::mt19937_64 rng(std::random_device{}());
+    std::mt19937_64 rng(std::random_device{ }());
     for (int pieceType = 0; pieceType < 4; ++pieceType) {
         for (int position = 0; position < 64; ++position) {
             zobristTable[pieceType][position] = rng();
@@ -643,12 +643,12 @@ bool check_dama_has_akel(char row, char col, char color, BitmaskBoard board_layo
     return false;
 }
 
-pair<vector<char*>, char> get_valid_moves(char row,char col, char color, char streak, vector<char*> valid_moves,  BitmaskBoard board_layout, char eat_direction)
+pair<vector<char*>, char> get_valid_moves(char row,char col, char color, char streak, vector<char*> valid_moves, BitmaskBoard board_layout, char eat_direction)
 {
     if(row>7 || col>7 || row<0 || col<0)
     {
         pair<vector<char*>, char> validMovesAndEatingPiece;
-        validMovesAndEatingPiece.first = {};
+        validMovesAndEatingPiece.first = { };
         validMovesAndEatingPiece.second = 0;
         return validMovesAndEatingPiece;
     }
@@ -1514,7 +1514,8 @@ bool doesnt_have(vector <vector<char*>> a, vector<char*> b){
 
 std::vector<std::vector<char*>> eat_max2(char row, char col,BitmaskBoard board_layout,  vector<vector<char*>> parent_list, char color, char eat_direction) {
     // Call get_valid_moves function
-    auto [valid_moves, eating_piece] = get_valid_moves(row, col, color, 0, {}, board_layout, eat_direction);
+    vector<char*> emptyV;
+    auto [valid_moves, eating_piece] = get_valid_moves(row, col, color, 0, emptyV, board_layout, eat_direction);
 
     bool dama_nom = (eating_piece == 'd');
     
@@ -1546,6 +1547,7 @@ std::vector<std::vector<char*>> eat_max2(char row, char col,BitmaskBoard board_l
             // Call get_valid_moves function
             // auto  eating_piece = get_valid_moves(move[0], move[1], color, 0, {}, board_layout, eat_direction).second;
 
+            // dama_nom = (eating_piece == 'd');
             dama_nom = check_dama_has_akel(move[0], move[1], color, board_layout, eat_direction);
 
             if (dama_nom) {
@@ -1564,8 +1566,6 @@ std::vector<std::vector<char*>> eat_max2(char row, char col,BitmaskBoard board_l
             parent_list = big_dama_list;
         } 
         if (new_list.empty()) {
-            
-            bool did_eat_once = false;
             std::vector<std::vector<char*>> aux_list2;
             aux_list2.clear();
             char counter = 0;
@@ -1600,16 +1600,12 @@ std::vector<std::vector<char*>> eat_max2(char row, char col,BitmaskBoard board_l
                         aux_list3.push_back(move);
                         aux_list2.push_back(aux_list3);
                     }
-                    did_eat_once = true;
                 }
-                // else if(valid_moves2.size() == 1)
-                //     return parent_list;
             
             }
-            
-
-            if(!aux_list2.empty())
-                return aux_list2;
+            // if(!aux_list2.empty())
+            //     return aux_list2;
+            parent_list = aux_list2;
             return parent_list;
             
         } else {
@@ -1668,7 +1664,7 @@ std::vector<std::vector<char*>> eat_max2_not_dama(char row, char col,BitmaskBoar
                 }
             }
             // Call get_valid_moves function
-            auto  eating_piece = get_valid_moves(move[0], move[1], color, 0, {}, board_layout, eat_direction).second;
+            auto eating_piece = get_valid_moves(move[0], move[1], color, 0, {}, board_layout, eat_direction).second;
             dama_nom = (eating_piece != 0);
     
             if (dama_nom) {
@@ -1912,7 +1908,7 @@ bool check_if_piece_can_capture(char row, char col, BitmaskBoard board_layout, c
     return false;
 }
 
-vector<char*> check_for_force(BitmaskBoard board_layout, char turn, vector<char*> *pieces = {})
+vector<char*> check_for_force(BitmaskBoard board_layout, char turn, vector<char*> *pieces = { })
 {
     auto [pieces2, check] = check_for_possible_capture(board_layout, turn);
     *pieces = pieces2;
@@ -2492,7 +2488,7 @@ int evaluate_int(BitmaskBoard board_layout, char turn)
     // return sum;
 }
 
-pair<vector<BitmaskBoard>, bool> get_all_moves(BitmaskBoard board_layout, char color, vector<BitmaskBoard> *moves = {})
+pair<vector<BitmaskBoard>, bool> get_all_moves(BitmaskBoard board_layout, char color, vector<BitmaskBoard> *moves = { })
 {
     vector<char *> pieces;
     counter++;
@@ -3201,23 +3197,23 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
     int evaluation, maxEval, minEval;
     BitmaskBoard best_move;
 
-    // uint64_t hashKey = calculateHashKey(board_layout, max_player ? 1 : 2);
+    uint64_t hashKey = calculateHashKey(board_layout, max_player ? 1 : 2);
 
-    // if (transpositionTable.count(hashKey) > 0) {
-    //     std::pair<char, int> storedValues = transpositionTable[hashKey];
-    //     char storedDepth = storedValues.first;
-    //     int storedEval = storedValues.second;
+    if (transpositionTable.count(hashKey) > 0) {
+        std::pair<char, int> storedValues = transpositionTable[hashKey];
+        char storedDepth = storedValues.first;
+        int storedEval = storedValues.second;
 
-    //     if (storedDepth >= depth)
-    //     {
-    //         // if(depth>4)
-    //         //     cout<<int(depth)<<endl;
-    //         // cout<<"found in hash table"<<endl;
-    //         cacheHits++;
-    //         movesSeen++;
-    //         return std::make_pair(storedEval, board_layout);
-    //     }
-    // }
+        if (storedDepth >= depth)
+        {
+            // if(depth>4)
+            //     cout<<int(depth)<<endl;
+            // cout<<"found in hash table"<<endl;
+            cacheHits++;
+            movesSeen++;
+            return std::make_pair(storedEval, board_layout);
+        }
+    }
 
     if(depth <=0)
     {
@@ -3276,6 +3272,7 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
 
                 if(fff)
                 {
+                    bool fff2 = false;
                     vector<vector<char*>> parent_list2;
                     for(char* move : valid_moves)
                     {
@@ -3283,15 +3280,20 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
                         tempValue.push_back(piece);
                         tempValue.push_back(move);
                         parent_list2.push_back(tempValue);
+                        if(check_if_piece_can_capture(move[0], move[1], board_layout, color2))
+                            fff2 = true;
                     }
 
-                    parent_list = eat_max2_not_dama(piece[0], piece[1], board_layout, parent_list2, color2, 0);
-                    vector<char*> aux_list;
-                    if(!parent_list.empty())
+                    if(fff2)
                     {
-                        for(vector<char*> value: parent_list)
-                            aux_list.push_back(value[char(value.size()) - 1]);
-                        valid_moves = aux_list;
+                        parent_list = eat_max2_not_dama(piece[0], piece[1], board_layout, parent_list2, color2, 0);
+                        vector<char*> aux_list;
+                        if(!parent_list.empty())
+                        {
+                            for(vector<char*> value: parent_list)
+                                aux_list.push_back(value[char(value.size()) - 1]);
+                            valid_moves = aux_list;
+                        }
                     }
 
                 }
@@ -3328,11 +3330,14 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
                     {
                         parent_list = eat_max2(piece[0], piece[1], board_layout, parent_list2, color2, 0);
                         vector<char*> aux_list;
-    
-                        for(vector<char*> value: parent_list)
-                            aux_list.push_back(value[char(value.size()) - 1]);
-                        
-                        valid_moves = aux_list;
+
+                        if(!parent_list.empty())
+                        {
+                            for(vector<char*> value: parent_list)
+                                aux_list.push_back(value[char(value.size()) - 1]);
+                            
+                            valid_moves = aux_list;
+                        }
                     }   
                 }
             }
@@ -3369,7 +3374,7 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
             if(exit)
                 break;
         }
-        // transpositionTable[hashKey] = std::make_pair(depth, maxEval);
+        transpositionTable[hashKey] = std::make_pair(depth, maxEval);
         return make_pair(maxEval, best_move);
     }
     else
@@ -3415,6 +3420,7 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
 
                 if(fff)
                 {
+                    bool fff2 = false;
                     vector<vector<char*>> parent_list2;
                     for(char* move : valid_moves)
                     {
@@ -3422,15 +3428,21 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
                         tempValue.push_back(piece);
                         tempValue.push_back(move);
                         parent_list2.push_back(tempValue);
+                        if(check_if_piece_can_capture(move[0], move[1], board_layout, color2))
+                            fff2 = true;
                     }
 
-                    parent_list = eat_max2_not_dama(piece[0], piece[1], board_layout, parent_list2, color2, 0);
-                    vector<char*> aux_list;
-                    
-                    for(vector<char*> value: parent_list)
-                        aux_list.push_back(value[char(value.size()) - 1]);
-                    if(!aux_list.empty())
-                        valid_moves = aux_list;
+                    if(fff2)
+                    {
+                        parent_list = eat_max2_not_dama(piece[0], piece[1], board_layout, parent_list2, color2, 0);
+                        vector<char*> aux_list;
+                        if(!parent_list.empty())
+                        {
+                            for(vector<char*> value: parent_list)
+                                aux_list.push_back(value[char(value.size()) - 1]);
+                            valid_moves = aux_list;
+                        }
+                    }
                     
                 }
             }
@@ -3465,11 +3477,12 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
                     {
                         parent_list = eat_max2(piece[0], piece[1], board_layout, parent_list2, color2, 0);
                         vector<char*> aux_list;
-
-                        for(vector<char*> value: parent_list)
-                            aux_list.push_back(value[char(value.size()) - 1]);
-                        
-                        valid_moves = aux_list;
+                        if(!parent_list.empty())
+                        {
+                            for(vector<char*> value: parent_list)
+                                aux_list.push_back(value[char(value.size()) - 1]);
+                            valid_moves = aux_list;
+                        }
                     }
                     
                 }
@@ -3505,7 +3518,7 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
             if(exit)
                 break;
         }
-        // transpositionTable[hashKey] = std::make_pair(depth, minEval);
+        transpositionTable[hashKey] = std::make_pair(depth, minEval);
         return make_pair(minEval, best_move);
     }
 }
@@ -3569,7 +3582,7 @@ int main()
     //     deepcopy2_char(test2);
     // minimaxResult = minimax_pro2(6, true, test2, INT_MIN, INT_MAX, 0, true, false);
     // minimaxResult = minimax_pro2_hash(6, true, test2, INT_MIN, INT_MAX, 0, true, false);
-    minimaxResult = minimax_pro2_based(6, true, curr_board, INT_MIN, INT_MAX, 0, true, false);
+    minimaxResult = minimax_pro2_based(7, true, curr_board, INT_MIN, INT_MAX, 0, true, false);
     // minimaxResult = normal_minimax_based(9, true, test2, INT_MIN, INT_MAX);
     // minimaxResult = normal_minimax(9, true, curr_board, INT_MIN, INT_MAX);
 

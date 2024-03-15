@@ -8,7 +8,7 @@ class BitmaskBoard {
 public:
     uint64_t whitePawns, blackPawns, whiteKings, blackKings, emptySquares;
 
-    uint64_t ONE = 1ULL, ZERO = 0ULL, INITIAL_POSITION = 0x00FFFF0000FFFF00ULL;
+    // uint64_t INITIAL_POSITION = 0x00FFFF0000FFFF00ULL;
 
     void clearPosition(int i, int j) {
         uint64_t mask = ~(1ULL << (i * 8 + j));

@@ -22,7 +22,7 @@ class BitmaskBoard {
 private:
     uint64_t whitePawns, blackPawns, whiteKings, blackKings, emptySquares;
 
-    uint64_t ONE = 1ULL, ZERO = 0ULL, INITIAL_POSITION = 0xffff0000ffff00ULL;
+    // uint64_t ONE = 1ULL, ZERO = 0ULL, INITIAL_POSITION = 0xffff0000ffff00ULL;
 
     void clearPosition(int i, int j) {
         uint64_t mask = ~(1ULL << (i * 8 + j));
@@ -167,22 +167,22 @@ public:
         // std::cout <<  (int)(__builtin_popcountll(blackPawns & 0x00000000FF000000ULL)) - (int)(__builtin_popcountll(whitePawns & 0x00FF000000000000ULL))<< std::endl;
 
         // Count pieces using popcount (population count - counts the number of set bits)
-        int black_pawns = __builtin_popcountll(blackPawns);
-        int white_pawns = __builtin_popcountll(whitePawns);
-        int black_kings = __builtin_popcountll(blackKings);
-        int white_kings = __builtin_popcountll(whiteKings);
+        int nb_black_pawns = __builtin_popcountll(blackPawns);
+        int nb_white_pawns = __builtin_popcountll(whitePawns);
+        int nb_black_kings = __builtin_popcountll(blackKings);
+        int nb_white_kings = __builtin_popcountll(whiteKings);
 
         int sum = 0;
 
         // Base scores for pawns and kings
-        sum += 100 * (black_pawns - white_pawns); // Pawn difference
-        sum += 450 * (black_kings - white_kings); // King difference
+        sum += 100 * (nb_black_pawns - nb_white_pawns); // Pawn difference
+        sum += 450 * (nb_black_kings - nb_white_kings); // King difference
 
         // Edge bonuses specifically for the right and left edges
         uint64_t leftEdgeMask = 0x0101010101010101; // Left edge of the board
         uint64_t rightEdgeMask = 0x8080808080808080; // Right edge of the board
-        int edge_bonus_black = 10 * (__builtin_popcountll(blackPawns & leftEdgeMask) + __builtin_popcountll(blackPawns & rightEdgeMask) + __builtin_popcountll(blackKings & leftEdgeMask) + __builtin_popcountll(blackKings & rightEdgeMask));
-        int edge_bonus_white = 10 * (__builtin_popcountll(whitePawns & leftEdgeMask) + __builtin_popcountll(whitePawns & rightEdgeMask) + __builtin_popcountll(whiteKings & leftEdgeMask) + __builtin_popcountll(whiteKings & rightEdgeMask));
+        int edge_bonus_black = 3 * (__builtin_popcountll(blackPawns & leftEdgeMask) + __builtin_popcountll(blackPawns & rightEdgeMask) + __builtin_popcountll(blackKings & leftEdgeMask) + __builtin_popcountll(blackKings & rightEdgeMask));
+        int edge_bonus_white = 3 * (__builtin_popcountll(whitePawns & leftEdgeMask) + __builtin_popcountll(whitePawns & rightEdgeMask) + __builtin_popcountll(whiteKings & leftEdgeMask) + __builtin_popcountll(whiteKings & rightEdgeMask));
         sum += edge_bonus_black - edge_bonus_white;
 
         // Corrected masks and calculations for pawn advancement
@@ -215,11 +215,12 @@ public:
         int balance_white = abs(__builtin_popcountll(whitePawns & leftHalfMask) - __builtin_popcountll(whitePawns & rightHalfMask));
         sum -= 2 * (balance_black - balance_white); // Penalize imbalance more subtly than before, adjusting the weight as needed
 
-        return sum;
+        // Increase sum by the less total value of pieces there is
+        return sum * (32 / (nb_black_pawns + nb_black_kings + nb_white_pawns + nb_white_kings));
     }
 
     // Function to calculate hash key for a board layout and turn
-    uint64_t calculateHashKey(char turn, std::array<std::array<uint64_t, 64>, 4> zobristTable) {
+    uint64_t calculateHashKey(char turn, std::array<std::array<uint64_t, 64>, 4> &zobristTable) {
         uint64_t hashKey = 0;
 
         // Function to XOR pieces' positions based on their bitmasks
@@ -239,12 +240,6 @@ public:
 
         // Include turn information in the hash
         hashKey ^= (turn == '1' ? zobristTable[0][0] : zobristTable[1][0]); // Example: Use first values as turn indicator
-        // hashKey ^= whitePawns;
-        // hashKey ^= blackPawns;
-        // hashKey ^= whiteKings;
-        // hashKey ^= blackKings;
-        // turn == '1' ? hashKey ^= zobristTable[0][0] : hashKey ^= zobristTable[1][0];
-
 
         return hashKey;
     }

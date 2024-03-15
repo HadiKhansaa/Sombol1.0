@@ -8,6 +8,7 @@ Large:
 
 Medium:
 1. Fix leaks
+2. undo
 
 Small:
 1. There is a bug in sombol logic, sometimes its playing fumb moves, fix it.
