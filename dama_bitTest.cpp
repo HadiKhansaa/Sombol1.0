@@ -623,7 +623,7 @@ pair<vector<char*>, char> get_valid_moves(char row,char col, char color, char st
                         i=10;
                         break;
                     }
-                    if (board_layout.get(row+i+j, col)!=0)
+                    if(!board_layout.check_empty_index(row+i+j, col))
                     {
                         i=10;
                         break;
@@ -2843,7 +2843,6 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
     int evaluation, maxEval, minEval;
     BitmaskBoard best_move;
 
-    // uint64_t hashKey = calculateHashKey(board_layout, max_player ? 1 : 2);
     board_layout.setTurn(max_player ? 0 : 1);
     if (transpositionTable2.count(board_layout) > 0) {
         std::pair<char, int> storedValues = transpositionTable2[board_layout];

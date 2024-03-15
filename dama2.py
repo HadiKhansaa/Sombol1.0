@@ -48,7 +48,6 @@ def no_more_moves_white(b):
 def empty_square(row, col):
     pass
 
-
 def get_valid_moves_gpt(row, col, color, streak, valid_moves, board_layout, eat_direction):
     def is_valid_move(row, col, piece):
         if row < 0 or row >= 8 or col < 0 or col >= 8:
@@ -388,9 +387,6 @@ def check_for_piece_akel(row, col, color, board_layout):
 
     return ''
 
-def eat_piece():
-    pass
-
 def check_for_nom(row, col, color, streak, valid_moves, board_layout):
 
     eating_piece = get_valid_moves(row, col, color, streak, valid_moves, board_layout, '')[1]
@@ -652,19 +648,19 @@ class Board:
     testSurf = pygame.image.load("images/positionBoard.jpeg").convert()
     testSurf = pygame.transform.scale(testSurf, (800, 800))
 
-    layout_bugged = [
+    layout = [
                 [0, 0, 0, 0, 0, 0, 0, 0],
-                [1, 1, 1, 1, 1, 1, 0, 1],
-                [1, 0, 0, 1, 1, 1, 0, 1],
-                [1, 0, 1, 0, 0, 0, 1, 1],
-                [2, 2, 0, 2, 2, 2, 0, 0],
-                [2, 0, 2, 0, 0, 0, 2, 2],
-                [2, 0, 2, 2, 2, 2, 2, 2],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 0, 0, 1, 1, 1, 1],
+                [1, 1, 1, 0, 0, 0, 0, 1],
+                [0, 0, 0, 0, 2, 2, 2, 2],
+                [2, 2, 2, 2, 0, 0, 2, 2],
+                [2, 2, 2, 2, 0, 0, 2, 2],
                 [0, 0, 0, 0, 0, 0, 0, 0]
                ]
                                             
               
-    layout = [
+    layout3 = [
                 [0, 0, 0, 0, 0, 0, 0, 0],
                 [1, 1, 1, 1, 1, 1, 1, 1],
                 [1, 1, 1, 1, 1, 1, 1, 1],
@@ -1174,50 +1170,6 @@ def display(move):
     print()
     print()
     print()
-
-def get_max_eval(depth, all_moves, alpha, beta):
-    for move in all_moves:
-        evaluation = minimax(screen, depth-1, False, move, alpha, beta, {})[0]
-
-        if evaluation >= maxEval:
-            maxEval = evaluation
-            best_move = move
-
-        if depth < 4:
-            alpha = max(alpha, maxEval)
-            if beta<= alpha:
-                break
-        return maxEval, best_move
-
-def get_min_eval(depth, all_moves, alpha, beta):
-    for move in all_moves:
-        strMove = str(move)
-        if strMove in memo.keys() and memo[strMove][1]==depth:
-            evaluation = strMove
-        else:    
-            evaluation = minimax(screen, depth-1, True, move, alpha, beta, {})[0]
-            memo[str(move)] = (evaluation, depth)
-        if evaluation <= minEval:
-            minEval = evaluation
-            best_move = move
-        
-        if depth < 4:
-            beta = min(beta, minEval)
-            if beta<= alpha:
-                break
-        return minEval, best_move
-
-def pool_max(screen, depth, all_moves, board_layout, alpha, beta):
-    p = Pool(4)
-    args = [screen, depth, all_moves, board_layout, alpha, beta]
-    results = p.starmap(get_max_eval, product(args, repeat=2))
-    return results
-
-def pool_min(screen, depth, all_moves, board_layout, alpha, beta):
-    p = Pool(4)
-    args = [screen, depth, all_moves, board_layout, alpha, beta]
-    results = p.starmap(get_min_eval, product(args, repeat=2))
-    return results
 
 def dama_in_board(board_layout):
     for i in board_layout:
@@ -2345,9 +2297,6 @@ def eat_max2(row, col, board_layout, parent_list,  color, eat_direction):
     else:
         return []
 
-def pool_func(all_moves):
-    p = Pool(4)
-    p.map
 
 def check_for_move(b1, b2, color):
     i=0

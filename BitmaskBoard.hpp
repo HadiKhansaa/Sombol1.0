@@ -17,7 +17,7 @@ private:
         blackPawns &= mask;
         whiteKings &= mask;
         blackKings &= mask;
-        // emptySquares |= mask;
+        emptySquares |= (~mask);
     }
 
 public:
@@ -27,7 +27,8 @@ public:
     // Copy constructor
     BitmaskBoard(const BitmaskBoard& other)
         : whitePawns(other.whitePawns), blackPawns(other.blackPawns),
-          whiteKings(other.whiteKings), blackKings(other.blackKings) {}
+          whiteKings(other.whiteKings), blackKings(other.blackKings),
+          emptySquares(other.emptySquares), isWhiteTurn(other.isWhiteTurn) {}
 
     char get(int i, int j) const {
         uint64_t pos = 1ULL << (i * 8 + j);
@@ -41,6 +42,7 @@ public:
     void set(int i, int j, char piece) {
         clearPosition(i, j); // Clear the piece at (i, j) if any
         uint64_t pos = 1ULL << (i * 8 + j);
+        // emptySquares |= pos;
         switch (piece) {
             case 1: blackPawns |= pos; break;
             case 2: whitePawns |= pos; break;
@@ -52,18 +54,22 @@ public:
     }
 
     void set_whitePawn(int i, int j) {
+        clearPosition(i, j);
         uint64_t pos = 1ULL << (i * 8 + j);
         whitePawns |= pos;
         emptySquares &= ~(pos);
     }
 
     void set_blackPawn(int i, int j) {
+        clearPosition(i, j);
         uint64_t pos = 1ULL << (i * 8 + j);
         blackPawns |= pos;
         emptySquares &= ~(pos);
     }
 
     void set_whiteKing(int i, int j) {
+        clearPosition(i, j);
+
         uint64_t mask = ~(1ULL << (i * 8 + j));
         whitePawns &= mask;
 
@@ -73,6 +79,8 @@ public:
     }
 
     void set_blackKing(int i, int j) {
+        clearPosition(i, j);
+
         uint64_t mask = ~(1ULL << (i * 8 + j));
         blackPawns &= mask;
 
@@ -131,8 +139,6 @@ public:
     // Define the < operator
     bool operator<(const BitmaskBoard& other) const {
         // Implement comparison logic here
-        // This is a simple example comparing a hypothetical member variable
-        // You should adjust this to fit your class design and comparison criteria
         return blackKings + blackPawns < whiteKings + whitePawns;
     }
 
