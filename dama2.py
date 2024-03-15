@@ -649,7 +649,7 @@ class Board:
     surf = pygame.image.load("images/board2.jpg").convert()
     surf = pygame.transform.scale(surf, (800, 800))
 
-    testSurf = pygame.image.load("positionBoard.jpeg").convert()
+    testSurf = pygame.image.load("images/positionBoard.jpeg").convert()
     testSurf = pygame.transform.scale(testSurf, (800, 800))
 
     layout_bugged = [

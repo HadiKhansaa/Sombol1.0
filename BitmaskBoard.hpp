@@ -1,26 +1,13 @@
 #pragma once
 
-#include <iostream>
-#include <tuple>
-#include <fstream>
-#include <cstring>
-#include <random>
-#include <time.h> 
-#include <vector>
-#include <set>
-#include <memory>
-#include <windows.h>
-#include <cstdlib>   // for rand() and srand()
-#include <ctime>
-#include <fstream>
-#include <string>
-#include <algorithm>
+#include "constant.hpp"
 
 using namespace std;
 
 class BitmaskBoard {
 private:
     uint64_t whitePawns, blackPawns, whiteKings, blackKings, emptySquares;
+    bool isWhiteTurn;
 
     // uint64_t ONE = 1ULL, ZERO = 0ULL, INITIAL_POSITION = 0xffff0000ffff00ULL;
 
@@ -35,7 +22,7 @@ private:
 
 public:
     // Default constructor initializes all masks to 0
-    BitmaskBoard() : whitePawns(0), blackPawns(0), whiteKings(0), blackKings(0), emptySquares() {}
+    BitmaskBoard() : whitePawns(0), blackPawns(0), whiteKings(0), blackKings(0), emptySquares(0xFF0000FFFF0000FFULL) {}
 
     // Copy constructor
     BitmaskBoard(const BitmaskBoard& other)
@@ -136,6 +123,11 @@ public:
             return whitePawns | whiteKings;
     }
 
+    // 0 for black, 1 for white
+    void setTurn(bool turn) {
+        isWhiteTurn = turn;
+    }
+
     // Define the < operator
     bool operator<(const BitmaskBoard& other) const {
         // Implement comparison logic here
@@ -144,23 +136,11 @@ public:
         return blackKings + blackPawns < whiteKings + whitePawns;
     }
 
-    // int evaluate_board() {
-    //     // Count pieces using popcount (population count - counts the number of set bits)
-    //     int black_pawns = __builtin_popcountll(blackPawns);
-    //     int white_pawns = __builtin_popcountll(whitePawns);
-    //     int black_kings = __builtin_popcountll(blackKings);
-    //     int white_kings = __builtin_popcountll(whiteKings);
-
-    //     int sum = 0;
-
-    //     // Basic evaluation based on piece counts
-    //     sum += 100 * (black_pawns - white_pawns); // Pawn difference
-    //     sum += 350 * (black_kings - white_kings); // King difference
-
-    //     // Additional evaluations could go here
-
-    //     return sum;
-    // }
+    bool operator==(const BitmaskBoard& other) const {
+        return whitePawns == other.whitePawns && blackPawns == other.blackPawns &&
+               whiteKings == other.whiteKings && blackKings == other.blackKings
+               && isWhiteTurn == other.isWhiteTurn;
+    }
 
     int evaluate_board() {
         // print blackPawns in hex
@@ -216,7 +196,8 @@ public:
         sum -= 2 * (balance_black - balance_white); // Penalize imbalance more subtly than before, adjusting the weight as needed
 
         // Increase sum by the less total value of pieces there is
-        return sum * (32 / (nb_black_pawns + nb_black_kings + nb_white_pawns + nb_white_kings));
+        // return sum * (32 / (nb_black_pawns + nb_black_kings + nb_white_pawns + nb_white_kings));
+        return sum;
     }
 
     // Function to calculate hash key for a board layout and turn
@@ -243,4 +224,33 @@ public:
 
         return hashKey;
     }
+
+    // Hash method
+    std::size_t hash() const {
+        std::hash<uint64_t> hasher;
+        size_t hashValue = 17; // Start with a non-zero constant
+        
+        // Combine the hash values of the bitmasks using a prime number
+        hashValue = hashValue * 31 + hasher(whitePawns);
+        hashValue = hashValue * 31 + hasher(blackPawns);
+        hashValue = hashValue * 31 + hasher(whiteKings);
+        hashValue = hashValue * 31 + hasher(blackKings);
+        
+        // Incorporate isWhiteTurn into the hash
+        // Treat isWhiteTurn as an additional bit in the hash computation. 
+        // You can use a simple conditional to add a unique value (like a small prime number) 
+        // to distinguish between the two possible states.
+        hashValue = hashValue * 31 + (isWhiteTurn ? 1231 : 1237); // Prime numbers for true/false
+
+        return hashValue;
+    }
 };
+
+namespace std {
+    template<>
+    struct hash<BitmaskBoard> {
+        std::size_t operator()(const BitmaskBoard& board) const noexcept {
+            return board.hash(); // Use the hash method of BitmaskBoard
+        }
+    };
+}
