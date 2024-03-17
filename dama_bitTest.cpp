@@ -210,7 +210,7 @@ bool check_dama_has_akel(char row, char col, char color, BitmaskBoard& board_lay
                         i=10;
                         break;
                     }
-                    if (board_layout.get(row, col-i-j)!=0)
+                    if (board_layout.get(row, col-i-j) != 0)
                     {
                         i=10;
                         break;
@@ -272,7 +272,7 @@ bool check_dama_has_akel(char row, char col, char color, BitmaskBoard& board_lay
                         i=10;
                         break;
                     }
-                    if (board_layout.get(row-i-j, col) != 0)
+                    if (board_layout.get(row-i-j, col)!=0)
                     {
                         i=10;
                         break;
@@ -542,7 +542,7 @@ pair<vector<char*>, char> get_valid_moves(char row,char col, char color, char st
                         i=10;
                         break;
                     }
-                    if (board_layout.get(row, col+i+j) != 0)
+                    if(board_layout.check_index_has_whiteKing(row, col+i+j) || board_layout.check_index_has_whitePawn(row, col+i+j) || board_layout.check_index_has_blackKing(row, col+i+j) || board_layout.check_index_has_blackPawn(row, col+i+j))
                     {
                         i=10;
                         break;
@@ -583,7 +583,7 @@ pair<vector<char*>, char> get_valid_moves(char row,char col, char color, char st
                         i=10;
                         break;
                     }
-                    if (board_layout.get(row, col-i-j)!=0)
+                    if (board_layout.check_index_has_whiteKing(row, col-i-j) || board_layout.check_index_has_whitePawn(row, col-i-j) || board_layout.check_index_has_blackKing(row, col-i-j) || board_layout.check_index_has_blackPawn(row, col-i-j))
                     {
                         i=10;
                         break;
@@ -623,7 +623,7 @@ pair<vector<char*>, char> get_valid_moves(char row,char col, char color, char st
                         i=10;
                         break;
                     }
-                    if(!board_layout.check_empty_index(row+i+j, col))
+                    if(board_layout.check_index_has_whiteKing(row+i+j, col) || board_layout.check_index_has_whitePawn(row+i+j, col) || board_layout.check_index_has_blackKing(row+i+j, col) || board_layout.check_index_has_blackPawn(row+i+j, col))
                     {
                         i=10;
                         break;
@@ -663,7 +663,7 @@ pair<vector<char*>, char> get_valid_moves(char row,char col, char color, char st
                         i=10;
                         break;
                     }
-                    if (board_layout.get(row-i-j, col) != 0)
+                    if (board_layout.check_index_has_whiteKing(row-i-j, col) || board_layout.check_index_has_whitePawn(row-i-j, col) || board_layout.check_index_has_blackKing(row-i-j, col) || board_layout.check_index_has_blackPawn(row-i-j, col))
                     {
                         i=10;
                         break;
@@ -1018,12 +1018,12 @@ pair<BitmaskBoard, char> eat_piece_if_possible(BitmaskBoard& board_layout, char 
     {
         if (board_layout.check_index_has_whitePawn(sumRowOver2, col) || board_layout.check_index_has_whiteKing(sumRowOver2, col))
         {
-            board_layout.set(sumRowOver2, col, 0);
+            board_layout.clearPosition(sumRowOver2, col);
             return make_pair(board_layout, eat_direction);
         }
         else if (board_layout.check_index_has_whitePawn(row, sumColOver2) || board_layout.check_index_has_whiteKing(row, sumColOver2))
         {
-            board_layout.set(row, sumColOver2, 0);
+            board_layout.clearPosition(row, sumColOver2);
             return make_pair(board_layout, eat_direction);
         }
     }
@@ -1031,12 +1031,12 @@ pair<BitmaskBoard, char> eat_piece_if_possible(BitmaskBoard& board_layout, char 
     {
         if (board_layout.check_index_has_blackPawn(sumRowOver2, col) || board_layout.check_index_has_blackKing(sumRowOver2, col))
         {
-            board_layout.set(sumRowOver2, col, 0);
+            board_layout.clearPosition(sumRowOver2, col);
             return make_pair(board_layout, eat_direction);
         }
         else if (board_layout.check_index_has_blackPawn(row, sumColOver2) || board_layout.check_index_has_blackKing(row, sumColOver2))
         {
-            board_layout.set(row, sumColOver2, 0);
+            board_layout.clearPosition(row, sumColOver2);
             return make_pair(board_layout, eat_direction);
         }
     }
@@ -1061,7 +1061,7 @@ pair<BitmaskBoard, char> eat_piece_if_possible(BitmaskBoard& board_layout, char 
             {
                 if (board_layout.check_index_has_whitePawn(k, c) || board_layout.check_index_has_whiteKing(k, c))
                 {
-                    board_layout.set(k, c, 0);
+                    board_layout.clearPosition(k, c);
                     return make_pair(board_layout, eat_direction);
                 }
             }
@@ -1085,7 +1085,7 @@ pair<BitmaskBoard, char> eat_piece_if_possible(BitmaskBoard& board_layout, char 
             {
                 if (board_layout.check_index_has_whitePawn(r, k) || board_layout.check_index_has_whiteKing(r, k))
                 {
-                    board_layout.set(r, k, 0);
+                    board_layout.clearPosition(r, k);
                     return make_pair(board_layout, eat_direction);
                 }
             }
@@ -1112,7 +1112,7 @@ pair<BitmaskBoard, char> eat_piece_if_possible(BitmaskBoard& board_layout, char 
             {
                 if (board_layout.check_index_has_blackPawn(k, c) || board_layout.check_index_has_blackKing(k, c))
                 {
-                    board_layout.set(k, c, 0);
+                    board_layout.clearPosition(k, c);
                     return make_pair(board_layout, eat_direction);
                 }
             }
@@ -1136,7 +1136,7 @@ pair<BitmaskBoard, char> eat_piece_if_possible(BitmaskBoard& board_layout, char 
             {
                 if (board_layout.check_index_has_blackPawn(r, k) || board_layout.check_index_has_blackKing(r, k))
                 {
-                    board_layout.set(r, k, 0);
+                    board_layout.clearPosition(r, k);
                     return make_pair(board_layout, eat_direction);
                 }
             }
@@ -1684,16 +1684,30 @@ BitmaskBoard move_piece(char* piece, char* move, BitmaskBoard& board_layout, vec
             index++;
         }
         parent_list.erase(parent_list.begin()+index);
-        if(value_length==0)
+        if(value_length==0)  
             return board_layout;
+        
     }
     else
         board_layout = eat_piece_if_possible(board_layout, row, col, r, c, color).first;
 
     char aux;
     aux = board_layout.get(row, col);
-    board_layout.set(row, col, board_layout.get(r, c));
-    board_layout.set(r, c, aux);
+    // board_layout.set(row, col, board_layout.get(r, c));
+    
+
+    if(aux == 1)
+        board_layout.set_blackPawn(r, c);
+    else if(aux == 2)
+        board_layout.set_whitePawn(r, c);
+    else if(aux == 3)
+        board_layout.set_blackKing(r, c);
+    else if(aux == 4)
+        board_layout.set_whiteKing(r, c);
+
+    board_layout.clearPosition(row, col);
+
+    // board_layout.set(r, c, aux);
 
     //check for dama promotion
     if(r==0 && color==2)
@@ -2839,26 +2853,72 @@ pair<int, BitmaskBoard> normal_minimax(char depth, char max_player, BitmaskBoard
 }
 
 pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskBoard& board_layout, int alpha, int beta, char akel_player, char akel_depth, char akling)
-{
+{   
+
+    // BitmaskBoard test_board;
+
+    // // create this board in test_board
+    // // 0 0 0 0 0 0 0 0
+    // // 1 1 1 1 0 1 1 1
+    // // 0 0 0 0 0 0 1 1
+    // // 1 1 1 0 0 0 0 1
+    // // 0 0 0 0 4 2 2 2
+    // // 2 2 2 0 2 0 2 2
+    // // 2 2 2 2 0 0 2 2
+    // // 0 0 0 0 0 0 0 0
+
+    // // test_board.set(0, 4, 4);
+    // test_board.set(4, 4, 4);
+
+    // test_board.set(1, 0, 1);
+    // test_board.set(1, 1, 1);
+    // test_board.set(1, 2, 1);
+    // test_board.set(1, 3, 1);
+    // test_board.set(1, 5, 1);
+    // test_board.set(1, 6, 1);
+    // test_board.set(1, 7, 1);
+    // // test_board.set(2, 5, 1);
+    // test_board.set(2, 6, 1);
+    // test_board.set(2, 7, 1);
+    // test_board.set(3, 0, 1);
+    // test_board.set(3, 1, 1);
+    // test_board.set(3, 2, 1);
+    // test_board.set(3, 7, 1);
+    // // test_board.set(4, 4, 2);
+    // test_board.set(4, 5, 2);
+    // test_board.set(4, 6, 2);
+    // test_board.set(4, 7, 2);
+    // test_board.set(5, 0, 2);
+    // test_board.set(5, 1, 2);
+    // test_board.set(5, 2, 2);
+    // test_board.set(5, 4, 2);
+    // test_board.set(5, 6, 2);
+    // test_board.set(5, 7, 2);
+    // test_board.set(6, 0, 2);
+    // test_board.set(6, 1, 2);
+    // test_board.set(6, 2, 2);
+    // test_board.set(6, 3, 2);
+    // test_board.set(6, 6, 2);
+    // test_board.set(6, 7, 2);
+    
     int evaluation, maxEval, minEval;
     BitmaskBoard best_move;
 
-    board_layout.setTurn(max_player ? 0 : 1);
-    if (transpositionTable2.count(board_layout) > 0) {
-        std::pair<char, int> storedValues = transpositionTable2[board_layout];
-        char storedDepth = storedValues.first;
-        int storedEval = storedValues.second;
+    // board_layout.setTurn(max_player ? 0 : 1);
+    // if (transpositionTable2.count(board_layout) > 0) {
+    //     TranspositionTableValue value = transpositionTable2[board_layout];
 
-        if (storedDepth >= depth)
-        {
-            // if(depth>4)
-            //     cout<<int(depth)<<endl;
-            // cout<<"found in hash table"<<endl;
-            cacheHits++;
-            movesSeen++;
-            return std::make_pair(storedEval, board_layout);
-        }
-    }
+    //     char storedDepth = value.getDepth();
+    //     int storedEval = value.getEval();
+    //     BitmaskBoard storedBoard = value.getBestMove();
+
+    //     if (storedDepth >= depth)
+    //     {
+    //         cacheHits++;
+    //         movesSeen++;
+    //         return std::make_pair(storedEval, storedBoard);
+    //     }
+    // }
 
     if(depth <=0 || playerWon(board_layout))
     {
@@ -2990,7 +3050,7 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
             for(char* move : valid_moves)
             {
                 BitmaskBoard board_layout2 = board_layout;
-                auto current_board = move_piece(piece, move, board_layout2, parent_list, color2);
+                BitmaskBoard current_board = move_piece(piece, move, board_layout2, parent_list, color2);
 
                 if (!force_list.empty() && akel_depth<5)
                     evaluation = minimax_pro2_based(depth, false, current_board, alpha, beta, akel_depth+1, false, true).first;
@@ -3019,8 +3079,10 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
             if(exit)
                 break;
         }
-        board_layout.setTurn(0);
-        transpositionTable2[board_layout] = std::make_pair(depth, maxEval);
+
+        // board_layout.setTurn(1);
+        // TranspositionTableValue value(maxEval, depth, best_move);
+        // transpositionTable2[board_layout] = value;
         return make_pair(maxEval, best_move);
     }
     else
@@ -3137,7 +3199,7 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
             for(char* move : valid_moves)
             {
                 BitmaskBoard board_layout2 = board_layout;
-                auto current_board = move_piece(piece, move, board_layout2, parent_list, color2);
+                BitmaskBoard current_board = move_piece(piece, move, board_layout2, parent_list, color2);
                 if (!force_list.empty() && akel_depth<5)
                     evaluation = minimax_pro2_based(depth, true, current_board, alpha, beta, akel_depth+1, true, true).first;
                 else
@@ -3164,8 +3226,9 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
             if(exit)
                 break;
         }
-        board_layout.setTurn(1);
-        transpositionTable2[board_layout] = std::make_pair(depth, minEval);
+        // board_layout.setTurn(0);
+        // TranspositionTableValue value(minEval, depth, best_move);
+        // transpositionTable2[board_layout] = value;
         return make_pair(minEval, best_move);
     }
 }
@@ -3221,6 +3284,8 @@ int main()
     for(int i=0; i<8; i++)
         for(int j=0; j<8; j++)
             curr_board.set(i, j, test2[i][j]);
+
+
     //fetching TT from  file
     // loadTranspositionTableFromFile(transpositionTable, "transposition_table.txt");
 

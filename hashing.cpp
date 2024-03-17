@@ -2,13 +2,39 @@
 
 #include "BitmaskBoard.hpp"
 
+class TranspositionTableValue {
+    int eval;
+    int depth;
+    BitmaskBoard bestMove;
+
+public:
+     // Default constructor
+    TranspositionTableValue() : eval(0), depth(0), bestMove() {}
+
+    // Constructor with initializer list
+    TranspositionTableValue(int e, int d, const BitmaskBoard& b) : eval(e), depth(d), bestMove(b) {}
+
+    //copy constructor
+    TranspositionTableValue(const TranspositionTableValue& other) : eval(other.eval), depth(other.depth), bestMove(other.bestMove) {}
+
+    // Getters
+    int getEval() const { return eval; }
+    int getDepth() const { return depth; }
+    const BitmaskBoard& getBestMove() const { return bestMove; }
+
+    // If setters are needed
+    void setEval(int e) { eval = e; }
+    void setDepth(int d) { depth = d; }
+    void setBestMove(const BitmaskBoard& b) { bestMove = b; }
+};
+
 //hashing stuff
 std::mt19937_64 rng(std::random_device{ }());
 std::uniform_int_distribution<uint64_t> distribution(0, std::numeric_limits<uint64_t>::max());
 
 std::unordered_map<uint64_t, std::pair<uint64_t, int>> transpositionTable;
 
-std::unordered_map<BitmaskBoard, std::pair<int, int>> transpositionTable2;
+std::unordered_map<BitmaskBoard, TranspositionTableValue> transpositionTable2;
 
 void initializeLookupTable() {
     for (int piece = 0; piece < NUM_PIECES; ++piece) {

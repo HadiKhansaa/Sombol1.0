@@ -648,7 +648,7 @@ class Board:
     testSurf = pygame.image.load("images/positionBoard.jpeg").convert()
     testSurf = pygame.transform.scale(testSurf, (800, 800))
 
-    layout = [
+    layout3 = [
                 [0, 0, 0, 0, 0, 0, 0, 0],
                 [1, 1, 1, 1, 1, 1, 1, 1],
                 [0, 0, 0, 0, 1, 1, 1, 1],
@@ -660,7 +660,7 @@ class Board:
                ]
                                             
               
-    layout3 = [
+    layout = [
                 [0, 0, 0, 0, 0, 0, 0, 0],
                 [1, 1, 1, 1, 1, 1, 1, 1],
                 [1, 1, 1, 1, 1, 1, 1, 1],

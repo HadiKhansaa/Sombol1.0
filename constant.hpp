@@ -22,7 +22,7 @@ const int NUM_SQUARES = 64;  // Number of squares on the board
 const int NUM_TURNS = 2;  // Number of possible turns
 
 // AI dept
-const int DEPTH = 8;
+const int DEPTH = 7;
 
 uint64_t lookupTable[NUM_PIECES][NUM_SQUARES][NUM_TURNS];
 

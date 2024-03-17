@@ -6,31 +6,33 @@ using namespace std;
 
 class BitmaskBoard {
 private:
-    uint64_t whitePawns, blackPawns, whiteKings, blackKings, emptySquares;
+    uint64_t whitePawns, blackPawns, whiteKings, blackKings;
     bool isWhiteTurn;
 
     // uint64_t ONE = 1ULL, ZERO = 0ULL, INITIAL_POSITION = 0xffff0000ffff00ULL;
 
-    void clearPosition(int i, int j) {
-        uint64_t mask = ~(1ULL << (i * 8 + j));
-        whitePawns &= mask;
-        blackPawns &= mask;
-        whiteKings &= mask;
-        blackKings &= mask;
-        emptySquares |= (~mask);
-    }
-
 public:
     // Default constructor initializes all masks to 0
-    BitmaskBoard() : whitePawns(0), blackPawns(0), whiteKings(0), blackKings(0), emptySquares(0xFF0000FFFF0000FFULL) {}
+    BitmaskBoard() : whitePawns(0x0ULL), blackPawns(0x0ULL), whiteKings(0x0ULL), blackKings(0x0ULL), isWhiteTurn(true) {}
 
     // Copy constructor
     BitmaskBoard(const BitmaskBoard& other)
         : whitePawns(other.whitePawns), blackPawns(other.blackPawns),
           whiteKings(other.whiteKings), blackKings(other.blackKings),
-          emptySquares(other.emptySquares), isWhiteTurn(other.isWhiteTurn) {}
+          isWhiteTurn(other.isWhiteTurn) {}
+    
+    // copy assignmet operator
+    BitmaskBoard& operator=(const BitmaskBoard& other) {
+        whitePawns = other.whitePawns;
+        blackPawns = other.blackPawns;
+        whiteKings = other.whiteKings;
+        blackKings = other.blackKings;
+        isWhiteTurn = other.isWhiteTurn;
+        return *this;
+    }
 
     char get(int i, int j) const {
+
         uint64_t pos = 1ULL << (i * 8 + j);
         if (whitePawns & pos) return 2;
         if (blackPawns & pos) return 1;
@@ -39,10 +41,17 @@ public:
         return 0; // Empty
     }
 
+    void clearPosition(int i, int j) {
+        uint64_t pos = ~(1ULL << (i * 8 + j));
+        whitePawns &= pos;
+        blackPawns &= pos;
+        whiteKings &= pos;
+        blackKings &= pos;
+    }
+
     void set(int i, int j, char piece) {
         clearPosition(i, j); // Clear the piece at (i, j) if any
         uint64_t pos = 1ULL << (i * 8 + j);
-        // emptySquares |= pos;
         switch (piece) {
             case 1: blackPawns |= pos; break;
             case 2: whitePawns |= pos; break;
@@ -50,50 +59,38 @@ public:
             case 4: whiteKings |= pos; break;
             default: break; // Do nothing for invalid piece
         }
-        emptySquares &= ~(pos);
     }
 
     void set_whitePawn(int i, int j) {
-        clearPosition(i, j);
+        // clearPosition(i, j);
         uint64_t pos = 1ULL << (i * 8 + j);
         whitePawns |= pos;
-        emptySquares &= ~(pos);
     }
 
     void set_blackPawn(int i, int j) {
-        clearPosition(i, j);
+        // clearPosition(i, j);
         uint64_t pos = 1ULL << (i * 8 + j);
         blackPawns |= pos;
-        emptySquares &= ~(pos);
     }
 
     void set_whiteKing(int i, int j) {
-        clearPosition(i, j);
+        // clearPosition(i, j);
 
         uint64_t mask = ~(1ULL << (i * 8 + j));
         whitePawns &= mask;
 
         uint64_t pos = 1ULL << (i * 8 + j);
         whiteKings |= pos;
-        emptySquares &= ~(pos);
     }
 
     void set_blackKing(int i, int j) {
-        clearPosition(i, j);
+        // clearPosition(i, j);
 
         uint64_t mask = ~(1ULL << (i * 8 + j));
         blackPawns &= mask;
 
         uint64_t pos = 1ULL << (i * 8 + j);
         blackKings |= pos;
-        emptySquares &= ~(pos);
-    }
-
-    bool check_empty_index(int i, int j) {
-        uint64_t pos = 1ULL << (i * 8 + j);
-        if(emptySquares & pos)
-            return true;
-        return false;
     }
 
     bool check_index_has_whitePawn(int i, int j) {
@@ -250,6 +247,7 @@ public:
 
         return hashValue;
     }
+
 };
 
 namespace std {
