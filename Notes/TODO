@@ -8,7 +8,10 @@ Large:
 
 Medium:
 1. Fix leaks
+2. consider teskeer l kash early in the moves.
 2. undo
+3. improve check_for_force performance by creating a get_max_akel_length function
+4. minimax can only return eval, and at the end get the best move based on the evals of level 1
 
 Small:
-1. There is a bug in sombol logic, sometimes its playing fumb moves, fix it.
+1. ✔ There is a bug in sombol logic, sometimes its playing fumb moves, fix it.

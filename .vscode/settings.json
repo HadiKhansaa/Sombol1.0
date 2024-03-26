@@ -49,7 +49,15 @@
         "fstream": "cpp",
         "set": "cpp",
         "ctime": "cpp",
-        "sstream": "cpp"
+        "sstream": "cpp",
+        "unordered_set": "cpp",
+        "chrono": "cpp",
+        "condition_variable": "cpp",
+        "ratio": "cpp",
+        "mutex": "cpp",
+        "semaphore": "cpp",
+        "stop_token": "cpp",
+        "thread": "cpp"
     },
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter"

@@ -1,9 +1,44 @@
 #include "hashing.cpp"
 
+//headers
+// BitmaskBoard move_piece(char* piece, char* move, BitmaskBoard& board_layout, std::vector<std::vector<char*>>& parent_list, char color);
+// std::pair<std::vector<char*>, bool> check_for_possible_capture(BitmaskBoard& board_layout, char turn);
+bool check_if_piece_can_capture(char row, char col, BitmaskBoard& board_layout, char turn);
+std::pair<int, BitmaskBoard> search(
+    char depth, bool max_player, BitmaskBoard& board_layout,
+    int alpha, int beta, char akel_player, char akel_depth, bool akling,
+     std::unordered_map<BitmaskBoard, TranspositionTableValue>& transpositionTable);
 //counters
 int movesSeen = 0;
 int counter = 0;
 int cacheHits = 0;
+
+// bool sakker_kesh(BitmaskBoard board_layout, char row, char col, char* v_move, char turn) {
+//     char oppTurn;
+//     if(turn == 1)
+//         oppTurn = 2;
+//     else
+//         oppTurn = 1;
+//     if(check_for_possible_capture(board_layout, oppTurn).second) //eza fi kesh
+//     {
+//         std::vector<std::vector<char*>> emptyV;
+//         BitmaskBoard board_layout2 = move_piece(new char[2]{row, col}, v_move, board_layout, emptyV, turn);
+//         if(!check_for_possible_capture(board_layout2, oppTurn).second) // eza tsakkar l kesh
+//             return true;
+//         else
+//             return false;
+//     }
+//     return false;
+// }
+
+bool check_end_of_parent_list(std::vector<std::vector<char*>> parent_list, char* move){
+    for (auto l : parent_list)
+    {
+        if (l[l.size() - 1][0] == move[0] && l[l.size() - 1][1] == move[1])
+            return true;
+    }
+    return false;
+}
 
 // TODO: needs fixing its wrong
 bool kol(BitmaskBoard& board_layout, char row, char col, char color){
@@ -289,13 +324,13 @@ bool check_dama_has_akel(char row, char col, char color, BitmaskBoard& board_lay
     return false;
 }
 
-pair<vector<char*>, char> get_valid_moves(char row,char col, char color, char streak, BitmaskBoard& board_layout, char eat_direction)
+std::pair<std::vector<char*>, char> get_valid_moves(char row, char col, char color, char streak, BitmaskBoard& board_layout, char eat_direction)
 {
-    vector<char* > valid_moves;
+    std::vector<char* > valid_moves;
 
     if(row>7 || col>7 || row<0 || col<0)
     {
-        pair<vector<char*>, char> validMovesAndEatingPiece;
+        std::pair<std::vector<char*>, char> validMovesAndEatingPiece;
         validMovesAndEatingPiece.first = { };
         validMovesAndEatingPiece.second = 0;
         return validMovesAndEatingPiece;
@@ -903,11 +938,9 @@ pair<vector<char*>, char> get_valid_moves(char row,char col, char color, char st
             if (row-1>=0 && board_layout.get(row-1, col)==0 && streak==0)
             {
                 v_move = new char[2];
-                v_move = new char[2];
                 v_move[0] = row-1;
                 v_move[1] = col;
                 valid_moves.push_back(v_move);
-                // valid_moves.insert(valid_moves.begin(), v_move);
             }
             if (col+1<8 && board_layout.get(row, col+1)==0 && streak==0)
             {
@@ -953,11 +986,9 @@ pair<vector<char*>, char> get_valid_moves(char row,char col, char color, char st
             if (row-1>=0 && board_layout.get(row-1, col)==0 && streak==0)
             {
                 v_move = new char[2];
-                v_move = new char[2];
                 v_move[0] = row-1;
                 v_move[1] = col;
                 valid_moves.push_back(v_move);
-                // valid_moves.insert(valid_moves.begin(), v_move);
             }
             // if(valid_moves.size() > 1)
             // {
@@ -974,26 +1005,27 @@ pair<vector<char*>, char> get_valid_moves(char row,char col, char color, char st
     
     }
     
-    pair<vector<char*>, char> validMovesAndEatingPiece;
+    std::pair<std::vector<char*>, char> validMovesAndEatingPiece;
     validMovesAndEatingPiece.first = valid_moves;
     validMovesAndEatingPiece.second = eating_piece;
 
     return validMovesAndEatingPiece;
 }
 
+// pieice[row1, col1] -> move[row2, col2]
 char get_eat_direction(char row1, char col1, char row2, char col2)
 {
     char eat_direction = 0;
     if (col1==col2)
     {
-        if (row1>row2)
+        if (row2>row1)
             eat_direction = 'd';
         else
             eat_direction = 'u';
     }
     else
     {
-        if (col1>col2)
+        if (col2>col1)
             eat_direction = 'r';
         else
             eat_direction = 'l';
@@ -1001,7 +1033,117 @@ char get_eat_direction(char row1, char col1, char row2, char col2)
     return eat_direction;
 }
 
-pair<BitmaskBoard, char> eat_piece_if_possible(BitmaskBoard& board_layout, char row, char col, char r, char c, char color)
+char get_piece_to_eat(BitmaskBoard& board_layout, char row, char col, char r, char c, char color)
+{
+    char sumRowOver2;
+    char sumColOver2;
+    if (color == 1 || color == 2)
+    {
+        sumRowOver2 = (row + r)/2;
+        sumColOver2 = (col+c)/2;
+    }
+
+    if (color == 1)
+    {
+        if (board_layout.check_index_has_whitePawn(sumRowOver2, col) || board_layout.check_index_has_whiteKing(sumRowOver2, col))
+            return board_layout.get(sumRowOver2, col);
+        
+        else if (board_layout.check_index_has_whitePawn(row, sumColOver2) || board_layout.check_index_has_whiteKing(row, sumColOver2))
+            return board_layout.get(row, sumColOver2);
+    }
+    else if (color == 2)
+    {
+        if (board_layout.check_index_has_blackPawn(sumRowOver2, col) || board_layout.check_index_has_blackKing(sumRowOver2, col))
+            return board_layout.get(sumRowOver2, col);
+        else if (board_layout.check_index_has_blackPawn(row, sumColOver2) || board_layout.check_index_has_blackKing(row, sumColOver2))
+            return board_layout.get(row, sumColOver2);
+    }
+    else if (color == 3)
+    {
+        if (c==col)
+        {
+            char big, small;
+            if (r>row)
+            {
+                big = r;
+                small = row;
+            }
+            else
+            {
+                big = row;
+                small = r;
+            }
+            for(char k = small; k<big; k++)
+            {
+                if (board_layout.check_index_has_whitePawn(k, c) || board_layout.check_index_has_whiteKing(k, c))
+                    return board_layout.get(k, c);
+            }
+        }
+        else if (row ==r)
+        {
+            char small, big;
+            if (c>col)
+            {
+                big = c;
+                small = col;
+            }
+            else
+            {
+                big = col;
+                small = c;
+            }
+            for(char k=small; k<big; k++)
+            {
+                if (board_layout.check_index_has_whitePawn(r, k) || board_layout.check_index_has_whiteKing(r, k))
+                    return board_layout.get(r, k);
+            }
+        }
+    }                
+    else if (color == 4)
+    {
+        if (c==col)
+        {
+            char big, small;
+            if (r>row)
+            {
+                big = r;
+                small = row;
+            }
+            else
+            {
+                big = row;
+                small = r;
+            }
+            for(char k = small; k<big; k++)
+            {
+                if (board_layout.check_index_has_blackPawn(k, c) || board_layout.check_index_has_blackKing(k, c))
+                    return board_layout.get(k, c);
+            }
+        }
+        else if (row ==r)
+        {
+            char small, big;
+            if (c>col)
+            {
+                big = c;
+                small = col;
+            }
+            else
+            {
+                big = col;
+                small = c;
+            }
+            for(char k=small; k<big; k++)
+            {
+                if (board_layout.check_index_has_blackPawn(r, k) || board_layout.check_index_has_blackKing(r, k))
+                    return board_layout.get(r, k);
+            }
+        }
+    }
+    return 0;
+}
+
+std::pair<BitmaskBoard, char> eat_piece_if_possible(BitmaskBoard& board_layout, char row, char col, char r, char c, char color)
 {
     char eat_direction = 0;
     char sumRowOver2;
@@ -1011,7 +1153,7 @@ pair<BitmaskBoard, char> eat_piece_if_possible(BitmaskBoard& board_layout, char 
         sumRowOver2 = (row + r)/2;
         sumColOver2 = (col+c)/2;
         
-        eat_direction = get_eat_direction(r, c, row, col);
+        eat_direction = get_eat_direction(row, col, r, c);
     }
 
     if (color == 1)
@@ -1019,12 +1161,12 @@ pair<BitmaskBoard, char> eat_piece_if_possible(BitmaskBoard& board_layout, char 
         if (board_layout.check_index_has_whitePawn(sumRowOver2, col) || board_layout.check_index_has_whiteKing(sumRowOver2, col))
         {
             board_layout.clearPosition(sumRowOver2, col);
-            return make_pair(board_layout, eat_direction);
+            return std::make_pair(board_layout, eat_direction);
         }
         else if (board_layout.check_index_has_whitePawn(row, sumColOver2) || board_layout.check_index_has_whiteKing(row, sumColOver2))
         {
             board_layout.clearPosition(row, sumColOver2);
-            return make_pair(board_layout, eat_direction);
+            return std::make_pair(board_layout, eat_direction);
         }
     }
     else if (color == 2)
@@ -1032,12 +1174,12 @@ pair<BitmaskBoard, char> eat_piece_if_possible(BitmaskBoard& board_layout, char 
         if (board_layout.check_index_has_blackPawn(sumRowOver2, col) || board_layout.check_index_has_blackKing(sumRowOver2, col))
         {
             board_layout.clearPosition(sumRowOver2, col);
-            return make_pair(board_layout, eat_direction);
+            return std::make_pair(board_layout, eat_direction);
         }
         else if (board_layout.check_index_has_blackPawn(row, sumColOver2) || board_layout.check_index_has_blackKing(row, sumColOver2))
         {
             board_layout.clearPosition(row, sumColOver2);
-            return make_pair(board_layout, eat_direction);
+            return std::make_pair(board_layout, eat_direction);
         }
     }
     else if (color == 3)
@@ -1062,7 +1204,7 @@ pair<BitmaskBoard, char> eat_piece_if_possible(BitmaskBoard& board_layout, char 
                 if (board_layout.check_index_has_whitePawn(k, c) || board_layout.check_index_has_whiteKing(k, c))
                 {
                     board_layout.clearPosition(k, c);
-                    return make_pair(board_layout, eat_direction);
+                    return std::make_pair(board_layout, eat_direction);
                 }
             }
         }
@@ -1086,7 +1228,7 @@ pair<BitmaskBoard, char> eat_piece_if_possible(BitmaskBoard& board_layout, char 
                 if (board_layout.check_index_has_whitePawn(r, k) || board_layout.check_index_has_whiteKing(r, k))
                 {
                     board_layout.clearPosition(r, k);
-                    return make_pair(board_layout, eat_direction);
+                    return std::make_pair(board_layout, eat_direction);
                 }
             }
         }
@@ -1113,7 +1255,7 @@ pair<BitmaskBoard, char> eat_piece_if_possible(BitmaskBoard& board_layout, char 
                 if (board_layout.check_index_has_blackPawn(k, c) || board_layout.check_index_has_blackKing(k, c))
                 {
                     board_layout.clearPosition(k, c);
-                    return make_pair(board_layout, eat_direction);
+                    return std::make_pair(board_layout, eat_direction);
                 }
             }
         }
@@ -1137,15 +1279,15 @@ pair<BitmaskBoard, char> eat_piece_if_possible(BitmaskBoard& board_layout, char 
                 if (board_layout.check_index_has_blackPawn(r, k) || board_layout.check_index_has_blackKing(r, k))
                 {
                     board_layout.clearPosition(r, k);
-                    return make_pair(board_layout, eat_direction);
+                    return std::make_pair(board_layout, eat_direction);
                 }
             }
         }
     }
-    return make_pair(board_layout, eat_direction);
+    return std::make_pair(board_layout, eat_direction);
 }
 
-bool equals(vector<char*>& a, vector<char*>& b)
+bool equals(std::vector<char*>& a, std::vector<char*>& b)
 {
     for(char i=0; i<(char)a.size(); i++)
         if(a[i][0]!=b[i][0] || a[i][1]!=b[i][1])
@@ -1153,25 +1295,165 @@ bool equals(vector<char*>& a, vector<char*>& b)
     return true;
 }
 
-bool doesnt_have(vector <vector<char*>>& a, vector<char*>& b){
+bool doesnt_have(std::vector <std::vector<char*>>& a, std::vector<char*>& b){
     for(auto element:a)
         if(equals(element, b))
             return false;
     return true;
 }
 
-std::vector<std::vector<char*>> eat_max2(char row, char col, BitmaskBoard& board_layout,  vector<vector<char*>>& parent_list, char color, char eat_direction) {
+std::vector<char*> better_parent_list(std::vector<char*>& a, std::vector<char*>& b, BitmaskBoard &board_layout, char color){
+    int count1 = 0, count2 = 0;
+    for(int i=0; i<a.size() - 1; i++){
+        if(color == 2 || color == 4)
+        {
+            if(get_piece_to_eat(board_layout, a[i][0], a[i][1], a[i+1][0], a[i+1][1], color) == 3)
+                count1+=1;
+            if(get_piece_to_eat(board_layout, b[i][0], b[i][1], b[i+1][0], b[i+1][1], color) == 3)
+                count2+=1;
+        }
+        else
+        {
+            if(get_piece_to_eat(board_layout, a[i][0], a[i][1], a[i+1][0], a[i+1][1], color) == 4)
+                count1+=1;
+            if(get_piece_to_eat(board_layout, b[i][0], b[i][1], b[i+1][0], b[i+1][1], color) == 4)
+                count2+=1;
+        }
+    }
+    
+    if(count1>=count2)
+        return a;
+    return b;
+}
+
+std::vector<std::vector<char*>> deepcopy_parent_list(std::vector<std::vector<char*>>& parent_list){
+    std::vector<std::vector<char*>> new_parent_list;
+    for(auto element:parent_list){
+        std::vector<char*> new_element;
+        for(auto move:element){
+            char* new_move = new char[2];
+            new_move[0] = move[0];
+            new_move[1] = move[1];
+            new_element.push_back(new_move);
+        }
+        new_parent_list.push_back(new_element);
+    }
+    return new_parent_list;
+}
+
+std::vector<std::vector<char*>> eat_max2(char row, char col, BitmaskBoard& board_layout,  std::vector<std::vector<char*>> parent_list, char color, char eat_direction) {
+    if(color == 1 || color == 2)
+        eat_direction = 0; // no need for eat direction for normal pieces
+    auto [valid_moves, eating_piece] = get_valid_moves(row, col, color, 0, board_layout, eat_direction);
+    
+    bool dama_nom = (eating_piece != 0);
+
+    if(dama_nom) 
+    {
+        std::vector<std::vector<char*>> updated_parent_list;
+        // create a new list where only the moves that have a next akel
+        std::vector<char*> updated_valid_moves;
+        for(auto &move : valid_moves)
+        {
+            if(color == 3 || color == 4) //dama
+            {
+                eat_direction = get_eat_direction(row, col, move[0], move[1]);
+                dama_nom = check_dama_has_akel(move[0], move[1], color, board_layout, eat_direction);
+            }
+            else if (color == 1 || color == 2){
+                char turn = (color == 1 || color == 3) ? 1 : 2;
+                dama_nom = check_if_piece_can_capture(move[0], move[1], board_layout, turn);
+            }
+            if(dama_nom)
+            {
+                updated_valid_moves.push_back(move);
+                // update the parent list
+                for (auto &list : parent_list) {
+                    if (row == list.back()[0] && col == list.back()[1]) {
+                        std::vector<char*> updated_list(list);
+                        updated_list.push_back(move);
+                        // if(doesnt_have(updated_parent_list, updated_list))
+                            // updated_parent_list.push_back(updated_list);
+                        updated_parent_list.push_back(updated_list);
+                    }
+                }
+            }
+        }
+
+        if(updated_parent_list.empty())
+        {
+            for(auto &move : valid_moves)
+            {
+                // update the parent list
+                for (auto &list : parent_list) {
+                    if ((row == list.back()[0]) && (col == list.back()[1])) {
+                        std::vector<char*> updated_list(list);
+                        updated_list.push_back(move);
+                        // if(doesnt_have(updated_parent_list, updated_list))
+                            // updated_parent_list.push_back(updated_list);
+                        updated_parent_list.push_back(updated_list);
+                    }
+                }
+            }
+            if(updated_parent_list.empty())
+                std::cout<<"Error in eat_max2"<<std::endl;
+
+            if(updated_parent_list.empty())
+                return parent_list;
+            
+            return updated_parent_list;
+        }
+
+        // recursively run eat_max2 with new parent list and new board for each move
+        std::vector<std::vector<char*>> maxp;
+        for (auto &move : updated_valid_moves) {
+            BitmaskBoard board_layout2 = board_layout;
+
+            // remove the piece
+            eat_direction = eat_piece_if_possible(board_layout2, row, col, move[0], move[1], color).second;
+            board_layout2.clearPosition(row, col); // added
+            board_layout2.set(move[0], move[1], color);
+
+
+            if(color == 1 || color == 2)
+                eat_direction = 0; // no need for eat direction for normal pieces
+            
+            std::vector<std::vector<char*>> p2 = eat_max2(move[0], move[1], board_layout2, updated_parent_list, color, eat_direction);
+            
+            if (maxp.empty())
+                maxp = p2;
+            else {
+                if (!p2.empty() && p2[0].size() > maxp[0].size()) {
+                    maxp = p2;
+                } else if (!p2.empty() && (p2[0].size() == maxp[0].size())) { 
+                    for (auto li : p2) 
+                        if(doesnt_have(maxp, li))
+                            maxp.push_back(li);
+                }
+            }
+        }
+        if(maxp.empty())
+            std::cout<<"Error in eat_max2"<<std::endl;
+        return maxp; // return the maximum parent list
+    }
+    else
+    {   
+        // if(parent_list.empty())
+        //     std::cout<<"Error in eat_max2"<<std::endl;
+        return parent_list; // the current list is the correct final one, return it
+    }
+
+    std::cout<<"Error in eat_max2"<<std::endl;
+    return {};
+}
+
+std::vector<std::vector<char*>> eat_max3(char row, char col, BitmaskBoard& board_layout, std::vector<std::vector<char*>>& parent_list, char color, char eat_direction) {
     // Call get_valid_moves function
     auto [valid_moves, eating_piece] = get_valid_moves(row, col, color, 0, board_layout, eat_direction);
-
     bool dama_nom = (eating_piece == 'd');
     
-    // impossible
-    // if(!dama_nom)
-    //     return parent_list;
-
+    std::vector<char*> new_list;
     if (dama_nom) {
-        std::vector<char*> new_list;
         std::vector<std::vector<char*>> big_dama_list;
         big_dama_list.clear();
         new_list.clear();
@@ -1192,16 +1474,15 @@ std::vector<std::vector<char*>> eat_max2(char row, char col, BitmaskBoard& board
                 }
             }
             // Call get_valid_moves function
-            // auto  eating_piece = get_valid_moves(move[0], move[1], color, 0, {}, board_layout, eat_direction).second;
+            // auto  eating_piece = get_valid_moves(move[0], move[1], color, 0, board_layout, eat_direction).second;
 
             // dama_nom = (eating_piece == 'd');
             dama_nom = check_dama_has_akel(move[0], move[1], color, board_layout, eat_direction);
 
             if (dama_nom) {
-                char* parent = new char[2];  parent[0] = row; parent[1] = col;
                 new_list.push_back(move);
                 for (auto value : parent_list) {
-                    if (parent[0] == value.back()[0] && parent[1] == value.back()[1]) {
+                    if (row == value.back()[0] && col == value.back()[1]) {
                         std::vector<char*> big_dama = value;
                         big_dama.push_back(move);
                         big_dama_list.push_back(big_dama);
@@ -1211,17 +1492,15 @@ std::vector<std::vector<char*>> eat_max2(char row, char col, BitmaskBoard& board
         }
         if (!big_dama_list.empty()) {
             parent_list = big_dama_list;
-        } 
-        if (new_list.empty()) {
+            // big_dama_list.clear();
+        }
+        if (new_list.empty()) {   
             std::vector<std::vector<char*>> aux_list2;
             aux_list2.clear();
             char counter = 0;
-            for (vector<char*> value : parent_list) {
+            for (std::vector<char*> value : parent_list) {
                 char* last = value.back();
                 char* pre_last = value[char(value.size())-2];
-
-                // char sizeLast = char(sizeof(last)/sizeof(last[0]));
-                // char sizePreLast = sizeof(pre_last)/sizeof(pre_last[0]);
 
                 if (last[1] == pre_last[1]) {
                     if (last[0] > pre_last[0]) {
@@ -1236,6 +1515,7 @@ std::vector<std::vector<char*>> eat_max2(char row, char col, BitmaskBoard& board
                         eat_direction = 'l';
                     }
                 }
+
                 // Call get_valid_moves function
                 auto [valid_moves2, eating_piece] = get_valid_moves(last[0], last[1], color, 0, board_layout, eat_direction);
 
@@ -1248,44 +1528,43 @@ std::vector<std::vector<char*>> eat_max2(char row, char col, BitmaskBoard& board
                         aux_list2.push_back(aux_list3);
                     }
                 }
-            
             }
             // if(!aux_list2.empty())
             //     return aux_list2;
             parent_list = aux_list2;
             return parent_list;
-            
+
         } else {
+
+            //else
             valid_moves = new_list;
             std::vector<std::vector<char*>> maxp;
             maxp.clear();
             for (auto move : valid_moves) {
                 BitmaskBoard board_layout2 = board_layout;
                 auto [new_board_layout, eat_direction] = eat_piece_if_possible(board_layout2, row, col, move[0], move[1], color);
-                auto p2 = eat_max2(move[0], move[1], new_board_layout, parent_list, color, eat_direction);
+                auto p2 = eat_max3(move[0], move[1], new_board_layout, parent_list, color, eat_direction);
                 
                 if (maxp.empty()) {
                     maxp = p2;
                 } else {
                     if (!p2.empty() && p2[0].size() > maxp[0].size()) {
                         maxp = p2;
-                    } else if (!p2.empty() && p2[0].size() == maxp[0].size()) {
-                        for (auto li : p2) {
-                            if (doesnt_have(maxp, li)) {
+                    } else if (!p2.empty() && (p2[0].size() == maxp[0].size())) { 
+                        for (auto li : p2) 
+                            if (doesnt_have(maxp, li)) 
                                 maxp.push_back(li);
-                            }
-                        }
                     }
                 }
             }
             return maxp;
         }
     } else {
-        return {};  // Return an empty vector
+        return {};  // Return an empty std::vector
     }
 }
 
-std::vector<std::vector<char*>> eat_max2_not_dama(char row, char col, BitmaskBoard& board_layout,  vector<vector<char*>>& parent_list, char color, char eat_direction) {
+std::vector<std::vector<char*>> eat_max2_not_dama(char row, char col, BitmaskBoard& board_layout,  std::vector<std::vector<char*>>& parent_list, char color, char eat_direction) {
     // Call get_valid_moves function
     auto [valid_moves, eating_piece] = get_valid_moves(row, col, color, 0, board_layout, eat_direction);
     bool dama_nom = (eating_piece != 0);
@@ -1333,7 +1612,7 @@ std::vector<std::vector<char*>> eat_max2_not_dama(char row, char col, BitmaskBoa
             std::vector<std::vector<char*>> aux_list2;
             aux_list2.clear();
             char counter = 0;
-            for (vector<char*> value : parent_list) {
+            for (std::vector<char*> value : parent_list) {
                 char* last = value.back();
                 char* pre_last = value[char(value.size())-2];
 
@@ -1365,10 +1644,9 @@ std::vector<std::vector<char*>> eat_max2_not_dama(char row, char col, BitmaskBoa
                         aux_list2.push_back(aux_list3);
                     }
                 }
-                else
-                    return parent_list;
             }
-            parent_list = aux_list2;
+            if(!aux_list2.empty())
+                parent_list = aux_list2;
             return parent_list;
             
         } else {
@@ -1381,11 +1659,17 @@ std::vector<std::vector<char*>> eat_max2_not_dama(char row, char col, BitmaskBoa
                 auto p2 = eat_max2_not_dama(move[0], move[1], new_board_layout, parent_list, color, eat_direction);
                 if(maxp.empty() || p2[0].size() > maxp[0].size())
                     maxp = p2;
+                else if (maxp[0].size() == p2[0].size()) // new
+                {
+                    for(auto li:p2)
+                        if(doesnt_have(maxp, li))
+                            maxp.push_back(li);
+                }
             }
             return maxp;
         }
     } else {
-        return {};  // Return an empty vector
+        return {};  // Return an empty std::vector
     }
 }
 
@@ -1454,9 +1738,9 @@ bool passage_is_clear(BitmaskBoard& board_layout, char row, char col, char turn)
 }
 
 // bitwise optimized: tested
-vector<char*> get_all_pieces(BitmaskBoard& board_layout, char color)
+std::vector<char*> get_all_pieces(BitmaskBoard& board_layout, char color)
 {
-    vector<char*> pieces = vector<char*>();
+    std::vector<char*> pieces = std::vector<char*>();
     char i, j;
     if(color == 1)
     {
@@ -1497,9 +1781,9 @@ vector<char*> get_all_pieces(BitmaskBoard& board_layout, char color)
     return pieces;
 }
 
-pair<vector<char*>, bool > check_for_possible_capture(BitmaskBoard& board_layout, char turn)
+std::pair<std::vector<char*>, bool> check_for_possible_capture(BitmaskBoard& board_layout, char turn)
 {
-    vector<char*> pieces = get_all_pieces(board_layout, turn);
+    std::vector<char*> pieces = get_all_pieces(board_layout, turn);
     for(auto piece:pieces){
         char row = piece[0];
         char col = piece[1];
@@ -1507,63 +1791,66 @@ pair<vector<char*>, bool > check_for_possible_capture(BitmaskBoard& board_layout
         {
             char eating_piece = get_valid_moves(row, col, board_layout.get(row, col), 0, board_layout, 0).second;
             if(eating_piece!=0)
-                return make_pair(pieces, true);
+                return std::make_pair(pieces, true);
         }
         else if(turn == 2){
             if(col-2>=0 && board_layout.get(row, col-2)==0 && (board_layout.check_index_has_blackPawn(row, col-1) || board_layout.check_index_has_blackKing(row, col-1)))
-                return make_pair(pieces, true);
+                return std::make_pair(pieces, true);
             if(col+2<8 && board_layout.get(row, col+2)==0 && (board_layout.check_index_has_blackPawn(row, col+1) || board_layout.check_index_has_blackKing(row, col+1)))
-                return make_pair(pieces, true);
+                return std::make_pair(pieces, true);
             if(row-2>=0 && board_layout.get(row-2, col)==0 && (board_layout.check_index_has_blackPawn(row-1, col) || board_layout.check_index_has_blackKing(row-1, col)))
-                return make_pair(pieces, true);
+                return std::make_pair(pieces, true);
         }
         else{
             if(col-2>=0 && board_layout.get(row, col-2)==0 && (board_layout.check_index_has_whitePawn(row, col-1) || board_layout.check_index_has_whiteKing(row, col-1)))
-                return make_pair(pieces, true);
+                return std::make_pair(pieces, true);
             if(col+2<8 && board_layout.get(row, col+2)==0 && (board_layout.check_index_has_whitePawn(row, col+1) || board_layout.check_index_has_whiteKing(row, col+1)))
-                return make_pair(pieces, true);
+                return std::make_pair(pieces, true);
             if(row+2<8 && board_layout.get(row+2, col)==0 && (board_layout.check_index_has_whitePawn(row+1, col) || board_layout.check_index_has_whiteKing(row+1, col)))
-                return make_pair(pieces, true);
+                return std::make_pair(pieces, true);
         }
     }
-    return make_pair(pieces, false);
+    return std::make_pair(pieces, false);
 }
 
 bool check_if_piece_can_capture(char row, char col, BitmaskBoard& board_layout, char turn){
+
     if((board_layout.check_index_has_blackKing(row, col) && turn==1) || (board_layout.check_index_has_whiteKing(row, col) && turn == 2))
-        {
-            char eating_piece = get_valid_moves(row, col, board_layout.get(row, col), 0, board_layout, 0).second;
-            if(eating_piece!=0)
-                return true;
-        }
-        else if(turn == 2){
-            if(col-2>=0 && board_layout.get(row, col-2)==0 && (board_layout.check_index_has_blackPawn(row, col-1) || board_layout.check_index_has_blackKing(row, col-1)))
-                return true;
-            if(col+2<8 && board_layout.get(row, col+2)==0 && (board_layout.check_index_has_blackPawn(row, col+1) || board_layout.check_index_has_blackKing(row, col+1)))
-                return true;
-            if(row-2>=0 && board_layout.get(row-2, col)==0 && (board_layout.check_index_has_blackPawn(row-1, col) || board_layout.check_index_has_blackKing(row-1, col)))
-                return true;
-        }
-        else{
-            if(col-2>=0 && board_layout.get(row, col-2)==0 && (board_layout.check_index_has_whitePawn(row, col-1) || board_layout.check_index_has_whiteKing(row, col-1)))
-                return true;
-            if(col+2<8 && board_layout.get(row, col+2)==0 && (board_layout.check_index_has_whitePawn(row, col+1) || board_layout.check_index_has_whiteKing(row, col+1)))
-                return true;
-            if(row+2<8 && board_layout.get(row+2, col)==0 && (board_layout.check_index_has_whitePawn(row+1, col) || board_layout.check_index_has_whiteKing(row+1, col)))
-                return true;
-        }
+    {
+        char eating_piece = get_valid_moves(row, col, board_layout.get(row, col), 0, board_layout, 0).second;
+        if(eating_piece!=0)
+            return true;
+        return false;
+    }
+    else if(turn == 2){
+        if(col-2>=0 && board_layout.get(row, col-2)==0 && (board_layout.check_index_has_blackPawn(row, col-1) || board_layout.check_index_has_blackKing(row, col-1)))
+            return true;
+        if(col+2<8 && board_layout.get(row, col+2)==0 && (board_layout.check_index_has_blackPawn(row, col+1) || board_layout.check_index_has_blackKing(row, col+1)))
+            return true;
+        if(row-2>=0 && board_layout.get(row-2, col)==0 && (board_layout.check_index_has_blackPawn(row-1, col) || board_layout.check_index_has_blackKing(row-1, col)))
+            return true;
+    }
+    else{
+        if(col-2>=0 && board_layout.get(row, col-2)==0 && (board_layout.check_index_has_whitePawn(row, col-1) || board_layout.check_index_has_whiteKing(row, col-1)))
+            return true;
+        if(col+2<8 && board_layout.get(row, col+2)==0 && (board_layout.check_index_has_whitePawn(row, col+1) || board_layout.check_index_has_whiteKing(row, col+1)))
+            return true;
+        if(row+2<8 && board_layout.get(row+2, col)==0 && (board_layout.check_index_has_whitePawn(row+1, col) || board_layout.check_index_has_whiteKing(row+1, col)))
+            return true;
+    }
     return false;
 }
 
-vector<char*> check_for_force(BitmaskBoard& board_layout, char turn, vector<char*> *pieces = { })
+std::vector<char*> check_for_force(BitmaskBoard& board_layout, char turn, std::vector<char*> *pieces = { })
 {
     auto [pieces2, check] = check_for_possible_capture(board_layout, turn);
     *pieces = pieces2;
     if(check == false)
         return {};
     bool aktar_flag = false;
-    vector<char*> aktar_list;
-    vector<char*> force_list;
+    std::vector<char*> aktar_list;
+    std::unordered_set<char*> aktar_set;
+    std::vector<char*> force_list;
     char maxLength = 3, listSize = 0;
 
     for(char* piece : pieces2)
@@ -1575,65 +1862,90 @@ vector<char*> check_for_force(BitmaskBoard& board_layout, char turn, vector<char
         if(((color==2 || color==4) && turn==2) || ((color==1 || color==3) && turn==1))
         {
             bool fff = false;
-            vector<vector<char*>> parent_list2;
+            std::vector<std::vector<char*>> parent_list2;
             
             //get_valid_moves stuff
-            pair<vector<char*>, char> validMovesAndEatingPiece;
+            std::pair<std::vector<char*>, char> validMovesAndEatingPiece;
             validMovesAndEatingPiece  = get_valid_moves(row2, col2, color, 0, board_layout, 0);
             
             char eating_piece = validMovesAndEatingPiece.second;
-            bool dama_nom = eating_piece == 'd';
+            bool dama_nom = (eating_piece == 'd');
             fff = eating_piece!=0;
 
             if(fff)
             {
-                vector<char*> valid_moves = validMovesAndEatingPiece.first;
-                //vector<char*> parent_list = eat_max2_not_dama(row2, col2, board_layout, parent_list2, color, 0);
-                parent_list2 = vector<vector<char*>>();
-                for(char* move : valid_moves)
-                {
-                    //parent_list2.append([(row2, col2), move])
-                    char* temp = new char[2];
-                    vector<char*> tempValue = vector<char*>();
-                    temp[0] = row2; temp[1] = col2;
-                    tempValue.push_back(temp);
-                    tempValue.push_back(move);
-                    parent_list2.push_back(tempValue);
-                }
+                std::vector<char*> valid_moves = validMovesAndEatingPiece.first;
+                //std::vector<char*> parent_list = eat_max2_not_dama(row2, col2, board_layout, parent_list2, color, 0);
                 if(color == 1 || color == 2)
                 {
-                    vector<vector<char*>> parent_list;
-                    parent_list = eat_max2_not_dama(row2, col2, board_layout, parent_list2, color, 0);
-                    if(!parent_list.empty())
-                        listSize = parent_list[0].size();
-                    if(!parent_list.empty() && listSize>=maxLength)
-                    {
-                        if(listSize>maxLength)
-                            aktar_list.clear();
-                        maxLength = listSize;
-                        aktar_flag = true;
-                        for(vector<char*> value : parent_list)
-                            aktar_list.push_back(value[0]);
-                        
-                    }
-                }
-                else if (color == 3 || color == 4)
-                {
-                    vector<vector<char*>> parent_list;
-                    // cout<<"parent_list2 size: "<<valid_moves.size()<<endl;
-                    // for(auto value : parent_list2)
-                        // cout<<value[0]<<value[1];
+                    parent_list2 = std::vector<std::vector<char*>>();
+                    char* temp = new char[2];
+                    std::vector<char*> tempValue;
+                    temp[0] = row2; temp[1] = col2;
+                    tempValue.push_back(temp);
+                    parent_list2.push_back(tempValue);
+                    // for(char* move : valid_moves)
+                    // {
+                    //     //parent_list2.append([(row2, col2), move])
+                    //     char* temp = new char[2];
+                    //     std::vector<char*> tempValue = std::vector<char*>();
+                    //     temp[0] = row2; temp[1] = col2;
+                    //     tempValue.push_back(temp);
+                    //     tempValue.push_back(move);
+                    //     parent_list2.push_back(tempValue);
+                    // }
+
+                    std::vector<std::vector<char*>> parent_list;
                     parent_list = eat_max2(row2, col2, board_layout, parent_list2, color, 0);
                     if(!parent_list.empty())
                         listSize = parent_list[0].size();
                     if(!parent_list.empty() && listSize>=maxLength)
                     {
-                        if(listSize>maxLength)
-                            aktar_list.clear();
+                        if(listSize>maxLength){
+                            aktar_set.clear();
+                            // force_list.clear();
+                        }
                         maxLength = listSize;
                         aktar_flag = true;
-                        for(vector<char*> value : parent_list)
-                            aktar_list.push_back(value[0]);
+                        for(std::vector<char*> value : parent_list)
+                            aktar_set.insert(value[0]);
+                        
+                    }
+                }
+                else if (color == 3 || color == 4)
+                {
+                    parent_list2 = std::vector<std::vector<char*>>();
+                    std::vector<char*> tempValue = std::vector<char*>();
+                    char* temp = new char[2];
+                    temp[0] = row2; temp[1] = col2;
+                    tempValue.push_back(temp);
+                    parent_list2.push_back(tempValue);
+
+                    // for(char* move : valid_moves)
+                    // {
+                    //     //parent_list2.append([(row2, col2), move])
+                    //     char* temp = new char[2];
+                    //     std::vector<char*> tempValue = std::vector<char*>();
+                    //     temp[0] = row2; temp[1] = col2;
+                    //     tempValue.push_back(temp);
+                    //     tempValue.push_back(move);
+                    //     parent_list2.push_back(tempValue);
+                    // }
+
+                    std::vector<std::vector<char*>> parent_list;
+                    parent_list = eat_max2(row2, col2, board_layout, parent_list2, color, 0);
+                    if(!parent_list.empty())
+                        listSize = parent_list[0].size();
+                    if(!parent_list.empty() && listSize>=maxLength)
+                    {
+                        if(listSize>maxLength){
+                            aktar_set.clear();
+                            // force_list.clear();
+                        }
+                        maxLength = listSize;
+                        aktar_flag = true;
+                        for(std::vector<char*> value : parent_list)
+                            aktar_set.insert(value[0]);
                     }
                 }
 
@@ -1642,17 +1954,25 @@ vector<char*> check_for_force(BitmaskBoard& board_layout, char turn, vector<char
                     char* piece = new char[2];
                     piece[0] = row2; piece[1] = col2;
                     force_list.push_back(piece);
+                    // aktar_set.insert(piece);
                 }
             }
         }
     }
     if(aktar_flag)
-        force_list = aktar_list;
+    {
+        force_list.clear();
+        for(auto element : aktar_set)
+        {
+            force_list.push_back(element);
+        }
+        // force_list = aktar_list;
+    }
     return force_list;
 }
 /////////////////////////////////////////////// AI STUFF ////////////////////////////////////////////
 
-BitmaskBoard move_piece(char* piece, char* move, BitmaskBoard& board_layout, vector<vector<char*>>& parent_list, char color)
+BitmaskBoard move_piece(char* piece, char* move, BitmaskBoard& board_layout, std::vector<std::vector<char*>>& parent_list, char color)
 {
     char row = piece[0];
     char col = piece[1];
@@ -1662,23 +1982,19 @@ BitmaskBoard move_piece(char* piece, char* move, BitmaskBoard& board_layout, vec
 
     char listSize = parent_list.size();
     char index=0;
-    char value_length;
+    char value_length=0;
 
     if(!parent_list.empty())
     {
-
-        for(vector<char*> value : parent_list)
+        for(std::vector<char*> value : parent_list)
         {
             value_length = value.size();
             auto temp = value[value_length-1];
             if(temp[0]==r && temp[1]==c)
             {
                 char z=0;
-                for(z = 0; z<value_length; z++)
-                {
-                    if(z+1 >= value_length) break;
-                    board_layout = eat_piece_if_possible(board_layout, value[z][0], value[z][1], value[z+1][0], value[z+1][1], color).first;
-                }
+                for(z = 0; z<value_length - 1; z++)
+                    eat_piece_if_possible(board_layout, value[z][0], value[z][1], value[z+1][0], value[z+1][1], color).first;
                 break;
             }
             index++;
@@ -1686,15 +2002,12 @@ BitmaskBoard move_piece(char* piece, char* move, BitmaskBoard& board_layout, vec
         parent_list.erase(parent_list.begin()+index);
         if(value_length==0)  
             return board_layout;
-        
     }
     else
         board_layout = eat_piece_if_possible(board_layout, row, col, r, c, color).first;
 
     char aux;
     aux = board_layout.get(row, col);
-    // board_layout.set(row, col, board_layout.get(r, c));
-    
 
     if(aux == 1)
         board_layout.set_blackPawn(r, c);
@@ -1706,8 +2019,6 @@ BitmaskBoard move_piece(char* piece, char* move, BitmaskBoard& board_layout, vec
         board_layout.set_whiteKing(r, c);
 
     board_layout.clearPosition(row, col);
-
-    // board_layout.set(r, c, aux);
 
     //check for dama promotion
     if(r==0 && color==2)
@@ -1893,6 +2204,7 @@ int count_all_pieces(BitmaskBoard& board_layout, char turn)
 int evaluate_int(BitmaskBoard& board_layout, char turn)
 {
     movesSeen++;
+    
     return board_layout.evaluate_board();
 
     // int sum = 0, balance_black = 0, balance_red = 0, all_pieces=0, red_pieces=0, black_pieces = 0;
@@ -2084,54 +2396,14 @@ int evaluate_int(BitmaskBoard& board_layout, char turn)
     //             {
     //                 black_pieces+=1;
     //                 sum+=450;
-    //                 // if(i==0 && j==0) //corners in home for dama are good
-    //                 // {
-    //                 //     if(board_layout.check_index_has_blackPawn(1, 0) && board_layout.check_index_has_blackPawn(2, 0) && board_layout.check_index_has_blackPawn(3, 0))
-    //                 //         sum+=30;
-    //                 //     if(board_layout.check_index_has_blackPawn(1, 0) && board_layout.check_index_has_blackPawn(2, 0))
-    //                 //         sum+=20;
-    //                 // }
-    //                 // if(i==0 && j==7){
-    //                 //     if(board_layout.check_index_has_blackPawn(1, 7) && board_layout.check_index_has_blackPawn(2, 7) && board_layout.check_index_has_blackPawn(3, 7))
-    //                 //         sum+=30;
-    //                 //     if(board_layout.check_index_has_blackPawn(1, 7) && board_layout.check_index_has_blackPawn(2, 7))
-    //                 //         sum+=20;
-    //                 // }
-    //                 // if(i!=0 && i!=7 && j!=0 && j!=7) //dama is bad in center
-    //                 //     sum+=10;
     //             }
     //             else if(piece==4)
     //             {
     //                 red_pieces+=1;
     //                 sum-=450;
-    //                 // if(i==7 && j==7) //corners in home for dama are good
-    //                 // {
-    //                 //     if(board_layout.check_index_has_whitePawn(6, 7) && board_layout.check_index_has_whitePawn(5, 7) && board_layout.check_index_has_whitePawn(4, 7))
-    //                 //         sum-=10;
-    //                 //     if(board_layout.check_index_has_whitePawn(6, 7) && board_layout.check_index_has_whitePawn(5, 7))
-    //                 //         sum-=5;
-    //                 // }
-    //                 // if(i==7 && j==0){
-    //                 //     if(board_layout.check_index_has_whitePawn(6, 0) && board_layout.check_index_has_whitePawn(5, 0) && board_layout.check_index_has_whitePawn(4, 0))
-    //                 //         sum-=10;
-    //                 //     if(board_layout.check_index_has_whitePawn(6, 0) && board_layout.check_index_has_whitePawn(5, 0))
-    //                 //         sum-=5;
-    //                 // }
-    //                 // if(i!=0 && i!=7 && j!=0 && j!=7) //dama is bad in center
-    //                 //     sum-=10;
     //             }
     //         }
     //     }
-    
-    // // if(all_pieces_red + all_pieces_black <= 9){
-
-    // //     if(black_damas==2 && red_damas==1 && red_pawns<=3){
-    // //         sum = 0;
-    // //     }
-    // //     if(red_damas==2 && black_damas==1 && black_pawns<=3){
-    // //         sum = 0;
-    // //     }
-    // // }
 
     //     sum = sum - 100*abs(balance_black)/20 + 100*abs(balance_red)/20;
 
@@ -2149,15 +2421,17 @@ int evaluate_int(BitmaskBoard& board_layout, char turn)
     // return sum;
 }
 
-pair<vector<BitmaskBoard>, bool> get_all_moves(BitmaskBoard& board_layout, char color, vector<BitmaskBoard> *moves = { })
+std::pair<std::vector<BitmaskBoard>, bool> get_all_moves(BitmaskBoard& board_layout, char color)
 {
-    vector<char *> pieces;
+    std::vector<BitmaskBoard> moves;
+    // std::unordered_set<BitmaskBoard> moves_set;
+    std::vector<char *> pieces;
     counter++;
     //create force list
-    vector<char *> force_list;
-    vector<char *> valid_moves;
+    std::vector<char *> force_list;
+    std::vector<char *> valid_moves;
     bool forceListEmpty = false;
-    vector<vector<char *>> parent_list;
+    std::vector<std::vector<char *>> parent_list;
     bool dama_nom = false, fff = false;
 
     force_list = check_for_force(board_layout, color, &pieces);
@@ -2173,78 +2447,108 @@ pair<vector<BitmaskBoard>, bool> get_all_moves(BitmaskBoard& board_layout, char 
         fff = dama_nom = false;
         if(color2 == 1 || color2 == 2)
         {
-            pair<vector<char*>, char> validMovesAndEatingPiece;
+            std::pair<std::vector<char*>, char> validMovesAndEatingPiece;
             validMovesAndEatingPiece  = get_valid_moves(piece[0], piece[1], color2, 0, board_layout, 0);
             
             valid_moves = validMovesAndEatingPiece.first;
             char eating_piece = validMovesAndEatingPiece.second;
 
-            fff = eating_piece!=0;
+            fff = (eating_piece!=0);
 
             if(fff)
             {
-                vector<vector<char*>> parent_list2;
+                bool fff2 = false;
+                std::vector<std::vector<char*>> parent_list2;
+                std::vector<char*> tempValue;
+                tempValue.push_back(piece);
+                parent_list2.push_back(tempValue);
                 for(char* move : valid_moves)
                 {
-                    vector<char*> tempValue = vector<char*>();
-                    tempValue.push_back(piece);
-                    tempValue.push_back(move);
-                    parent_list2.push_back(tempValue);
+                    // std::vector<char*> tempValue = std::vector<char*>();
+                    // tempValue.push_back(piece);
+                    // tempValue.push_back(move);
+                    // parent_list2.push_back(tempValue);
+                    // auto eat_direction = get_eat_direction(piece[0], piece[1], move[0], move[1]);
+
+                    if(check_if_piece_can_capture(move[0], move[1], board_layout, color))
+                        fff2 = true;
                 }
 
-                parent_list = eat_max2_not_dama(piece[0], piece[1], board_layout, parent_list2, color2, 0);
-                vector<char*> aux_list;
-                if(!parent_list.empty())
+                if(fff2)
                 {
-                    for(vector<char*> value: parent_list)
-                        aux_list.push_back(value[char(value.size()) - 1]);
-                    valid_moves = aux_list;
+                    parent_list = eat_max2(piece[0], piece[1], board_layout, parent_list2, color2, 0);
+                    std::vector<char*> aux_list;
+                    if(!parent_list.empty())
+                    {
+                        for(std::vector<char*> value: parent_list)
+                            aux_list.push_back(value[char(value.size()) - 1]);
+                        valid_moves = aux_list;
+                    }
                 }
 
             }
         }
 
-        if (color2 ==3 || color2 == 4)
+        if (color2 == 3 || color2 == 4)
         {
-            pair<vector<char*>, char> validMovesAndEatingPiece;
+            std::pair<std::vector<char*>, char> validMovesAndEatingPiece;
             validMovesAndEatingPiece  = get_valid_moves(piece[0], piece[1], color2, 0, board_layout, 0);
             
             valid_moves = validMovesAndEatingPiece.first;
             char eating_piece = validMovesAndEatingPiece.second;
 
-            dama_nom = eating_piece=='d';
+            dama_nom = (eating_piece=='d');
 
             if(dama_nom)
             {
-                vector<vector<char*>> parent_list2;
+                bool dama_nom2 = false;
+                std::vector<std::vector<char*>> parent_list2;
+                std::vector<char*> tempList;
+                tempList.push_back(piece);
+                parent_list2.push_back(tempList);
                 for(char* move : valid_moves)
                 {
-                    vector<char*> tempValue = vector<char*>();
-                    tempValue.push_back(piece);
-                    tempValue.push_back(move);
-                    parent_list2.push_back(tempValue);
-                }
+                    // std::vector<char*> tempValue = std::vector<char*>();
+                    // tempValue.push_back(piece);
+                    // tempValue.push_back(move);
+                    // parent_list2.push_back(tempValue);
 
-                parent_list = eat_max2(piece[0], piece[1], board_layout, parent_list2, color2, 0);
-                vector<char*> aux_list;
-                if(!parent_list.empty())
-                {
-                    for(vector<char*> value: parent_list)
-                        aux_list.push_back(value[char(value.size()) - 1]);
-                    valid_moves = aux_list;
+                    auto eat_direction = get_eat_direction(piece[0], piece[1], move[0], move[1]);
+
+                    if(check_dama_has_akel(move[0], move[1], color2, board_layout, eat_direction))
+                        dama_nom2 = true;
+                    // cout<<move[0]<<" "<<move[1]<<"\n";
                 }
+                if(dama_nom2)
+                {
+                    parent_list = eat_max2(piece[0], piece[1], board_layout, parent_list2, color2, 0);
+                    std::vector<char*> aux_list;
+
+                    if(!parent_list.empty())
+                    {
+                        for(std::vector<char*> value: parent_list)
+                            aux_list.push_back(value[char(value.size()) - 1]);
+                        valid_moves = aux_list;
+                    }
+                }   
             }
         }
 
         for(char* move : valid_moves)
         {
-            // moves.push_back(move_piece(piece, move, deepcopy2(board_layout), parent_list, color2));
+            // std::cout<<int(piece[0])<<" "<<int(piece[1])<<" "<<int(move[0])<<" "<<int(move[1])<<"\n";
             BitmaskBoard board_layout2 = board_layout;
-            moves->push_back(move_piece(piece, move, board_layout2, parent_list, color2));
+            move_piece(piece, move, board_layout2, parent_list, color2);
+            // if(moves_set.find(board_layout2) == moves_set.end())
+            // {
+            //     moves_set.insert(board_layout2);
+            //     moves.push_back(board_layout2);
+            // }
+            moves.push_back(board_layout2);
         }
     }
 
-    return make_pair(*moves, forceListEmpty);
+    return std::make_pair(moves, forceListEmpty);
 }
 
 void printBoard(BitmaskBoard& board_layout)
@@ -2255,7 +2559,7 @@ void printBoard(BitmaskBoard& board_layout)
         {
             std::cout<<int(board_layout.get(i, j))<<" ";
         }
-        std::cout<<endl;
+        std::cout<<"\n";
     }
 }
 
@@ -2274,407 +2578,13 @@ bool playerWon(BitmaskBoard& board_layout){
     return true;
 }
 
-pair<int, BitmaskBoard> normal_minimax_based(char depth, char max_player, BitmaskBoard& board_layout, int alpha, int beta)
+void sort_moves(std::vector<BitmaskBoard> *moves, char turn)
 {
-    int evaluation, maxEval, minEval;
-    BitmaskBoard best_move;
-
-    uint64_t hashKey = calculateHashKey(board_layout, max_player ? 1 : 2);
-
-    if (transpositionTable.count(hashKey) > 0) {
-        std::pair<char, int> storedValues = transpositionTable[hashKey];
-        char storedDepth = storedValues.first;
-        int storedEval = storedValues.second;
-
-        if (storedDepth >= depth)
-        {
-            // cout<<"found in hash table"<<endl;
-            cacheHits++;
-            return std::make_pair(storedEval, board_layout);
-        }
-    }
-
-    if(depth<=0 || playerWon(board_layout))
-    {
-        char turn;
-        if(max_player)
-            turn = 1;
-        else
-            turn = 2;
-        return make_pair(evaluate_int(board_layout, turn), board_layout);
-    }
-
-    if(max_player)
-    {
-        // printBoard(board_layout);
-        // cout<<endl;
-        // Sleep(1000);
-
-        maxEval = INT_MIN;
-        vector <BitmaskBoard> all_moves;
-
-        ////////////////////////////////////////
-        
-        vector<char *> pieces;
-        counter++;
-        //create force list
-        vector<char *> force_list;
-        vector<char *> valid_moves;
-        bool forceListEmpty = false;
-        vector<vector<char *>> parent_list;
-        bool dama_nom = false, fff = false;
-
-        force_list = check_for_force(board_layout, 1, &pieces);
-
-        if(!force_list.empty())
-            pieces = force_list;
-        else
-            forceListEmpty = true;
-        
-        for(char* piece : pieces)
-        {
-            char color2 = board_layout.get(piece[0], piece[1]);
-            fff = dama_nom = false;
-            if(color2 == 1 || color2 == 2)
-            {
-                pair<vector<char*>, char> validMovesAndEatingPiece;
-                validMovesAndEatingPiece  = get_valid_moves(piece[0], piece[1], color2, 0, board_layout, 0);
-                
-                valid_moves = validMovesAndEatingPiece.first;
-                char eating_piece = validMovesAndEatingPiece.second;
-
-                fff = eating_piece!=0;
-
-                if(fff)
-                {
-                    vector<vector<char*>> parent_list2;
-                    for(char* move : valid_moves)
-                    {
-                        vector<char*> tempValue = vector<char*>();
-                        tempValue.push_back(piece);
-                        tempValue.push_back(move);
-                        parent_list2.push_back(tempValue);
-                    }
-
-                    parent_list = eat_max2_not_dama(piece[0], piece[1], board_layout, parent_list2, color2, 0);
-                    vector<char*> aux_list;
-                    if(!parent_list.empty())
-                    {
-                        for(vector<char*> value: parent_list)
-                            aux_list.push_back(value[char(value.size()) - 1]);
-                        valid_moves = aux_list;
-                    }
-
-                }
-            }
-
-            if (color2 ==3 || color2 == 4)
-            {
-                pair<vector<char*>, char> validMovesAndEatingPiece;
-                validMovesAndEatingPiece  = get_valid_moves(piece[0], piece[1], color2, 0, board_layout, 0);
-                
-                valid_moves = validMovesAndEatingPiece.first;
-                char eating_piece = validMovesAndEatingPiece.second;
-
-                dama_nom = eating_piece=='d';
-
-                if(dama_nom)
-                {
-                    vector<vector<char*>> parent_list2;
-                    for(char* move : valid_moves)
-                    {
-                        vector<char*> tempValue = vector<char*>();
-                        tempValue.push_back(piece);
-                        tempValue.push_back(move);
-                        parent_list2.push_back(tempValue);
-                    }
-
-                    parent_list = eat_max2(piece[0], piece[1], board_layout, parent_list2, color2, 0);
-                    vector<char*> aux_list;
-                    if(!parent_list.empty())
-                    {
-                        for(vector<char*> value: parent_list)
-                            aux_list.push_back(value[char(value.size()) - 1]);
-                        valid_moves = aux_list;
-                    }
-                }
-            }
-            bool exit = false;
-            for(char* move : valid_moves)
-            {
-                BitmaskBoard board_layout2 = board_layout;
-                auto current_board = move_piece(piece, move, board_layout2, parent_list, color2);
-                evaluation = normal_minimax_based(depth-1, false, current_board, alpha, beta).first;
-                if(evaluation>maxEval)
-                {
-                    maxEval = evaluation;
-                    best_move = current_board;
-                }
-
-                alpha = max(alpha, maxEval);
-                if(beta<=alpha)
-                {
-                    exit = true;
-                    break;
-                }
-                // moves->push_back(move_piece(piece, move, deepcopy2(board_layout), parent_list, color2));
-            }
-            if(exit)
-                break;
-        }
-        transpositionTable[hashKey] = std::make_pair(depth, maxEval);
-        return make_pair(maxEval, best_move);
-    }
-    else
-    {
-        // printBoard(board_layout);
-        // cout<<endl;
-        // Sleep(1000);
-
-        minEval = INT_MAX;
-        vector <BitmaskBoard> all_moves;
-
-        ////////////////////////////////////////
-        vector<char *> pieces;
-        counter++;
-        //create force list
-        vector<char *> force_list;
-        vector<char *> valid_moves;
-        bool forceListEmpty = false;
-        vector<vector<char *>> parent_list;
-        bool dama_nom = false, fff = false;
-
-        force_list = check_for_force(board_layout, 2, &pieces);
-
-        if(!force_list.empty())
-            pieces = force_list;
-        else
-            forceListEmpty = true;
-        
-        for(char* piece : pieces)
-        {
-            char color2 = board_layout.get(piece[0], piece[1]);
-            fff = dama_nom = false;
-            if(color2 == 1 || color2 == 2)
-            {
-                pair<vector<char*>, char> validMovesAndEatingPiece;
-                validMovesAndEatingPiece  = get_valid_moves(piece[0], piece[1], color2, 0, board_layout, 0);
-                
-                valid_moves = validMovesAndEatingPiece.first;
-                char eating_piece = validMovesAndEatingPiece.second;
-
-                fff = eating_piece!=0;
-
-                if(fff)
-                {
-                    vector<vector<char*>> parent_list2;
-                    for(char* move : valid_moves)
-                    {
-                        vector<char*> tempValue = vector<char*>();
-                        tempValue.push_back(piece);
-                        tempValue.push_back(move);
-                        parent_list2.push_back(tempValue);
-                    }
-
-                    parent_list = eat_max2_not_dama(piece[0], piece[1], board_layout, parent_list2, color2, 0);
-                    vector<char*> aux_list;
-                    if(!parent_list.empty())
-                    {
-                        for(vector<char*> value: parent_list)
-                            aux_list.push_back(value[char(value.size()) - 1]);
-                        valid_moves = aux_list;
-                    }
-
-                }
-            }
-
-            if (color2 ==3 || color2 == 4)
-            {
-                pair<vector<char*>, char> validMovesAndEatingPiece;
-                validMovesAndEatingPiece  = get_valid_moves(piece[0], piece[1], color2, 0, board_layout, 0);
-                
-                valid_moves = validMovesAndEatingPiece.first;
-                char eating_piece = validMovesAndEatingPiece.second;
-
-                dama_nom = eating_piece=='d';
-
-                if(dama_nom)
-                {
-                    vector<vector<char*>> parent_list2;
-                    for(char* move : valid_moves)
-                    {
-                        vector<char*> tempValue = vector<char*>();
-                        tempValue.push_back(piece);
-                        tempValue.push_back(move);
-                        parent_list2.push_back(tempValue);
-                    }
-
-                    parent_list = eat_max2(piece[0], piece[1], board_layout, parent_list2, color2, 0);
-                    vector<char*> aux_list;
-                    if(!parent_list.empty())
-                    {
-                        for(vector<char*> value: parent_list)
-                            aux_list.push_back(value[char(value.size()) - 1]);
-                        valid_moves = aux_list;
-                    }
-                }
-            }
-            bool exit = false;
-            for(char* move : valid_moves)
-            {
-                BitmaskBoard board_layout2 = board_layout;
-                auto current_board = move_piece(piece, move, board_layout2, parent_list, color2);
-                evaluation = normal_minimax_based(depth-1, true, current_board, alpha, beta).first;
-                if(evaluation<minEval)
-                {
-                    minEval = evaluation;
-                    best_move = current_board;
-                }
-
-                beta = min(beta, minEval);
-                if(beta<=alpha)
-                {
-                    exit = true;
-                    break;
-                }
-                // moves->push_back(move_piece(piece, move, deepcopy2(board_layout), parent_list, color2));
-            }
-            if(exit)
-                break;
-        }
-        transpositionTable[hashKey] = std::make_pair(depth, minEval);
-        return make_pair(minEval, best_move);
-    }
+    return ;
+    // cout<<"\n";
 }
 
-void sort_moves(vector<BitmaskBoard> *moves, char turn)
-{
-    vector<pair<int, BitmaskBoard>> moves_and_eval;
-    for(BitmaskBoard move : *moves)
-    {
-        int eval = evaluate_int(move, turn);
-        // transpositionTable[calculateHashKey(move, turn)] = std::make_pair(1, eval);
-        moves_and_eval.push_back(make_pair(eval, move));
-    }
-    if(turn == 1)
-        sort(moves_and_eval.begin(), moves_and_eval.end(), greater<pair<int, BitmaskBoard>>());
-    else
-        sort(moves_and_eval.begin(), moves_and_eval.end());
-    moves->clear();
-    for(pair<int, BitmaskBoard> move : moves_and_eval)
-    {
-        // cout<<move.first<<" ";
-        moves->push_back(move.second);
-    }
-    // cout<<endl;
-}
-
-std::pair<int, BitmaskBoard> minimax_pro2_hash(char depth, char max_player, BitmaskBoard& board_layout, int alpha, int beta, char akel_depth, char akel_player, char akling)
-{
-    int evaluation, maxEval, minEval;
-    BitmaskBoard best_move;
-
-    uint64_t hashKey = calculateHashKey(board_layout, max_player ? 1 : 2);
-
-    if (transpositionTable.count(hashKey) > 0) {
-        std::pair<char, int> storedValues = transpositionTable[hashKey];
-        char storedDepth = storedValues.first;
-        int storedEval = storedValues.second;
-
-        if (storedDepth >= depth)
-        {
-            cacheHits++;
-            // cout<<"found in hash table"<<endl;
-            return std::make_pair(storedEval, board_layout);
-        }
-    }
-
-    if (depth <= 0)
-    {
-        char turn;
-        if (max_player)
-            turn = 1;
-        else
-            turn = 2;
-        int eval = evaluate_int(board_layout, turn);
-        transpositionTable[hashKey] = std::make_pair(0, eval);
-        return std::make_pair(eval, board_layout);
-    }
-
-    if (max_player)
-    {
-        maxEval = INT_MIN;
-        vector <BitmaskBoard> all_moves;
-        pair<vector <BitmaskBoard>, bool> allandForce = get_all_moves(board_layout, 1, &all_moves);
-        sort_moves(&all_moves, 1);
-        bool force_list_empty = allandForce.second;
-
-        for (auto move : all_moves)
-        {
-            if (!force_list_empty && akel_depth < 5)
-                evaluation = minimax_pro2_hash(depth, false, move, alpha, beta, akel_depth + 1, false, true).first;
-            else
-            {
-                if (akel_player == false && akel_depth > 2)
-                    evaluation = minimax_pro2_hash(0, false, move, alpha, beta, 100, false, false).first;
-                else
-                    evaluation = minimax_pro2_hash(depth - 1, false, move, alpha, beta, 0, false, false).first;
-            }
-
-            if (evaluation > maxEval)
-            {
-                maxEval = evaluation;
-                best_move = move;
-            }
-
-            alpha = std::max(alpha, maxEval);
-            if (beta <= alpha)
-                break;
-        }
-
-        transpositionTable[hashKey] = std::make_pair(depth, maxEval);
-
-        return std::make_pair(maxEval, best_move);
-    }
-    else
-    {
-        minEval = INT_MAX;
-        vector <BitmaskBoard> all_moves;
-        pair<vector <BitmaskBoard>, bool > allandForce = get_all_moves(board_layout, 2, &all_moves);
-        sort_moves(&all_moves, 2);
-        all_moves = allandForce.first;
-        bool force_list_empty = allandForce.second;
-
-        for (auto move : all_moves)
-        {
-            if (!force_list_empty && akel_depth < 5)
-                evaluation = minimax_pro2_hash(depth, true, move, alpha, beta, akel_depth + 1, true, true).first;
-            else
-            {
-                if ((akel_player == true) && akel_depth > 2)
-                    evaluation = minimax_pro2_hash(0, true, move, alpha, beta, 100, true, false).first;
-                else
-                    evaluation = minimax_pro2_hash(depth - 1, true, move, alpha, beta, 0, true, false).first;
-            }
-
-            if (evaluation < minEval)
-            {
-                minEval = evaluation;
-                best_move = move;
-            }
-
-            beta = std::min(beta, minEval);
-            if (beta <= alpha)
-                break;
-        }
-
-        transpositionTable[hashKey] = std::make_pair(depth, minEval);
-
-        return std::make_pair(minEval, best_move);
-    }
-}
-
-pair<int, BitmaskBoard> minimax_pro2(char depth, char max_player, BitmaskBoard& board_layout, int alpha, int beta, char akel_depth, char akel_player, char akling)
+std::pair<int, BitmaskBoard> minimax_pro2(char depth, char max_player, BitmaskBoard& board_layout, int alpha, int beta, char akel_depth, char akel_player, char akling)
 {
     int evaluation, maxEval, minEval;
     BitmaskBoard best_move;
@@ -2686,18 +2596,17 @@ pair<int, BitmaskBoard> minimax_pro2(char depth, char max_player, BitmaskBoard& 
             turn = 1;
         else
             turn = 2;
-        return make_pair(evaluate_int(board_layout, turn), board_layout);
+
+        turn == 1 ? board_layout.setTurn(0) : board_layout.setTurn(1);
+        return std::make_pair(board_layout.evaluate_board(), board_layout);
     }
 
     if(max_player)
     {
-        // printBoard(board_layout);
-        // cout<<endl;
-        // Sleep(1000);
-
         maxEval = INT_MIN;
-        vector <BitmaskBoard> all_moves;
-        pair<vector <BitmaskBoard>, bool> allandForce = get_all_moves(board_layout, 1, &all_moves);
+        
+        std::pair<std::vector <BitmaskBoard>, bool> allandForce = get_all_moves(board_layout, 1);
+        std::vector <BitmaskBoard> all_moves = allandForce.first;
         // sort_moves(&all_moves, 1);
         bool force_list_empty = allandForce.second;
 
@@ -2719,21 +2628,18 @@ pair<int, BitmaskBoard> minimax_pro2(char depth, char max_player, BitmaskBoard& 
                 best_move = move;
             }
 
-            alpha = max(alpha, maxEval);
+            alpha = std::max(alpha, maxEval);
             if(beta<=alpha)
                 break;
         }
-        return make_pair(maxEval, best_move);
+        return std::make_pair(maxEval, best_move);
     }
     else
     {
-        // printBoard(board_layout);
-        // cout<<endl;
-        // Sleep(1000);
-
         minEval = INT_MAX;
-        vector <BitmaskBoard> all_moves;
-        pair<vector <BitmaskBoard>, bool > allandForce = get_all_moves(board_layout, 2, &all_moves);
+
+        std::pair<std::vector <BitmaskBoard>, bool > allandForce = get_all_moves(board_layout, 2);
+        std::vector <BitmaskBoard> all_moves = allandForce.first;
         // sort_moves(&all_moves, 2);
         all_moves = allandForce.first;
         bool force_list_empty = allandForce.second;
@@ -2756,15 +2662,15 @@ pair<int, BitmaskBoard> minimax_pro2(char depth, char max_player, BitmaskBoard& 
                 best_move = move;
             }
 
-            beta = min(beta, minEval);
+            beta = std::min(beta, minEval);
             if(beta<=alpha)
                 break;
         }
-        return make_pair(minEval, best_move);
+        return std::make_pair(minEval, best_move);
     }
 }
 
-pair<int, BitmaskBoard> normal_minimax(char depth, char max_player, BitmaskBoard& board_layout, int alpha, int beta)
+std::pair<int, BitmaskBoard> normal_minimax(char depth, char max_player, BitmaskBoard& board_layout, int alpha, int beta)
 {
     int evaluation, maxEval, minEval;
     BitmaskBoard best_move;
@@ -2778,7 +2684,7 @@ pair<int, BitmaskBoard> normal_minimax(char depth, char max_player, BitmaskBoard
 
         if (storedDepth >= depth)
         {
-            // cout<<"found in hash table"<<endl;
+            // cout<<"found in hash table"<<"\n";
             cacheHits++;
             return std::make_pair(storedEval, board_layout);
         }
@@ -2791,18 +2697,18 @@ pair<int, BitmaskBoard> normal_minimax(char depth, char max_player, BitmaskBoard
             turn = 1;
         else
             turn = 2;
-        return make_pair(evaluate_int(board_layout, turn), board_layout);
+        return std::make_pair(evaluate_int(board_layout, turn), board_layout);
     }
 
     if(max_player)
     {
         // printBoard(board_layout);
-        // cout<<endl;
+        // cout<<"\n";
         // Sleep(1000);
 
         maxEval = INT_MIN;
-        vector <BitmaskBoard> all_moves;
-        pair<vector <BitmaskBoard>, bool > allandForce = get_all_moves(board_layout, 1, &all_moves);
+        std::pair<std::vector <BitmaskBoard>, bool > allandForce = get_all_moves(board_layout, 1);
+        std::vector <BitmaskBoard> all_moves = allandForce.first;
         bool force_list = allandForce.second;
 
         for (auto move : all_moves)
@@ -2814,23 +2720,23 @@ pair<int, BitmaskBoard> normal_minimax(char depth, char max_player, BitmaskBoard
                 best_move = move;
             }
 
-            alpha = max(alpha, maxEval);
+            alpha = std::max(alpha, maxEval);
             if(beta<=alpha)
                 break;
 
         }
         transpositionTable[hashKey] = std::make_pair(depth, maxEval);
-        return make_pair(maxEval, best_move);
+        return std::make_pair(maxEval, best_move);
     }
     else
     {
         // printBoard(board_layout);
-        // cout<<endl;
+        // cout<<"\n";
         // Sleep(1000);
 
         minEval = INT_MAX;
-        vector <BitmaskBoard> all_moves;
-        pair<vector <BitmaskBoard>, bool > allandForce = get_all_moves(board_layout, 2, &all_moves);
+        std::pair<std::vector <BitmaskBoard>, bool > allandForce = get_all_moves(board_layout, 2);
+        std::vector <BitmaskBoard> all_moves = allandForce.first;
         all_moves = allandForce.first;
         bool force_list = allandForce.second;
 
@@ -2843,16 +2749,348 @@ pair<int, BitmaskBoard> normal_minimax(char depth, char max_player, BitmaskBoard
                 best_move = move;
             }
 
-            beta = min(beta, minEval);
+            beta = std::min(beta, minEval);
             if(beta<=alpha)
                 break;
         }
         transpositionTable[hashKey] = std::make_pair(depth, minEval);
-        return make_pair(minEval, best_move);
+        return std::make_pair(minEval, best_move);
     }
 }
 
-pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskBoard& board_layout, int alpha, int beta, char akel_player, char akel_depth, char akling)
+std::pair<int, BitmaskBoard> normal_minimax_based(char depth, char max_player, BitmaskBoard& board_layout, int alpha, int beta)
+{   
+    
+    int evaluation, maxEval, minEval;
+    BitmaskBoard best_move;
+
+    // board_layout.setTurn(max_player ? 0 : 1);
+    // if (transpositionTable2.count(board_layout) > 0) {
+    //     TranspositionTableValue value = transpositionTable2[board_layout];
+
+    //     char storedDepth = value.getDepth();
+    //     int storedEval = value.getEval();
+    //     BitmaskBoard storedBoard = value.getBestMove();
+
+    //     if (storedDepth >= depth)
+    //     {
+    //         cacheHits++;
+    //         movesSeen++;
+    //         return std::make_pair(storedEval, storedBoard);
+    //     }
+    // }
+
+    if(depth <=0 || playerWon(board_layout))
+    {
+        char turn;
+        if(max_player)
+            turn = 1;
+        else
+            turn = 2;
+        int eval = evaluate_int(board_layout, turn);
+        // transpositionTable[hashKey] = std::make_pair(0, eval);
+        return std::make_pair(eval, board_layout);
+        // return std::make_pair(evaluate_int(board_layout, turn), board_layout);
+    }
+
+    
+
+    if(max_player)
+    {
+
+        maxEval = INT_MIN;
+        std::vector <BitmaskBoard> all_moves;
+
+        ////////////////////////////////////////
+        
+        std::vector<char *> pieces;
+        counter++;
+        movesSeen++;
+        //create force list
+        std::vector<char *> force_list;
+        std::vector<char *> valid_moves;
+        bool forceListEmpty = false;
+        std::vector<std::vector<char *>> parent_list;
+        bool dama_nom = false, fff = false;
+
+        force_list = check_for_force(board_layout, 1, &pieces);
+
+        if(!force_list.empty())
+            pieces = force_list;
+        else
+            forceListEmpty = true;
+        
+        for(char* piece : pieces)
+        {
+            char color2 = board_layout.get(piece[0], piece[1]);
+            fff = dama_nom = false;
+            if(color2 == 1 || color2 == 2)
+            {
+                std::pair<std::vector<char*>, char> validMovesAndEatingPiece;
+                validMovesAndEatingPiece  = get_valid_moves(piece[0], piece[1], color2, 0, board_layout, 0);
+                
+                valid_moves = validMovesAndEatingPiece.first;
+                char eating_piece = validMovesAndEatingPiece.second;
+
+                fff = eating_piece!=0;
+
+                if(fff)
+                {
+                    bool fff2 = false;
+                    std::vector<std::vector<char*>> parent_list2;
+                    for(char* move : valid_moves)
+                    {
+                        std::vector<char*> tempValue = std::vector<char*>();
+                        tempValue.push_back(piece);
+                        tempValue.push_back(move);
+                        parent_list2.push_back(tempValue);
+                        if(check_if_piece_can_capture(move[0], move[1], board_layout, color2))
+                            fff2 = true;
+                    }
+
+                    if(fff2)
+                    {
+                        parent_list = eat_max2_not_dama(piece[0], piece[1], board_layout, parent_list2, color2, 0);
+                        std::vector<char*> aux_list;
+                        if(!parent_list.empty())
+                        {
+                            for(std::vector<char*> value: parent_list)
+                                aux_list.push_back(value[char(value.size()) - 1]);
+                            valid_moves = aux_list;
+                        }
+                    }
+
+                }
+            }
+
+            if (color2 == 3 || color2 == 4)
+            {
+                std::pair<std::vector<char*>, char> validMovesAndEatingPiece;
+                validMovesAndEatingPiece  = get_valid_moves(piece[0], piece[1], color2, 0, board_layout, 0);
+                
+                valid_moves = validMovesAndEatingPiece.first;
+                char eating_piece = validMovesAndEatingPiece.second;
+
+                dama_nom = eating_piece=='d';
+
+                if(dama_nom)
+                {
+                    bool dama_nom2 = false;
+                    std::vector<std::vector<char*>> parent_list2;
+                    std::vector<char*> tempList;
+                    tempList.push_back(piece);
+                    parent_list2.push_back(tempList);
+                    for(char* move : valid_moves)
+                    {
+                        // std::vector<char*> tempValue = std::vector<char*>();
+                        // tempValue.push_back(piece);
+                        // tempValue.push_back(move);
+                        // parent_list2.push_back(tempValue);
+
+                        auto eat_direction = get_eat_direction(piece[0], piece[1], move[0], move[1]);
+
+                        if(check_dama_has_akel(move[0], move[1], color2, board_layout, eat_direction))
+                            dama_nom2 = true;
+                        // cout<<move[0]<<" "<<move[1]<<"\n";
+                    }
+                    if(dama_nom2)
+                    {
+                        parent_list = eat_max2(piece[0], piece[1], board_layout, parent_list2, color2, 0);
+                        std::vector<char*> aux_list;
+
+                        if(!parent_list.empty())
+                        {
+                            for(std::vector<char*> value: parent_list)
+                                aux_list.push_back(value[char(value.size()) - 1]);
+                            
+                            valid_moves = aux_list;
+                        }
+                    }   
+                }
+            }
+
+            bool exit = false;
+            for(char* move : valid_moves)
+            {
+                BitmaskBoard board_layout2 = board_layout;
+                move_piece(piece, move, board_layout2, parent_list, color2);
+
+                evaluation = normal_minimax_based(depth-1, false, board_layout2, alpha, beta).first;
+                
+                if(evaluation>maxEval)
+                {
+                    maxEval = evaluation;
+                    best_move = board_layout2;
+                }
+
+                alpha = std::max(alpha, maxEval);
+                if(beta<=alpha)
+                {
+                    exit = true;
+                    break;
+                }
+            }
+                // moves->push_back(move_piece(piece, move, deepcopy2(board_layout), parent_list, color2));
+            
+            if(exit){
+                break;
+            }
+        }
+        // board_layout.setTurn(1);
+        // TranspositionTableValue value(maxEval, depth, best_move);
+        // transpositionTable2[board_layout] = value;
+        return std::make_pair(maxEval, best_move);
+    }
+    else
+    {
+        // printBoard(board_layout);
+        // cout<<"\n";
+        // Sleep(1000);
+        movesSeen++;
+
+        minEval = INT_MAX;
+        std::vector <BitmaskBoard> all_moves;
+
+        ////////////////////////////////////////
+        std::vector<char *> pieces;
+        counter++;
+        //create force list
+        std::vector<char *> force_list;
+        std::vector<char *> valid_moves;
+        bool forceListEmpty = false;
+        std::vector<std::vector<char *>> parent_list;
+        bool dama_nom = false, fff = false;
+
+        force_list = check_for_force(board_layout, 2, &pieces);
+
+        if(!force_list.empty())
+            pieces = force_list;
+        else
+            forceListEmpty = true;
+        
+        for(char* piece : pieces)
+        {
+            char color2 = board_layout.get(piece[0], piece[1]);
+            fff = dama_nom = false;
+            if(color2 == 1 || color2 == 2)
+            {
+                std::pair<std::vector<char*>, char> validMovesAndEatingPiece;
+                validMovesAndEatingPiece  = get_valid_moves(piece[0], piece[1], color2, 0, board_layout, 0);
+                
+                valid_moves = validMovesAndEatingPiece.first;
+                char eating_piece = validMovesAndEatingPiece.second;
+
+                fff = eating_piece!=0;
+
+                if(fff)
+                {
+                    bool fff2 = false;
+                    std::vector<std::vector<char*>> parent_list2;
+                    for(char* move : valid_moves)
+                    {
+                        std::vector<char*> tempValue = std::vector<char*>();
+                        tempValue.push_back(piece);
+                        tempValue.push_back(move);
+                        parent_list2.push_back(tempValue);
+                        if(check_if_piece_can_capture(move[0], move[1], board_layout, color2))
+                            fff2 = true;
+                    }
+
+                    if(fff2)
+                    {
+                        parent_list = eat_max2_not_dama(piece[0], piece[1], board_layout, parent_list2, color2, 0);
+                        std::vector<char*> aux_list;
+                        if(!parent_list.empty())
+                        {
+                            for(std::vector<char*> value: parent_list)
+                                aux_list.push_back(value[char(value.size()) - 1]);
+                            valid_moves = aux_list;
+                        }
+                    }
+                    
+                }
+            }
+
+            if (color2 == 3 || color2 == 4)
+            {
+                std::pair<std::vector<char*>, char> validMovesAndEatingPiece;
+                validMovesAndEatingPiece  = get_valid_moves(piece[0], piece[1], color2, 0, board_layout, 0);
+                
+                valid_moves = validMovesAndEatingPiece.first;
+                char eating_piece = validMovesAndEatingPiece.second;
+
+                dama_nom = eating_piece=='d';
+
+                if(dama_nom)
+                {
+                    bool dama_nom2 = false;
+                    std::vector<std::vector<char*>> parent_list2;
+                    std::vector<char*> tempList;
+                    tempList.push_back(piece);
+                    parent_list2.push_back(tempList);
+                    for(char* move : valid_moves)
+                    {
+                        // std::vector<char*> tempValue = std::vector<char*>();
+                        // tempValue.push_back(piece);
+                        // tempValue.push_back(move);
+                        // parent_list2.push_back(tempValue);
+
+                        auto eat_direction = get_eat_direction(piece[0], piece[1], move[0], move[1]);
+
+                        if(check_dama_has_akel(move[0], move[1], color2, board_layout, eat_direction))
+                            dama_nom2 = true;
+                    }
+                    if(dama_nom2)
+                    {
+                        parent_list = eat_max2(piece[0], piece[1], board_layout, parent_list2, color2, 0);
+                        std::vector<char*> aux_list;
+                        if(!parent_list.empty())
+                        {
+                            for(std::vector<char*> value: parent_list)
+                                aux_list.push_back(value[char(value.size()) - 1]);
+                            valid_moves = aux_list;
+                        }
+                    }
+                    
+                }
+            }
+            bool exit = false;
+            for(char* move : valid_moves)
+            {
+                BitmaskBoard board_layout2 = board_layout;
+                move_piece(piece, move, board_layout2, parent_list, color2);
+
+                evaluation = normal_minimax_based(depth-1, true, board_layout2, alpha, beta).first;
+                
+                if(evaluation<minEval)
+                {
+                    minEval = evaluation;
+                    best_move = board_layout2;
+                }
+
+                beta = std::min(beta, minEval);
+                if(beta<=alpha){
+                    exit = true;
+                    break;
+                }
+                // moves->push_back(move_piece(piece, move, deepcopy2(board_layout), parent_list, color2));
+                
+            }
+            if(exit)
+                break;
+            
+
+        }
+
+
+        // board_layout.setTurn(0);
+        // TranspositionTableValue value(minEval, depth, best_move);
+        // transpositionTable2[board_layout] = value;
+        return std::make_pair(minEval, best_move);
+    }
+}
+
+std::pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskBoard& board_layout, int alpha, int beta, char akel_player, char akel_depth, char akling)
 {   
 
     // BitmaskBoard test_board;
@@ -2904,21 +3142,21 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
     int evaluation, maxEval, minEval;
     BitmaskBoard best_move;
 
-    // board_layout.setTurn(max_player ? 0 : 1);
-    // if (transpositionTable2.count(board_layout) > 0) {
-    //     TranspositionTableValue value = transpositionTable2[board_layout];
+    board_layout.setTurn(max_player ? 0 : 1);
+    if (transpositionTable2.count(board_layout) > 0) {
+        TranspositionTableValue value = transpositionTable2[board_layout];
 
-    //     char storedDepth = value.getDepth();
-    //     int storedEval = value.getEval();
-    //     BitmaskBoard storedBoard = value.getBestMove();
+        char storedDepth = value.getDepth();
+        int storedEval = value.getEval();
+        BitmaskBoard storedBoard = value.getBestMove();
 
-    //     if (storedDepth >= depth)
-    //     {
-    //         cacheHits++;
-    //         movesSeen++;
-    //         return std::make_pair(storedEval, storedBoard);
-    //     }
-    // }
+        if (storedDepth >= depth)
+        {
+            cacheHits++;
+            movesSeen++;
+            return std::make_pair(storedEval, storedBoard);
+        }
+    }
 
     if(depth <=0 || playerWon(board_layout))
     {
@@ -2930,28 +3168,30 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
         int eval = evaluate_int(board_layout, turn);
         // transpositionTable[hashKey] = std::make_pair(0, eval);
         return std::make_pair(eval, board_layout);
-        // return make_pair(evaluate_int(board_layout, turn), board_layout);
+        // return std::make_pair(evaluate_int(board_layout, turn), board_layout);
     }
+
+    
 
     if(max_player)
     {
         // printBoard(board_layout);
-        // cout<<endl;
+        // cout<<"\n";
         // Sleep(1000);
 
         maxEval = INT_MIN;
-        vector <BitmaskBoard> all_moves;
+        std::vector <BitmaskBoard> all_moves;
 
         ////////////////////////////////////////
         
-        vector<char *> pieces;
+        std::vector<char *> pieces;
         counter++;
         movesSeen++;
         //create force list
-        vector<char *> force_list;
-        vector<char *> valid_moves;
+        std::vector<char *> force_list;
+        std::vector<char *> valid_moves;
         bool forceListEmpty = false;
-        vector<vector<char *>> parent_list;
+        std::vector<std::vector<char *>> parent_list;
         bool dama_nom = false, fff = false;
 
         force_list = check_for_force(board_layout, 1, &pieces);
@@ -2967,7 +3207,7 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
             fff = dama_nom = false;
             if(color2 == 1 || color2 == 2)
             {
-                pair<vector<char*>, char> validMovesAndEatingPiece;
+                std::pair<std::vector<char*>, char> validMovesAndEatingPiece;
                 validMovesAndEatingPiece  = get_valid_moves(piece[0], piece[1], color2, 0, board_layout, 0);
                 
                 valid_moves = validMovesAndEatingPiece.first;
@@ -2978,10 +3218,10 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
                 if(fff)
                 {
                     bool fff2 = false;
-                    vector<vector<char*>> parent_list2;
+                    std::vector<std::vector<char*>> parent_list2;
                     for(char* move : valid_moves)
                     {
-                        vector<char*> tempValue = vector<char*>();
+                        std::vector<char*> tempValue = std::vector<char*>();
                         tempValue.push_back(piece);
                         tempValue.push_back(move);
                         parent_list2.push_back(tempValue);
@@ -2992,10 +3232,10 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
                     if(fff2)
                     {
                         parent_list = eat_max2_not_dama(piece[0], piece[1], board_layout, parent_list2, color2, 0);
-                        vector<char*> aux_list;
+                        std::vector<char*> aux_list;
                         if(!parent_list.empty())
                         {
-                            for(vector<char*> value: parent_list)
+                            for(std::vector<char*> value: parent_list)
                                 aux_list.push_back(value[char(value.size()) - 1]);
                             valid_moves = aux_list;
                         }
@@ -3004,9 +3244,9 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
                 }
             }
 
-            if (color2 ==3 || color2 == 4)
+            if (color2 == 3 || color2 == 4)
             {
-                pair<vector<char*>, char> validMovesAndEatingPiece;
+                std::pair<std::vector<char*>, char> validMovesAndEatingPiece;
                 validMovesAndEatingPiece  = get_valid_moves(piece[0], piece[1], color2, 0, board_layout, 0);
                 
                 valid_moves = validMovesAndEatingPiece.first;
@@ -3017,28 +3257,31 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
                 if(dama_nom)
                 {
                     bool dama_nom2 = false;
-                    vector<vector<char*>> parent_list2;
+                    std::vector<std::vector<char*>> parent_list2;
+                    std::vector<char*> tempList;
+                    tempList.push_back(piece);
+                    parent_list2.push_back(tempList);
                     for(char* move : valid_moves)
                     {
-                        vector<char*> tempValue = vector<char*>();
-                        tempValue.push_back(piece);
-                        tempValue.push_back(move);
-                        parent_list2.push_back(tempValue);
+                        // std::vector<char*> tempValue = std::vector<char*>();
+                        // tempValue.push_back(piece);
+                        // tempValue.push_back(move);
+                        // parent_list2.push_back(tempValue);
 
                         auto eat_direction = get_eat_direction(piece[0], piece[1], move[0], move[1]);
 
                         if(check_dama_has_akel(move[0], move[1], color2, board_layout, eat_direction))
                             dama_nom2 = true;
-                        // cout<<move[0]<<" "<<move[1]<<endl;
+                        // cout<<move[0]<<" "<<move[1]<<"\n";
                     }
                     if(dama_nom2)
                     {
                         parent_list = eat_max2(piece[0], piece[1], board_layout, parent_list2, color2, 0);
-                        vector<char*> aux_list;
+                        std::vector<char*> aux_list;
 
                         if(!parent_list.empty())
                         {
-                            for(vector<char*> value: parent_list)
+                            for(std::vector<char*> value: parent_list)
                                 aux_list.push_back(value[char(value.size()) - 1]);
                             
                             valid_moves = aux_list;
@@ -3046,63 +3289,81 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
                     }   
                 }
             }
+
             bool exit = false;
             for(char* move : valid_moves)
             {
                 BitmaskBoard board_layout2 = board_layout;
-                BitmaskBoard current_board = move_piece(piece, move, board_layout2, parent_list, color2);
+                move_piece(piece, move, board_layout2, parent_list, color2);
 
                 if (!force_list.empty() && akel_depth<5)
-                    evaluation = minimax_pro2_based(depth, false, current_board, alpha, beta, akel_depth+1, false, true).first;
+                    evaluation = minimax_pro2_based(depth, false, board_layout2, alpha, beta, akel_depth+1, false, true).first;
                 else
                 {
                     if(akel_player == false && akel_depth>2)
-                        evaluation = minimax_pro2_based(0, false, current_board, alpha, beta, 100, false, false).first;
+                        evaluation = minimax_pro2_based(0, false, board_layout2, alpha, beta, 100, false, false).first;
                     else
-                        evaluation = minimax_pro2_based(depth-1, false, current_board, alpha, beta, 0, false, false).first;
+                        evaluation = minimax_pro2_based(depth-1, false, board_layout2, alpha, beta, 0, false, false).first;
                 }
 
                 if(evaluation>maxEval)
                 {
                     maxEval = evaluation;
-                    best_move = current_board;
+                    best_move = board_layout2;
                 }
 
-                alpha = max(alpha, maxEval);
+                alpha = std::max(alpha, maxEval);
                 if(beta<=alpha)
                 {
                     exit = true;
                     break;
                 }
-                // moves->push_back(move_piece(piece, move, deepcopy2(board_layout), parent_list, color2));
             }
-            if(exit)
+                // moves->push_back(move_piece(piece, move, deepcopy2(board_layout), parent_list, color2));
+            
+            if(exit){
                 break;
+            }
         }
 
-        // board_layout.setTurn(1);
-        // TranspositionTableValue value(maxEval, depth, best_move);
-        // transpositionTable2[board_layout] = value;
-        return make_pair(maxEval, best_move);
+        // free memory
+        // for (auto move : valid_moves)
+        //     delete move;
+        
+        // for (auto piece : pieces)
+        //     delete piece;
+        
+        // for (auto pos : force_list)
+        //     delete pos;
+        
+        // for (std::vector<char*> list : parent_list){
+        //     for (char* pos : list)
+        //         delete pos;
+        // }
+
+        board_layout.setTurn(1);
+        TranspositionTableValue value(maxEval, depth, best_move);
+        transpositionTable2[board_layout] = value;
+        return std::make_pair(maxEval, best_move);
     }
     else
     {
         // printBoard(board_layout);
-        // cout<<endl;
+        // cout<<"\n";
         // Sleep(1000);
         movesSeen++;
 
         minEval = INT_MAX;
-        vector <BitmaskBoard> all_moves;
+        std::vector <BitmaskBoard> all_moves;
 
         ////////////////////////////////////////
-        vector<char *> pieces;
+        std::vector<char *> pieces;
         counter++;
         //create force list
-        vector<char *> force_list;
-        vector<char *> valid_moves;
+        std::vector<char *> force_list;
+        std::vector<char *> valid_moves;
         bool forceListEmpty = false;
-        vector<vector<char *>> parent_list;
+        std::vector<std::vector<char *>> parent_list;
         bool dama_nom = false, fff = false;
 
         force_list = check_for_force(board_layout, 2, &pieces);
@@ -3118,7 +3379,7 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
             fff = dama_nom = false;
             if(color2 == 1 || color2 == 2)
             {
-                pair<vector<char*>, char> validMovesAndEatingPiece;
+                std::pair<std::vector<char*>, char> validMovesAndEatingPiece;
                 validMovesAndEatingPiece  = get_valid_moves(piece[0], piece[1], color2, 0, board_layout, 0);
                 
                 valid_moves = validMovesAndEatingPiece.first;
@@ -3129,10 +3390,10 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
                 if(fff)
                 {
                     bool fff2 = false;
-                    vector<vector<char*>> parent_list2;
+                    std::vector<std::vector<char*>> parent_list2;
                     for(char* move : valid_moves)
                     {
-                        vector<char*> tempValue = vector<char*>();
+                        std::vector<char*> tempValue = std::vector<char*>();
                         tempValue.push_back(piece);
                         tempValue.push_back(move);
                         parent_list2.push_back(tempValue);
@@ -3143,10 +3404,10 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
                     if(fff2)
                     {
                         parent_list = eat_max2_not_dama(piece[0], piece[1], board_layout, parent_list2, color2, 0);
-                        vector<char*> aux_list;
+                        std::vector<char*> aux_list;
                         if(!parent_list.empty())
                         {
-                            for(vector<char*> value: parent_list)
+                            for(std::vector<char*> value: parent_list)
                                 aux_list.push_back(value[char(value.size()) - 1]);
                             valid_moves = aux_list;
                         }
@@ -3157,7 +3418,7 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
 
             if (color2 == 3 || color2 == 4)
             {
-                pair<vector<char*>, char> validMovesAndEatingPiece;
+                std::pair<std::vector<char*>, char> validMovesAndEatingPiece;
                 validMovesAndEatingPiece  = get_valid_moves(piece[0], piece[1], color2, 0, board_layout, 0);
                 
                 valid_moves = validMovesAndEatingPiece.first;
@@ -3168,13 +3429,16 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
                 if(dama_nom)
                 {
                     bool dama_nom2 = false;
-                    vector<vector<char*>> parent_list2;
+                    std::vector<std::vector<char*>> parent_list2;
+                    std::vector<char*> tempList;
+                    tempList.push_back(piece);
+                    parent_list2.push_back(tempList);
                     for(char* move : valid_moves)
                     {
-                        vector<char*> tempValue = vector<char*>();
-                        tempValue.push_back(piece);
-                        tempValue.push_back(move);
-                        parent_list2.push_back(tempValue);
+                        // std::vector<char*> tempValue = std::vector<char*>();
+                        // tempValue.push_back(piece);
+                        // tempValue.push_back(move);
+                        // parent_list2.push_back(tempValue);
 
                         auto eat_direction = get_eat_direction(piece[0], piece[1], move[0], move[1]);
 
@@ -3184,10 +3448,10 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
                     if(dama_nom2)
                     {
                         parent_list = eat_max2(piece[0], piece[1], board_layout, parent_list2, color2, 0);
-                        vector<char*> aux_list;
+                        std::vector<char*> aux_list;
                         if(!parent_list.empty())
                         {
-                            for(vector<char*> value: parent_list)
+                            for(std::vector<char*> value: parent_list)
                                 aux_list.push_back(value[char(value.size()) - 1]);
                             valid_moves = aux_list;
                         }
@@ -3199,38 +3463,428 @@ pair<int, BitmaskBoard> minimax_pro2_based(char depth, char max_player, BitmaskB
             for(char* move : valid_moves)
             {
                 BitmaskBoard board_layout2 = board_layout;
-                BitmaskBoard current_board = move_piece(piece, move, board_layout2, parent_list, color2);
+                move_piece(piece, move, board_layout2, parent_list, color2);
                 if (!force_list.empty() && akel_depth<5)
-                    evaluation = minimax_pro2_based(depth, true, current_board, alpha, beta, akel_depth+1, true, true).first;
+                    evaluation = minimax_pro2_based(depth, true, board_layout2, alpha, beta, akel_depth+1, true, true).first;
                 else
                 {
-                    if( (akel_player == true) && akel_depth>2)
-                        evaluation = minimax_pro2_based(0, true, current_board, alpha, beta, 100, true, false).first;
+                    if((akel_player == true) && akel_depth>2)
+                        evaluation = minimax_pro2_based(0, true, board_layout2, alpha, beta, 100, true, false).first;
                     else
-                        evaluation = minimax_pro2_based(depth-1, true, current_board, alpha, beta, 0, true, false).first;
+                        evaluation = minimax_pro2_based(depth-1, true, board_layout2, alpha, beta, 0, true, false).first;
                 }
 
                 if(evaluation<minEval)
                 {
                     minEval = evaluation;
-                    best_move = current_board;
+                    best_move = board_layout2;
                 }
 
-                beta = min(beta, minEval);
+                beta = std::min(beta, minEval);
                 if(beta<=alpha){
                     exit = true;
                     break;
                 }
                 // moves->push_back(move_piece(piece, move, deepcopy2(board_layout), parent_list, color2));
+                
             }
             if(exit)
                 break;
+            
+
         }
-        // board_layout.setTurn(0);
-        // TranspositionTableValue value(minEval, depth, best_move);
-        // transpositionTable2[board_layout] = value;
-        return make_pair(minEval, best_move);
+
+
+        // free memory
+        // for (auto move : valid_moves)
+        //     delete move;
+        
+        // for (auto piece : pieces)
+        //     delete piece;
+        
+        // for (auto pos : force_list)
+        //     delete pos;
+        
+        // for (std::vector<char*> list : parent_list){
+        //     for (char* pos : list)
+        //         delete pos;
+        // }
+
+        // if there's already an entry for this board
+        board_layout.setTurn(0);
+        TranspositionTableValue value(minEval, depth, best_move);
+        transpositionTable2[board_layout] = value;
+        return std::make_pair(minEval, best_move);
     }
+}
+
+
+
+void order_moves(
+    BitmaskBoard& board, 
+    std::vector<BitmaskBoard>& moves, 
+    std::unordered_map<BitmaskBoard, TranspositionTableValue>& transpositionTable, 
+    char previousDepth, bool isMaxPlayer) 
+{
+
+    // Sorting lambda function
+    auto compareMoves = [&transpositionTable, &previousDepth, isMaxPlayer](BitmaskBoard& a, BitmaskBoard& b) -> bool {
+        
+        a.setTurn(isMaxPlayer ? 1 : 0);
+        b.setTurn(isMaxPlayer ? 1 : 0);
+        auto itA = transpositionTable.find(a);
+        auto itB = transpositionTable.find(b);
+
+        // If both moves are found, compare their evaluations
+        if (itA != transpositionTable.end() && itB != transpositionTable.end()) {
+            // Prioritize higher evaluations for simplicity; adjust based on your game's needs
+            // heuristic that prefers the move that was found at a deeper depth
+            if(isMaxPlayer)
+                return itA->second.getEval() > itB->second.getEval();
+            else
+                return itA->second.getEval() < itB->second.getEval();
+            // return itA->second.getEval() > itB->second.getEval();
+        }
+        // If only one move is found, prioritize it
+        else if (itA != transpositionTable.end()) {
+            // try to find b in the opposite turn
+            b.setTurn(isMaxPlayer ? 0 : 1);
+            auto itB = transpositionTable.find(b);
+            if(itB != transpositionTable.end())
+            {
+                if(isMaxPlayer)
+                    return itA->second.getEval() > itB->second.getEval();
+                else
+                    return itA->second.getEval() < itB->second.getEval();
+            }
+            
+            return true;
+        }
+        else if (itB != transpositionTable.end()) {
+            // try to find a in the opposite turn
+            a.setTurn(isMaxPlayer ? 0 : 1);
+            auto itA = transpositionTable.find(a);
+            if(itA != transpositionTable.end())
+            {
+                if(isMaxPlayer)
+                    return itA->second.getEval() > itB->second.getEval();
+                else
+                    return itA->second.getEval() < itB->second.getEval();
+            }
+            return false;
+        }
+        // If neither move is found, do simple evaluation of both boards
+
+        return false;
+    };
+
+    // Sort moves based on their evaluations stored in the transposition table
+    std::sort(moves.begin(), moves.end(), compareMoves);
+}
+
+std::pair<int, BitmaskBoard> search(
+    char depth, bool max_player, BitmaskBoard& board_layout,
+    int alpha, int beta, char akel_player, char akel_depth, bool akling,
+     std::unordered_map<BitmaskBoard, TranspositionTableValue>& transpositionTable)
+{
+
+    // First, check if this board state is already in the transposition table
+    board_layout.setTurn(max_player ? 0 : 1);
+    auto it = transpositionTable.find(board_layout);
+    if(it != transpositionTable.end()) {
+        TranspositionTableValue& ttValue = it->second;
+        // Ensure that the depth stored in the transposition table is at least as deep as the current search depth
+        if(ttValue.getDepth() >= depth) {
+            // If so, use the stored evaluation and potentially best move
+            cacheHits++; // Assuming cacheHits is a metric you're tracking
+            return std::make_pair(ttValue.getEval(), ttValue.getBestMove());
+        }
+    }
+
+    // Base case remains the same
+    if(depth <= 0 || board_layout.player_won()) {
+        movesSeen++;
+        int eval = board_layout.evaluate_board(); // Assuming evaluate_board is defined elsewhere
+        return {eval, board_layout};
+    }
+
+    auto [moves, isEmptyForceList] = get_all_moves(board_layout, max_player ? 1 : 2);
+
+    // Order moves based on transposition table
+    order_moves(board_layout, moves, transpositionTable, depth - 1, max_player);
+
+    int bestEval = max_player ? INT_MIN : INT_MAX;
+    BitmaskBoard bestMove;
+
+    for(auto move : moves) {
+        int eval;
+        BitmaskBoard resultBoard;
+
+        // Recursively call minimax on each move
+        if (!isEmptyForceList && akel_depth<5)
+            eval = search(depth, !max_player, move, alpha, beta, akel_depth+1, !max_player, true, transpositionTable).first;
+        else
+        {
+            if(!max_player && akel_depth>2)
+                eval = max_player ? INT_MIN : INT_MAX; // throw line
+                // eval = search(0, !max_player, move, alpha, beta, 100, !max_player, false, transpositionTable).first;
+            else
+                eval = search(depth-1, !max_player, move, alpha, beta, 0, !max_player, false, transpositionTable).first;
+        }
+
+        if(max_player) {
+            if(eval > bestEval) {
+                bestEval = eval;
+                bestMove = move;
+            }
+            alpha = std::max(alpha, bestEval);
+        } else {
+            if(eval < bestEval) {
+                bestEval = eval;
+                bestMove = move;
+            }
+            beta = std::min(beta, bestEval);
+        }
+
+        if(beta <= alpha) {
+            break; // Alpha-beta pruning
+        }
+    }
+
+    // Update transposition table if needed
+    if(!transpositionTable.count(board_layout) || transpositionTable[board_layout].getDepth() < depth) {
+        TranspositionTableValue value(bestEval, depth, bestMove);
+        transpositionTable[board_layout] = value;
+    }
+
+    return {bestEval, bestMove};
+}
+
+
+void order_moves2(
+    BitmaskBoard& board, 
+    std::vector<BitmaskBoard>& moves, 
+    std::unordered_map<BitmaskBoard, TTValue>& transpositionTable, 
+    char previousDepth, bool isMaxPlayer) 
+{
+
+    // Sorting lambda function
+    auto compareMoves = [&transpositionTable, &previousDepth, isMaxPlayer](BitmaskBoard& a, BitmaskBoard& b) -> bool {
+
+        a.setTurn(isMaxPlayer ? 1 : 0);
+        b.setTurn(isMaxPlayer ? 1 : 0);
+        auto itA = transpositionTable.find(a);
+        auto itB = transpositionTable.find(b);
+
+        // If both moves are found, compare their evaluations
+        if (itA != transpositionTable.end() && itB != transpositionTable.end()) {
+            // Prioritize higher evaluations for simplicity; adjust based on your game's needs
+            // heuristic that prefers the move that was found at a deeper depth
+            if(isMaxPlayer)
+                return itA->second.eval > itB->second.eval;
+            else
+                return itA->second.eval < itB->second.eval;
+            // return itA->second.getEval() > itB->second.getEval();
+        }
+        // If only one move is found, prioritize it
+        else if (itA != transpositionTable.end()) {
+            // try to find b in the opposite turn
+            b.setTurn(isMaxPlayer ? 0 : 1);
+            auto itB = transpositionTable.find(b);
+            if(itB != transpositionTable.end())
+            {
+                if(isMaxPlayer)
+                    return itA->second.eval > itB->second.eval;
+                else
+                    return itA->second.eval < itB->second.eval;
+            }
+            
+            return true;
+        }
+        else if (itB != transpositionTable.end()) {
+            // try to find a in the opposite turn
+            a.setTurn(isMaxPlayer ? 0 : 1);
+            auto itA = transpositionTable.find(a);
+            if(itA != transpositionTable.end())
+            {
+                if(isMaxPlayer)
+                    return itA->second.eval > itB->second.eval;
+                else
+                    return itA->second.eval < itB->second.eval;
+            }
+            return false;
+        }
+        // If neither move is found, do simple evaluation of both boards
+
+        return false;
+    };
+
+    // Sort moves based on their evaluations stored in the transposition table
+    std::sort(moves.begin(), moves.end(), compareMoves);
+}
+
+int search2(
+    char depth, bool max_player, BitmaskBoard& board_layout,
+    int alpha, int beta, char akel_player, char akel_depth, bool akling,
+     std::unordered_map<BitmaskBoard, TTValue>& transpositionTable,
+      BitmaskBoard& best_move, char maxDepth, std::unordered_map<uint64_t, int>& gameHistory)
+{
+    int total_depth = depth + akel_depth;
+
+    // First, check if this board state is already in the transposition table
+    board_layout.setTurn(max_player ? 0 : 1);
+    auto it = transpositionTable.find(board_layout);
+    if(!(depth == maxDepth && akel_depth == 0) && it != transpositionTable.end()) {
+        TTValue& ttValue = it->second;
+        // Ensure that the depth stored in the transposition table is at least as deep as the current search depth
+        if(ttValue.depth >= total_depth) {
+            // If so, use the stored evaluation and potentially best move
+            cacheHits++; // Assuming cacheHits is a metric you're tracking
+            return ttValue.eval;
+        }
+    }
+    // Base case remains the same
+    if(depth <= 0 || board_layout.player_won()) {
+        movesSeen++;
+        int eval = board_layout.evaluate_board(gameHistory); // Assuming evaluate_board is defined elsewhere
+        // TTValue value = {depth, eval};
+        // transpositionTable[board_layout] = value;
+        return eval;
+    }
+
+    auto [moves, isEmptyForceList] = get_all_moves(board_layout, max_player ? 1 : 2);
+
+    // Order moves based on transposition table
+    order_moves2(board_layout, moves, transpositionTable, total_depth - 1, max_player);
+
+    int bestEval = max_player ? INT_MIN : INT_MAX;
+    BitmaskBoard bestMove;
+    for(auto move : moves) {
+        int eval;
+        BitmaskBoard resultBoard;
+
+        // mimic playing the move
+        move.setTurn(max_player ? 0 : 1);
+        gameHistory[move.hash()]++;
+
+        if(gameHistory[move.hash()] >= 3)
+            eval = 0; // threefold draw
+        // Recursively call minimax on each move
+        else if (!isEmptyForceList && akel_depth<5)
+            eval = search2(depth, !max_player, move, alpha, beta, !max_player, akel_depth+1, true, transpositionTable, bestMove, maxDepth, gameHistory);
+        else
+        {
+            if(!max_player && akel_depth>2)
+                // eval = max_player ? INT_MIN : INT_MAX; // throw line
+                eval = search2(depth-1, !max_player, move, alpha, beta, !max_player, 100, false, transpositionTable, best_move, maxDepth, gameHistory);
+            else
+                eval = search2(depth-1, !max_player, move, alpha, beta, !max_player, 0, false, transpositionTable, bestMove, maxDepth, gameHistory);
+        }
+
+        if(max_player) {
+            if(eval > bestEval) {
+                bestEval = eval;
+                if((depth == maxDepth) && (akel_depth == 0))
+                    bestMove = move;
+            }
+            alpha = std::max(alpha, bestEval);
+        } else {
+            if(eval < bestEval) {
+                bestEval = eval;
+                if((depth == maxDepth) && (akel_depth == 0))
+                    bestMove = move;
+            }
+            beta = std::min(beta, bestEval);
+        }
+
+        // remove the move from the game history
+        gameHistory[move.hash()]--;
+
+        if(beta <= alpha) {
+            break; // Alpha-beta pruning
+        }
+    }
+
+    // Update transposition table if needed
+    if(!transpositionTable.count(board_layout) || transpositionTable[board_layout].depth < total_depth) {
+        TTValue value = {total_depth, bestEval};
+        transpositionTable[board_layout] = value;
+    }
+
+    if((depth == maxDepth) && (akel_depth == 0) && ((AI_IS_WHITE && max_player) || (!AI_IS_WHITE && !max_player)))
+        best_move = bestMove;
+    return bestEval;
+}
+
+BitmaskBoard get_best_move(BitmaskBoard& board, std::unordered_map<BitmaskBoard, TTValue>& transpositionTable, char depth, char turn) {
+    auto all_moves = get_all_moves(board, turn).first;
+
+    // Order moves based on transposition table
+
+    BitmaskBoard best_move = all_moves[0];
+    for (auto& move : all_moves) {
+        move.setTurn(turn == 1 ? 0 : 1);
+
+        auto it = transpositionTable.find(move);
+        auto best_eval = transpositionTable[best_move].eval;
+
+        if (turn == 1 && it != transpositionTable.end() && it->second.depth == depth && it->second.eval > best_eval) {
+            best_move = move;
+            break;
+        }
+
+        if (turn == 2 && it != transpositionTable.end() && it->second.depth == depth && it->second.eval < best_eval) {
+            best_move = move;
+            break;
+        }
+    }
+
+    return best_move;
+}
+
+std::pair<int, BitmaskBoard> iterativeDeepening(BitmaskBoard& initialBoard, char maxDepth, bool isMaxPlayer, std::unordered_map<BitmaskBoard, TTValue>& transpositionTable, int maxTimeSeconds, std::unordered_map<uint64_t, int>& gameHistory) {
+    int bestEval = isMaxPlayer ? INT_MIN : INT_MAX;
+    BitmaskBoard bestMove = initialBoard;
+
+    // add initial board to game history (white move)
+
+    uint64_t hashKey = initialBoard.hash();
+    gameHistory[hashKey]++;
+
+    // if there is only a single move possible play it instantly
+    auto [moves, isEmptyForceList] = get_all_moves(initialBoard, isMaxPlayer ? 1 : 2);
+    if (moves.size() == 1) {
+        // add best move to game history (white move)
+        hashKey = moves[0].hash();
+        gameHistory[hashKey]++;
+        return std::make_pair(0, moves[0]);
+    }
+
+    double time_spent = 0.0;
+    for (char depth = 2; depth <= maxDepth; ++depth) {
+        auto begin = clock();
+
+        // Call minimax for the current depth
+        bestMove = initialBoard;
+        auto eval = search2(depth, isMaxPlayer, initialBoard, INT_MIN, INT_MAX, isMaxPlayer, 0, false, transpositionTable, bestMove, depth, gameHistory);
+        auto end = clock();
+        
+        time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
+
+        bestEval = eval;
+
+        // check for time constraints here
+        if (time_spent > 0.1*maxTimeSeconds) {
+            std::cout<<"Depth reached: "<<int(depth)<<"\n\n";
+            break;
+        }
+    }
+
+    // add best move to game history (black move)
+    hashKey = bestMove.hash();
+    gameHistory[hashKey]++;
+
+    return std::make_pair(bestEval, bestMove);
 }
 
 /////////////////////////////////////////////// AI STUFF ////////////////////////////////////////////
@@ -3241,15 +3895,8 @@ int main()
     // initializeZobristTable();
 
     // sombolvsSombol(100, 8);
-    double time_spent = 0.0;
 
-    vector<vector<char*>> parent_list2;
-    char a[2] = {6, 0};
-    char b[2] = {4, 0};
-    vector<char*> v;
-    v.push_back(a);
-    v.push_back(b);
-    parent_list2.push_back(v);
+    double time_spent = 0.0;
 
     char* test2[8];  
     std::ifstream file("minimaxResult.txt");
@@ -3276,41 +3923,169 @@ int main()
         {
             test2[i][j]-='0';
         }
-    pair<int, BitmaskBoard> minimaxResult;
+    std::pair<int, BitmaskBoard> minimaxResult;
     
 
-    
+    int nb_of_pieces = 0;
     BitmaskBoard curr_board;
     for(int i=0; i<8; i++)
+    {
         for(int j=0; j<8; j++)
+        {
+            
             curr_board.set(i, j, test2[i][j]);
+            if(curr_board.get(i, j) != 0)
+                nb_of_pieces++;
+        }
+    }
 
+   //test 
+    // create this broad
+    // 0 0 0 0 0 0 0 0
+    // 1 0 0 1 0 1 1 1
+    // 0 1 0 1 1 0 0 1
+    // 1 0 1 0 0 1 2 2
+    // 1 0 2 2 2 0 0 2
+    // 0 2 2 2 0 0 2 0
+    // 2 2 0 0 0 0 2 0
+    // 0 0 0 0 0 0 0 0
+
+    BitmaskBoard test_board;
+
+    test_board.set(1, 0, 1);
+    test_board.set(1, 3, 1);
+    test_board.set(1, 5, 1);
+    test_board.set(1, 6, 1);
+    test_board.set(1, 7, 1);
+    test_board.set(2, 1, 1);
+    test_board.set(2, 3, 1);
+    test_board.set(2, 4, 1);
+    test_board.set(2, 7, 1);
+    test_board.set(3, 0, 1);
+    test_board.set(3, 2, 1);
+    test_board.set(3, 5, 1);
+    test_board.set(3, 6, 2);
+    test_board.set(3, 7, 2);
+    test_board.set(4, 0, 1);
+    test_board.set(4, 2, 2);
+    test_board.set(4, 3, 2);
+    test_board.set(4, 4, 2);
+    test_board.set(4, 7, 2);
+    test_board.set(5, 1, 2);
+    test_board.set(5, 2, 2);
+    test_board.set(5, 3, 2);
+    test_board.set(5, 6, 2);
+    test_board.set(6, 0, 2);
+    test_board.set(6, 1, 2);
+    test_board.set(6, 6, 2);
+
+    // auto pieces = get_all_pieces(test_board, 2);
+    // std::vector<char *> pieces;
+    // auto force_list = check_for_force(test_board, 2, &pieces);
+
+    // for(auto piece : force_list)
+    // {
+    //     std::cout<<int(piece[0])<<" "<<int(piece[1])<<"\n";
+    // }
+
+    // auto [all_moves, isEmptyForceList] = get_all_moves(test_board, 2);
+
+    // std::vector<std::vector<char*>> parent_list2;
+    // char tempPiece[2] = {0, 0};
+    // std::vector<char*> tempList;
+    // tempList.push_back(tempPiece);
+    // parent_list2.push_back(tempList);
+    // auto p = eat_max2(0, 0, test_board, parent_list2, 4, 0);
+
+    // for(auto move : all_moves)
+    // {
+    //     printBoard(move);
+    //     std::cout<<"\n";
+    // }
+    
+    // auto p = eat_max2(0, 4, curr_board, parent_list2, 3, 0);
+
+    // // print result
+    // for(auto v : p)
+    // {
+    //     for(auto a : v)
+    //         std::cout<<int(a[0])<<" "<<int(a[1])<<"\n";
+    //     std::cout<<"\n";
+    // }
+
+    // Sleep(10000);
 
     //fetching TT from  file
     // loadTranspositionTableFromFile(transpositionTable, "transposition_table.txt");
+
 
     clock_t begin = clock();
     // for(char i=0; i<1000000; i++)
     //     deepcopy2_char(test2);
     // minimaxResult = minimax_pro2(6, true, test2, INT_MIN, INT_MAX, 0, true, false);
     // minimaxResult = minimax_pro2_hash(6, true, test2, INT_MIN, INT_MAX, 0, true, false);
-    minimaxResult = minimax_pro2_based(DEPTH, true, curr_board, INT_MIN, INT_MAX, 0, true, false);
-    // minimaxResult = normal_minimax_based(9, true, test2, INT_MIN, INT_MAX);
+
+    // std::cout<<"nb_of_pieces: "<<nb_of_pieces<<"\n";
+    // if(nb_of_pieces < 14)
+    //     minimaxResult = minimax_pro2_based(DEPTH + 1, true, curr_board, INT_MIN, INT_MAX, 0, true, false);
+    // else
+    //     minimaxResult = minimax_pro2_based(DEPTH, true, curr_board, INT_MIN, INT_MAX, 0, true, false);
+    // minimaxResult = normal_minimax_based(DEPTH, true, curr_board, INT_MIN, INT_MAX);
     // minimaxResult = normal_minimax(9, true, curr_board, INT_MIN, INT_MAX);
 
     // save TT to file
     // writeTranspositionTableToFile(transpositionTable, "transposition_table.txt");
+    
+    // std::vector<std::vector<char*>> parent_list2;
+    // char tempPiece[2] = {4, 0};
+    // std::vector<char*> tempList;
+    // tempList.push_back(tempPiece);
+    // parent_list2.push_back(tempList);
+
+    // auto p = eat_max2(4, 0, curr_board, parent_list2, 2, 0);
+
+    // // print result
+    // for(auto v : p)
+    // {
+    //     for(auto a : v)
+    //         std::cout<<int(a[0])<<" "<<int(a[1])<<"\n";
+    //     std::cout<<"\n";
+    // }
+
+    // // auto valid_moves = get_valid_moves(2, 0, 2, 0, minimaxResult.second, 'u').first;
+
+    // auto all_moves = get_all_moves(curr_board, 2).first;
+    
+    // for(auto move : all_moves)
+    // {
+    //     printBoard(move);
+    //     std::cout<<"\n";
+    // }
+
+    // std::cout<<all_moves.size()<<"\n";
+
+    // get game history from file
+
+    std::unordered_map<uint64_t, int> gameHistory;
+    readGameHistoryFromFile(gameHistory, "game_history.txt");
+
+    // run iterative deepening
+    minimaxResult = iterativeDeepening(curr_board, MAX_DEPTH, AI_IS_WHITE, transpositionTable3, MAX_TIME_SECONDS, gameHistory);
+
+
+    // save game history to file
+    writeGameHistoryToFile(gameHistory, "game_history.txt");
 
     //start
     clock_t end = clock();
-    std::cout<<"Evaluation: "<<minimaxResult.first/100.0<<endl;
+    std::cout<<"Evaluation: "<<minimaxResult.first/100.0<<"\n";
     BitmaskBoard boardResult = minimaxResult.second;
     printBoard(boardResult);
-    std::cout<<"Positions Seen: "<<movesSeen<<endl;
+    std::cout<<"Positions Seen: "<<movesSeen<<"\n";
 
     std::ofstream outfile("minimaxResult.txt");
     if (!outfile.is_open()) {
-        std::cout << "Failed to open file" << std::endl;
+        std::cout << "Failed to open file" << "\n";
         return 1;
     }
 
@@ -3330,14 +4105,21 @@ int main()
             outfile << curr_boardResult[i][j]+'0'-'0';
             outfile<<" ";
         }
-        outfile<<endl;
+        outfile<<"\n";
     }
 
+    // std::vector<char*> pieces;
+    // auto force_list = check_for_force(boardResult, 2, &pieces);
+    
+    // auto all_moves = get_all_moves(minimaxResult.second, 2).first;
+
+    // std::cout<<"\n";
+    
     time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
-    std::cout<<"Positions/sec: "<<movesSeen/time_spent<<endl;
-    std::cout<<"get_all_moves: "<<counter<<endl;
-    std::cout<<"cacheHits: "<<cacheHits<<endl;
-    std::cout<<"Time: "<<time_spent<<endl<<endl;
+    std::cout<<"Positions/sec: "<<movesSeen/time_spent<<"\n";
+    std::cout<<"get_all_moves: "<<counter<<"\n";
+    std::cout<<"cacheHits: "<<cacheHits<<"\n";
+    std::cout<<"Time: "<<time_spent<<"\n"<<"\n";
     //end
 
     return 0;

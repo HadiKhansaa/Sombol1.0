@@ -9,6 +9,7 @@ from itertools import product
 import numpy as np
 from ctypes import *
 import subprocess
+import os
 
 from pygame.locals import (
     RLEACCEL,
@@ -36,6 +37,13 @@ def no_more_moves_black(b):
                 return False
 
     return True
+
+def delete_game_history(file_path):
+    # Check if file exists
+    if os.path.exists(file_path):
+        # Delete the file
+        os.remove(file_path)
+
 
 def no_more_moves_white(b):
     for i in b.layout:
@@ -648,18 +656,84 @@ class Board:
     testSurf = pygame.image.load("images/positionBoard.jpeg").convert()
     testSurf = pygame.transform.scale(testSurf, (800, 800))
 
+    #make this board
+    # 0 0 0 0 0 0 0 0
+    # 1 1 1 0 1 1 1 1
+    # 0 0 0 0 1 1 0 0
+    # 1 1 1 1 0 1 1 2
+    # 0 0 0 0 0 2 0 0
+    # 2 2 2 2 2 2 2 2
+    # 2 2 2 2 2 0 0 0
+    # 0 0 0 0 0 0 0 0
+
+    layout = [
+             [0, 0, 0, 0, 3, 0, 0, 0]
+            ,[1, 1, 2, 0, 0, 1, 1, 1]
+            ,[0, 0, 0, 0, 2, 1, 1, 0]
+            ,[1, 1, 0, 2, 0, 1, 1, 2]
+            ,[0, 0, 0, 2, 0, 2, 2, 0]
+            ,[2, 2, 0, 2, 0, 2, 2, 2]
+            ,[2, 2, 0, 4, 0, 0, 0, 0]
+            ,[0, 0, 0, 0, 0, 0, 0, 0]
+            ]
+
+    #test endgame
     layout3 = [
                 [0, 0, 0, 0, 0, 0, 0, 0],
-                [1, 1, 1, 1, 1, 1, 1, 1],
-                [0, 0, 0, 0, 1, 1, 1, 1],
-                [1, 1, 1, 0, 0, 0, 0, 1],
-                [0, 0, 0, 0, 2, 2, 2, 2],
-                [2, 2, 2, 2, 0, 0, 2, 2],
-                [2, 2, 2, 2, 0, 0, 2, 2],
+                [0, 1, 0, 0, 0, 0, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 1],
+                [1, 1, 0, 1, 0, 0, 0, 1],
+                [2, 0, 0, 0, 2, 2, 0, 2],
+                [2, 2, 0, 0, 2, 0, 0, 2],
+                [0, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 0]
                ]
+    #bugged 1: fixed
+    layout5 = [
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0, 0, 0, 1],
+            [0, 1, 0, 0, 0, 0, 1, 0],
+            [0, 0, 1, 0, 0, 0, 0, 2],
+            [1, 2, 2, 0, 0, 1, 0, 2],
+            [2, 0, 2, 0, 0, 0, 2, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0]
+        ]
+    
+    #bugged 2: 
+    layout6 = [
+            #  create this broad
+            # 0 0 0 4 0 0 0 0
+            # 1 0 0 0 0 0 0 0
+            # 1 0 0 0 0 0 0 0
+            # 1 0 0 0 0 1 1 1
+            # 2 0 0 0 0 0 0 0
+            # 2 2 0 0 0 0 0 2
+            # 0 0 0 0 0 0 0 2
+            # 0 0 0 3 0 0 0 0
+        
+            [0, 0, 0, 4, 0, 0, 0, 0]
+            ,[1, 0, 0, 0, 0, 0, 0, 0]
+            ,[1, 0, 0, 0, 0, 0, 0, 0]
+            ,[1, 0, 0, 0, 0, 0, 1, 1]
+            ,[2, 0, 0, 0, 0, 0, 0, 0]
+            ,[2, 2, 0, 0, 0, 0, 0, 2]
+            ,[0, 0, 0, 0, 0, 0, 0, 2]
+            ,[0, 0, 0, 3, 0, 0, 0, 0]
+
+            # [0, 0, 0, 0, 0, 0, 0, 0]
+            # ,[1, 2, 1, 1, 1, 0, 1, 1]
+            # ,[0, 0, 0, 1, 1, 1, 1, 1]
+            # ,[1, 0, 1, 0, 0, 0, 0, 0]
+            # ,[0, 0, 0, 0, 2, 0, 2, 2]
+            # ,[2, 0, 0, 0, 0, 0, 0, 0]
+            # ,[2, 2, 0, 2, 2, 0, 0, 2]
+            # ,[0, 0, 0, 0, 0, 0, 0, 0]
+
+            
+        ]
                                             
-              
+         
     layout = [
                 [0, 0, 0, 0, 0, 0, 0, 0],
                 [1, 1, 1, 1, 1, 1, 1, 1],
@@ -674,34 +748,26 @@ class Board:
     layout_photo = get_layout(testSurf)
 
     layout2 = [
-        #make this list
-                #0 0 0 0 0 0 0 0
-                # 0 0 0 1 1 0 0 1
-                # 0 0 0 0 0 0 0 1
-                # 2 1 0 0 0 3 0 0
-                # 0 0 0 0 2 0 0 0
-                # 2 0 0 0 0 0 0 0
-                # 0 0 0 0 0 0 0 0
-                # 0 0 0 0 0 0 0 0
-                # [0, 0, 0, 0, 0, 0, 0, 0],
-                # [0, 0, 0, 1, 1, 0, 0, 1],
-                # [0, 0, 0, 0, 0, 0, 0, 1],
-                # [2, 1, 0, 0, 0, 3, 0, 0],
-                # [0, 0, 0, 0, 2, 0, 0, 0],
-                # [2, 0, 0, 0, 0, 0, 0, 0],
-                # [0, 0, 0, 0, 0, 0, 0, 0],
-                # [0, 0, 0, 0, 0, 0, 0, 0]
+                # create this board
+#         0 0 0 0 0 0 0 0
+#         0 0 0 0 0 1 0 0
+# 1 1 0 0 2 0 0 1
+# 1 0 0 1 1 1 0 0
+# 2 0 0 0 0 0 0 2
+# 2 2 0 2 0 2 0 2
+# 0 0 0 0 0 0 0 0
+# 0 0 0 0 0 0 0 0
 
-                [0, 0, 0, 0, 0, 0, 0, 0],
-                [1, 0, 0, 0, 0, 0, 0, 0],
-                [1, 0, 0, 0, 0, 1, 1, 0],
-                [1, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 2, 4],
-                [0, 2, 2, 0, 2, 0, 0, 2],
-                [0, 0, 0, 0, 0, 0, 0, 3]
+                [0, 0, 0, 0, 0, 0, 0, 0]
+                ,[0, 0, 0, 0, 0, 1, 0, 0]
+                ,[1, 1, 0, 0, 2, 0, 0, 1]
+                ,[1, 0, 0, 1, 1, 1, 0, 0]
+                ,[2, 0, 0, 0, 0, 0, 0, 2]
+                ,[2, 2, 0, 2, 0, 2, 0, 2]
+                ,[0, 0, 0, 0, 0, 0, 0, 0]
+                ,[0, 0, 0, 0, 0, 0, 0, 0]
                 ]
-
+    
 ###################################################### ai stuff ##########################################################
 
 def get_all_pieces(board_layout, color):
@@ -2363,19 +2429,32 @@ AI_TURN = 1
 
 start2 = time.time()
 test = [
-                [0, 0, 0, 0, 0, 0, 0, 0],   
-                [0, 0, 0, 0, 0, 0, 0, 1],
-                [1, 1, 0, 1, 0, 0, 0, 1],
-                [1, 0, 0, 0, 1, 0, 1, 1],
-                [0, 2, 0, 2, 0, 0, 0, 2],
-                [2, 0, 2, 0, 2, 0, 0, 2],
-                [2, 0, 0, 0, 0, 0, 0, 2],
-                [0, 0, 0, 0, 0, 0, 0, 0]
+             [0, 0, 0, 0, 3, 0, 0, 0]
+            ,[1, 1, 0, 0, 0, 1, 1, 1]
+            ,[0, 0, 2, 0, 2, 1, 1, 0]
+            ,[1, 1, 0, 2, 0, 1, 1, 2]
+            ,[0, 0, 0, 4, 0, 2, 2, 0]
+            ,[2, 2, 0, 2, 0, 2, 2, 2]
+            ,[2, 2, 0, 2, 0, 0, 0, 0]
+            ,[0, 0, 0, 0, 0, 0, 0, 0]
             ]
+
+test2 = [
+             [0, 0, 0, 0, 3, 0, 0, 0]
+            ,[0, 2, 0, 0, 0, 0, 0, 1]
+            ,[0, 0, 2, 0, 2, 1, 2, 0]
+            ,[1, 1, 0, 2, 0, 2, 0, 2]
+            ,[0, 0, 0, 4, 0, 2, 2, 0]
+            ,[2, 0, 0, 2, 0, 2, 2, 2]
+            ,[2, 2, 0, 2, 0, 0, 0, 0]
+            ,[0, 0, 0, 0, 0, 0, 0, 0]
+            ]
+
+
 test2 = []
 sum = 0.1
 moves2 = []
-for i in range(1500000):
+for i in range(1):
     # print(get_valid_moves_gpt(5, 0, 2, 0, [], test, ''))
     # deepcopy2(test)
     # get_all_moves(test, 1)
@@ -2386,7 +2465,7 @@ for i in range(1500000):
     #check_for_piece_akel(3, 0, 1, test)
     #moves2.append(test)
     #evaluate_int(test, 2)
-    # print(eat_max2(5, 1, test, [[(5, 1), (3, 1)]], 4, ''))
+    print(eat_max2(0, 4, test, [[(0, 4), (4, 3)], [(0, 4), (4, 4)], [(0, 4), (4, 5)], [(0, 4), (4, 6)]], 3, ''))
     pass
 end2 = time.time()
 
@@ -2426,7 +2505,10 @@ pygame.display.flip()
 CPPFILE = 'dama_bitTest.cpp'
 # CPPFILE = 'dama22.cpp'
 # Compile the C++ file
-compile_command = ['g++','-Ofast','-faggressive-loop-optimizations', '-fstack-arrays', CPPFILE, '-o', 'executable']
+
+# delete game history of previous game
+delete_game_history("game_history.txt")
+compile_command = ['g++','-Ofast','-faggressive-loop-optimizations', '-fstack-arrays', CPPFILE, '-o', 'sombol1.0']
 subprocess.run(compile_command, check=True)
 
 while running:
@@ -2439,7 +2521,7 @@ while running:
         current_board_layout = deepcopy(board.layout)
         
         # Execute the compiled binary
-        execute_command = ['./executable']
+        execute_command = ['./sombol1.0']
         subprocess.run(execute_command)
 
         board.layout = []

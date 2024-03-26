@@ -3,26 +3,32 @@
 #include <iostream>
 #include <tuple>
 #include <fstream>
+#include <sstream>
 #include <cstring>
 #include <random>
 #include <time.h> 
 #include <vector>
-#include <set>
 #include <memory>
 #include <windows.h>
 #include <cstdlib>   // for rand() and srand()
 #include <ctime>
 #include <fstream>
 #include <string>
-#include <algorithm>
+#include <unordered_map>
+#include <set>
+#include <unordered_set>   
+// #include <unordered_map>
 #include <functional>
+
+const bool AI_IS_WHITE = true;
 
 const int NUM_PIECES = 5;  // Number of piece types
 const int NUM_SQUARES = 64;  // Number of squares on the board
 const int NUM_TURNS = 2;  // Number of possible turns
 
-// AI dept
-const int DEPTH = 7;
+const int MAX_DEPTH = 12;  // Depth of the search tree
+
+const int MAX_TIME_SECONDS = 20;  // Maximum time allowed for the AI to make a move
 
 uint64_t lookupTable[NUM_PIECES][NUM_SQUARES][NUM_TURNS];
 

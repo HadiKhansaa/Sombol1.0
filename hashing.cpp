@@ -2,6 +2,12 @@
 
 #include "BitmaskBoard.hpp"
 
+
+typedef struct TTValue {
+    int depth;
+    int eval;
+} TTValue;
+
 class TranspositionTableValue {
     int eval;
     int depth;
@@ -20,7 +26,7 @@ public:
     // Getters
     int getEval() const { return eval; }
     int getDepth() const { return depth; }
-    const BitmaskBoard& getBestMove() const { return bestMove; }
+    BitmaskBoard& getBestMove() { return bestMove; }
 
     // If setters are needed
     void setEval(int e) { eval = e; }
@@ -33,6 +39,8 @@ std::mt19937_64 rng(std::random_device{ }());
 std::uniform_int_distribution<uint64_t> distribution(0, std::numeric_limits<uint64_t>::max());
 
 std::unordered_map<uint64_t, std::pair<uint64_t, int>> transpositionTable;
+
+std::unordered_map<BitmaskBoard, TTValue> transpositionTable3;
 
 std::unordered_map<BitmaskBoard, TranspositionTableValue> transpositionTable2;
 
@@ -88,6 +96,37 @@ void loadTranspositionTableFromFile(std::unordered_map<uint64_t, std::pair<uint6
 
     while (inFile >> key >> valueFirst >> valueSecond) {
         transpositionTable[key] = {valueFirst, valueSecond};
+    }
+
+    inFile.close();
+}
+
+void writeGameHistoryToFile(const std::unordered_map<uint64_t, int>& gameHistory, const std::string& filename) {
+    std::ofstream outFile(filename);
+    if (!outFile.is_open()) {
+        std::cerr << "Failed to open file for writing: " << filename << std::endl;
+        return;
+    }
+
+    for (const auto& [key, value] : gameHistory) {
+        if(value != 0)
+            outFile << key << " " << value << "\n";
+    }
+
+    outFile.close();
+}
+
+void readGameHistoryFromFile(std::unordered_map<uint64_t, int>& gameHistory, const std::string& filename) {
+    std::ifstream inFile(filename);
+    if (!inFile.is_open()) {
+        std::cerr << "Failed to open file for reading: " << filename << std::endl;
+        return;
+    }
+
+    uint64_t key;
+    int value;
+    while (inFile >> key >> value) {
+        gameHistory[key] = value;
     }
 
     inFile.close();
