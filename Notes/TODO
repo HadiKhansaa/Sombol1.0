@@ -3,7 +3,7 @@ Large:
 2. more pruning
 3. better eval function (maybe reinforcment learning)
 4. better akel generation (eat_max, etc etc)
-5. organize code into files and Classes and functions
+5. ✔ organize code into files and Classes and functions
 
 
 Medium:
@@ -11,7 +11,7 @@ Medium:
 2. consider teskeer l kash early in the moves.
 2. undo
 3. improve check_for_force performance by creating a get_max_akel_length function
-4. minimax can only return eval, and at the end get the best move based on the evals of level 1
+4. ✔ minimax can only return eval, and at the end get the best move based on the evals of level 1
 
 Small:
 1. ✔ There is a bug in sombol logic, sometimes its playing fumb moves, fix it.

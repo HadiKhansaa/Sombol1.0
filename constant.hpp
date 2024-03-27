@@ -20,15 +20,20 @@
 // #include <unordered_map>
 #include <functional>
 
+//counters
+int movesSeen = 0;
+int counter = 0;
+int cacheHits = 0;
+
 const bool AI_IS_WHITE = true;
 
 const int NUM_PIECES = 5;  // Number of piece types
 const int NUM_SQUARES = 64;  // Number of squares on the board
 const int NUM_TURNS = 2;  // Number of possible turns
 
-const int MAX_DEPTH = 12;  // Depth of the search tree
+const int MAX_DEPTH = 20;  // Depth of the search tree
 
-const int MAX_TIME_SECONDS = 20;  // Maximum time allowed for the AI to make a move
+const int MAX_TIME_SECONDS = 16;  // Maximum time allowed for the AI to make a move
 
 uint64_t lookupTable[NUM_PIECES][NUM_SQUARES][NUM_TURNS];
 

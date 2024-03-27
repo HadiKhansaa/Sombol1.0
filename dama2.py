@@ -666,7 +666,7 @@ class Board:
     # 2 2 2 2 2 0 0 0
     # 0 0 0 0 0 0 0 0
 
-    layout = [
+    layout3 = [
              [0, 0, 0, 0, 3, 0, 0, 0]
             ,[1, 1, 2, 0, 0, 1, 1, 1]
             ,[0, 0, 0, 0, 2, 1, 1, 0]
@@ -678,16 +678,28 @@ class Board:
             ]
 
     #test endgame
-    layout3 = [
-                [0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 1, 0, 0, 0, 0, 0, 1],
-                [1, 0, 0, 0, 0, 0, 0, 1],
-                [1, 1, 0, 1, 0, 0, 0, 1],
-                [2, 0, 0, 0, 2, 2, 0, 2],
-                [2, 2, 0, 0, 2, 0, 0, 2],
-                [0, 0, 0, 0, 0, 0, 0, 0],
+    layout = [
+
+                # create this board
+                # 0 0 0 0 0 0 0 0
+                # 1 1 0 1 1 1 1 1
+                # 1 0 1 1 0 0 0 1
+                # 1 0 0 1 1 1 1 0
+                # 2 2 2 0 0 0 0 2
+                # 2 0 0 2 2 2 2 2
+                # 2 0 2 2 2 2 0 2
+                # 0 0 0 0 0 0 0 0
+                
                 [0, 0, 0, 0, 0, 0, 0, 0]
+                ,[1, 1, 0, 1, 1, 1, 0, 1]
+                ,[1, 0, 1, 1, 0, 0, 1, 1]
+                ,[1, 0, 0, 1, 1, 1, 1, 0]
+                ,[2, 2, 2, 0, 0, 0, 0, 2]
+                ,[2, 0, 2, 2, 2, 2, 2, 2]
+                ,[2, 0, 0, 2, 2, 2, 0, 2]
+                ,[0, 0, 0, 0, 0, 0, 0, 0]
                ]
+    
     #bugged 1: fixed
     layout5 = [
             [0, 0, 0, 0, 0, 0, 0, 0],
@@ -734,7 +746,7 @@ class Board:
         ]
                                             
          
-    layout = [
+    layout7 = [
                 [0, 0, 0, 0, 0, 0, 0, 0],
                 [1, 1, 1, 1, 1, 1, 1, 1],
                 [1, 1, 1, 1, 1, 1, 1, 1],
@@ -2508,8 +2520,15 @@ CPPFILE = 'dama_bitTest.cpp'
 
 # delete game history of previous game
 delete_game_history("game_history.txt")
-compile_command = ['g++','-Ofast','-faggressive-loop-optimizations', '-fstack-arrays', CPPFILE, '-o', 'sombol1.0']
-subprocess.run(compile_command, check=True)
+# compile_command = ['g++','-Ofast','-faggressive-loop-optimizations', '-fstack-arrays', CPPFILE, '-o', 'sombol1.0']
+# subprocess.run(compile_command, check=True)
+
+try:
+    # Call 'make' command
+    compile_command = ['make','-j']
+    subprocess.run(compile_command, check=True)
+except subprocess.CalledProcessError as e:
+    print(f"Error during make: {e}")
 
 while running:
     clock.tick(30)
@@ -2521,7 +2540,7 @@ while running:
         current_board_layout = deepcopy(board.layout)
         
         # Execute the compiled binary
-        execute_command = ['./sombol1.0']
+        execute_command = ['./sombol1']
         subprocess.run(execute_command)
 
         board.layout = []

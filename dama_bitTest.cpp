@@ -8,28 +8,7 @@ std::pair<int, BitmaskBoard> search(
     char depth, bool max_player, BitmaskBoard& board_layout,
     int alpha, int beta, char akel_player, char akel_depth, bool akling,
      std::unordered_map<BitmaskBoard, TranspositionTableValue>& transpositionTable);
-//counters
-int movesSeen = 0;
-int counter = 0;
-int cacheHits = 0;
 
-// bool sakker_kesh(BitmaskBoard board_layout, char row, char col, char* v_move, char turn) {
-//     char oppTurn;
-//     if(turn == 1)
-//         oppTurn = 2;
-//     else
-//         oppTurn = 1;
-//     if(check_for_possible_capture(board_layout, oppTurn).second) //eza fi kesh
-//     {
-//         std::vector<std::vector<char*>> emptyV;
-//         BitmaskBoard board_layout2 = move_piece(new char[2]{row, col}, v_move, board_layout, emptyV, turn);
-//         if(!check_for_possible_capture(board_layout2, oppTurn).second) // eza tsakkar l kesh
-//             return true;
-//         else
-//             return false;
-//     }
-//     return false;
-// }
 
 bool check_end_of_parent_list(std::vector<std::vector<char*>> parent_list, char* move){
     for (auto l : parent_list)
@@ -1295,50 +1274,11 @@ bool equals(std::vector<char*>& a, std::vector<char*>& b)
     return true;
 }
 
-bool doesnt_have(std::vector <std::vector<char*>>& a, std::vector<char*>& b){
+bool doesnt_have(std::vector <std::vector<char*>>& a, std::vector<char*>& b) {
     for(auto element:a)
         if(equals(element, b))
             return false;
     return true;
-}
-
-std::vector<char*> better_parent_list(std::vector<char*>& a, std::vector<char*>& b, BitmaskBoard &board_layout, char color){
-    int count1 = 0, count2 = 0;
-    for(int i=0; i<a.size() - 1; i++){
-        if(color == 2 || color == 4)
-        {
-            if(get_piece_to_eat(board_layout, a[i][0], a[i][1], a[i+1][0], a[i+1][1], color) == 3)
-                count1+=1;
-            if(get_piece_to_eat(board_layout, b[i][0], b[i][1], b[i+1][0], b[i+1][1], color) == 3)
-                count2+=1;
-        }
-        else
-        {
-            if(get_piece_to_eat(board_layout, a[i][0], a[i][1], a[i+1][0], a[i+1][1], color) == 4)
-                count1+=1;
-            if(get_piece_to_eat(board_layout, b[i][0], b[i][1], b[i+1][0], b[i+1][1], color) == 4)
-                count2+=1;
-        }
-    }
-    
-    if(count1>=count2)
-        return a;
-    return b;
-}
-
-std::vector<std::vector<char*>> deepcopy_parent_list(std::vector<std::vector<char*>>& parent_list){
-    std::vector<std::vector<char*>> new_parent_list;
-    for(auto element:parent_list){
-        std::vector<char*> new_element;
-        for(auto move:element){
-            char* new_move = new char[2];
-            new_move[0] = move[0];
-            new_move[1] = move[1];
-            new_element.push_back(new_move);
-        }
-        new_parent_list.push_back(new_element);
-    }
-    return new_parent_list;
 }
 
 std::vector<std::vector<char*>> eat_max2(char row, char col, BitmaskBoard& board_layout,  std::vector<std::vector<char*>> parent_list, char color, char eat_direction) {
@@ -3729,12 +3669,12 @@ int search2(
      std::unordered_map<BitmaskBoard, TTValue>& transpositionTable,
       BitmaskBoard& best_move, char maxDepth, std::unordered_map<uint64_t, int>& gameHistory)
 {
-    int total_depth = depth + akel_depth;
+    int total_depth = depth;
 
     // First, check if this board state is already in the transposition table
     board_layout.setTurn(max_player ? 0 : 1);
     auto it = transpositionTable.find(board_layout);
-    if(!(depth == maxDepth && akel_depth == 0) && it != transpositionTable.end()) {
+    if(akel_depth==0 && !(depth == maxDepth && akel_depth == 0) && it != transpositionTable.end()) {
         TTValue& ttValue = it->second;
         // Ensure that the depth stored in the transposition table is at least as deep as the current search depth
         if(ttValue.depth >= total_depth) {
@@ -3759,23 +3699,22 @@ int search2(
 
     int bestEval = max_player ? INT_MIN : INT_MAX;
     BitmaskBoard bestMove;
+
     for(auto move : moves) {
         int eval;
-        BitmaskBoard resultBoard;
-
         // mimic playing the move
-        move.setTurn(max_player ? 0 : 1);
+        move.setTurn(max_player ? 1 : 0);
         gameHistory[move.hash()]++;
 
         if(gameHistory[move.hash()] >= 3)
             eval = 0; // threefold draw
         // Recursively call minimax on each move
-        else if (!isEmptyForceList && akel_depth<5)
+        else if (!isEmptyForceList && akel_depth<10)
             eval = search2(depth, !max_player, move, alpha, beta, !max_player, akel_depth+1, true, transpositionTable, bestMove, maxDepth, gameHistory);
         else
         {
-            if(!max_player && akel_depth>2)
-                // eval = max_player ? INT_MIN : INT_MAX; // throw line
+            if((akel_player == !max_player) && akel_depth>2)
+                // eval = max_player ? INT_MAX : INT_MIN; // throw line
                 eval = search2(depth-1, !max_player, move, alpha, beta, !max_player, 100, false, transpositionTable, best_move, maxDepth, gameHistory);
             else
                 eval = search2(depth-1, !max_player, move, alpha, beta, !max_player, 0, false, transpositionTable, bestMove, maxDepth, gameHistory);
@@ -3806,7 +3745,7 @@ int search2(
     }
 
     // Update transposition table if needed
-    if(!transpositionTable.count(board_layout) || transpositionTable[board_layout].depth < total_depth) {
+    if(akel_depth==0 && !transpositionTable.count(board_layout) || transpositionTable[board_layout].depth < total_depth) {
         TTValue value = {total_depth, bestEval};
         transpositionTable[board_layout] = value;
     }
@@ -3814,32 +3753,6 @@ int search2(
     if((depth == maxDepth) && (akel_depth == 0) && ((AI_IS_WHITE && max_player) || (!AI_IS_WHITE && !max_player)))
         best_move = bestMove;
     return bestEval;
-}
-
-BitmaskBoard get_best_move(BitmaskBoard& board, std::unordered_map<BitmaskBoard, TTValue>& transpositionTable, char depth, char turn) {
-    auto all_moves = get_all_moves(board, turn).first;
-
-    // Order moves based on transposition table
-
-    BitmaskBoard best_move = all_moves[0];
-    for (auto& move : all_moves) {
-        move.setTurn(turn == 1 ? 0 : 1);
-
-        auto it = transpositionTable.find(move);
-        auto best_eval = transpositionTable[best_move].eval;
-
-        if (turn == 1 && it != transpositionTable.end() && it->second.depth == depth && it->second.eval > best_eval) {
-            best_move = move;
-            break;
-        }
-
-        if (turn == 2 && it != transpositionTable.end() && it->second.depth == depth && it->second.eval < best_eval) {
-            best_move = move;
-            break;
-        }
-    }
-
-    return best_move;
 }
 
 std::pair<int, BitmaskBoard> iterativeDeepening(BitmaskBoard& initialBoard, char maxDepth, bool isMaxPlayer, std::unordered_map<BitmaskBoard, TTValue>& transpositionTable, int maxTimeSeconds, std::unordered_map<uint64_t, int>& gameHistory) {
@@ -3855,6 +3768,7 @@ std::pair<int, BitmaskBoard> iterativeDeepening(BitmaskBoard& initialBoard, char
     auto [moves, isEmptyForceList] = get_all_moves(initialBoard, isMaxPlayer ? 1 : 2);
     if (moves.size() == 1) {
         // add best move to game history (white move)
+        moves[0].setTurn(isMaxPlayer? 1 : 0);
         hashKey = moves[0].hash();
         gameHistory[hashKey]++;
         return std::make_pair(0, moves[0]);
@@ -3881,6 +3795,7 @@ std::pair<int, BitmaskBoard> iterativeDeepening(BitmaskBoard& initialBoard, char
     }
 
     // add best move to game history (black move)
+    bestMove.setTurn(isMaxPlayer? 1 : 0);
     hashKey = bestMove.hash();
     gameHistory[hashKey]++;
 

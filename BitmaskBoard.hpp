@@ -209,7 +209,15 @@ public:
 
     int evaluate_board(std::unordered_map<uint64_t, int> &gameHistory) {
 
-        // if there is akel, eat the pieces
+        // if there is a single move
+        // auto [moves, isEmptyForceList] = get_all_moves(*this, isWhiteTurn ? 2 : 1);
+        // if (moves.size() == 1) {
+        //     // add best move to game history (white move)
+        //     moves[0].setTurn(isWhiteTurn? 1 : 0);
+        //     auto hashKey = moves[0].hash();
+        //     gameHistory[hashKey]++;
+        //     *this = moves[0]; // play that single move
+        // }
 
         // draw if threefold
         if(gameHistory[hash()] >= 2)
