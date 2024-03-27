@@ -1,10 +1,27 @@
-# Sombol1.0
-1. Initially, I undertook the development of a Dama game using the Python programming language, meticulously implementing all the necessary rules and functionalities.
+# Turkish Checkers (Dama) Game Repository
 
-2. Subsequently, I embarked on creating an artificial intelligence (AI) system capable of playing the game autonomously. Employing the minimax algorithm as the foundation, I further refined the AI by integrating optimization techniques such as alpha-beta pruning, memoization, and bitwise operations, all implemented in Python.
+This repository contains a Python implementation of the game along with a highly optimized AI engine written in C++.
 
-3. Recognizing the importance of computational efficiency, I made the decision to optimize the AI engine by refactoring its entire codebase into C++. Capitalizing on the inherent speed advantages offered by C++, the AI engine demonstrated significant performance enhancements. It could now evaluate up to **1 million** moves within a remarkably brief timeframe of less than **2 seconds**, reaching tree depths as deep as 14. These improvements resulted in the AI outperforming top-level players in the game.
+## About the Game
 
-4. Building upon the achievements thus far, I shifted my focus to establishing an online multiplayer environment along with a matchmaking system. Employing a client-server architecture, developed in Python utilizing sockets, players were afforded the opportunity to engage in challenging online matches against one another.
+Turkish Checkers, commonly known as Dama, is a popular board game played on an 8x8 board with pieces placed on dark squares. The game follows specific rules for movement and capturing, providing an engaging strategic challenge for players.
 
-5. Presently, I am actively engaged in developing a comprehensive website that incorporates all previously mentioned features, in addition to introducing supplementary elements such as player ratings, puzzle challenges, instructional courses, and more.
+## Features
+
+- **Python Implementation**: The game logic and interface are implemented in Python, providing an accessible platform for playing the game.
+- **C++ AI Engine**: The repository includes a powerful AI engine written in C++, capable of providing challenging gameplay experiences. The AI engine is highly optimized for efficiency and effectiveness.
+- **Interactive Gameplay**: Players can enjoy interactive gameplay by running the `dama.py` Python script. Simply execute `python dama.py` to start a new game and play against the AI engine.
+- **New Game Options**: The game interface allows players to start new games and select various options, providing flexibility and customization for gameplay.
+- **Rules Enforcement**: The game strictly follows the rules of Turkish Checkers, ensuring an authentic and fair gaming experience.
+
+## Getting Started
+
+To play the Turkish Checkers game, follow these steps:
+
+1. Clone the repository to your local machine.
+2. Ensure you have Python and a C++ compiler installed on your system.
+3. Install pygame by running this command: `pip install pygame`.
+4. Navigate to the repository directory.
+5. Run the `dama.py` script using Python: `python dama.py`.
+6. Select "New Game" from the menu to start a new game (check other menu options for more flexibility with theme and time).
+7. Enjoy playing against the AI engine!
