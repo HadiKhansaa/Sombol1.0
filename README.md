@@ -1,4 +1,4 @@
-# Turkish Checkers (Dama) Game Repository
+# Turkish Checkers (Dama) Game and AI Engine (Sombol1.0)
 
 This repository contains a Python implementation of the game along with a highly optimized AI engine written in C++.
 
