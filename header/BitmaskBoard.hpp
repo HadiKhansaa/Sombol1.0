@@ -27,6 +27,10 @@ private:
     // uint64_t ONE = 1ULL, ZERO = 0ULL, INITIAL_POSITION = 0xffff0000ffff00ULL;
 
 public:
+
+    friend std::ostream& operator<<(std::ostream& os, const BitmaskBoard& board);
+    friend std::istream& operator>>(std::istream& is, BitmaskBoard& board);
+
     // Default constructor initializes all masks to 0
     BitmaskBoard() : whitePawns(0x0ULL), blackPawns(0x0ULL), whiteKings(0x0ULL), blackKings(0x0ULL), isWhiteTurn(true) {}
 
@@ -261,7 +265,7 @@ public:
 
         // Base scores for pawns and kings
         sum += scaling_factor * (100 * (nb_black_pawns - nb_white_pawns)); // Pawn difference
-        sum += (450 * (nb_black_kings - nb_white_kings)); // King difference
+        sum += scaling_factor * (450 * (nb_black_kings - nb_white_kings)); // King difference
 
         // Edge bonuses specifically for the right and left edges
 
@@ -318,7 +322,15 @@ public:
             }
         }
         
-        // game end
+        // endgames
+        if((nb_black_kings + nb_black_pawns) == 1) // if you have 1 piece left its a draw at best
+            sum = std::min(sum, 0);
+
+        if((nb_white_kings + nb_white_pawns) == 1) // if you have 1 piece left its a draw at best
+            sum = std::max(sum, 0);
+
+
+        // game finished
         // wins
         if((nb_black_kings + nb_black_pawns) == 0)
             return -10000;
@@ -431,6 +443,18 @@ public:
         return false;
     }
 
+    bool black_won() {
+        if(((__builtin_popcountll(whiteKings) + __builtin_popcountll(whitePawns)) == 0))
+            return true;
+        return false;
+    }
+
+    bool white_won() {
+        if(((__builtin_popcountll(blackKings) + __builtin_popcountll(blackPawns)) == 0))
+            return true;
+        return false;
+    }
+
     // Function to calculate hash key for a board layout and turn
     uint64_t calculateHashKey(char turn, std::array<std::array<uint64_t, 64>, 4> &zobristTable) {
         uint64_t hashKey = 0;
@@ -477,6 +501,7 @@ public:
     }
 
 };
+
 
 namespace std {
     template<>

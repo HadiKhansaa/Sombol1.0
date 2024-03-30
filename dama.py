@@ -3,6 +3,7 @@ import ctypes
 import time
 import pygame
 from numba import njit, jit
+import platform
 import multiprocessing as mp
 from multiprocessing import Pool
 from itertools import product
@@ -44,7 +45,6 @@ def delete_game_history(file_path):
         # Delete the file
         os.remove(file_path)
 
-
 def no_more_moves_white(b):
     for i in b.layout:
         for j in i:
@@ -55,67 +55,6 @@ def no_more_moves_white(b):
 
 def empty_square(row, col):
     pass
-
-def get_valid_moves_gpt(row, col, color, streak, valid_moves, board_layout, eat_direction):
-    def is_valid_move(row, col, piece):
-        if row < 0 or row >= 8 or col < 0 or col >= 8:
-            return False
-        if board_layout[row][col] != 0:
-            return False
-        return True
-
-    def add_valid_move(row, col):
-        if (row, col) not in valid_moves:
-            valid_moves.append((row, col))
-
-    def add_eating_piece(direction):
-        return direction if not eating_piece else eating_piece
-
-    def check_directions(deltas, eating_piece):
-        for dx, dy in deltas:
-            i = 1
-            while True:
-                new_row, new_col = row + i * dx, col + i * dy
-                if not is_valid_move(new_row, new_col, board_layout[row][col]):
-                    break
-                if eating_piece:
-                    add_valid_move(new_row, new_col)
-                    eating_piece = add_eating_piece('d')
-                else:
-                    add_valid_move(new_row, new_col)
-                i += 1
-
-    deltas = {
-        'u': [(-1, 0)],
-        'd': [(1, 0)],
-        'l': [(0, -1)],
-        'r': [(0, 1)]
-    }
-
-    eating_piece = ''
-    directions = eat_direction if color in [3, 4] else ['u', 'd', 'l', 'r']
-
-    for direction in directions:
-        if direction in deltas:
-            check_directions(deltas[direction], eating_piece)
-
-    if color == 1:
-        if is_valid_move(row + 1, col, board_layout[row][col]) and streak == 0:
-            add_valid_move(row + 1, col)
-        if is_valid_move(row, col + 1, board_layout[row][col]) and streak == 0:
-            add_valid_move(row, col + 1)
-        if is_valid_move(row, col - 1, board_layout[row][col]) and streak == 0:
-            add_valid_move(row, col - 1)
-
-    elif color == 2:
-        if is_valid_move(row - 1, col, board_layout[row][col]) and streak == 0:
-            add_valid_move(row - 1, col)
-        if is_valid_move(row, col + 1, board_layout[row][col]) and streak == 0:
-            add_valid_move(row, col + 1)
-        if is_valid_move(row, col - 1, board_layout[row][col]) and streak == 0:
-            add_valid_move(row, col - 1)
-
-    return valid_moves, eating_piece
 
 def get_valid_moves(row, col, color, streak, valid_moves, board_layout, eat_direction):
     ate_up = (eat_direction == 'u')
@@ -678,7 +617,7 @@ class Board:
             ]
 
     #test endgame
-    layout = [
+    layout7 = [
 
                 # create this board
                 # 0 0 0 0 0 0 0 0
@@ -700,16 +639,38 @@ class Board:
                 ,[0, 0, 0, 0, 0, 0, 0, 0]
                ]
     
+    layout8 = [
+                # create this board
+                # 0 0 0 0 0 0 0 0 
+                # 1 0 1 1 0 0 1 0 
+                # 1 1 1 1 0 1 0 0 
+                # 2 0 0 0 1 1 1 1 
+                # 2 2 2 2 0 0 0 1 
+                # 0 0 0 2 2 2 2 2 
+                # 0 2 0 2 2 0 0 2 
+                # 0 0 0 0 0 0 0 0 
+        
+                [0, 0, 0, 0, 0, 0, 0, 0]
+                ,[1, 0, 1, 1, 0, 0, 1, 0]
+                ,[1, 1, 1, 1, 0, 1, 0, 0]
+                ,[2, 0, 0, 0, 1, 1, 1, 1]
+                ,[2, 2, 2, 2, 0, 0, 0, 1]
+                ,[0, 0, 0, 2, 2, 2, 2, 2]
+                ,[0, 2, 0, 2, 2, 0, 0, 2]
+                ,[0, 0, 0, 0, 0, 0, 0, 0]
+                ]
+
+    
     #bugged 1: fixed
     layout5 = [
             [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 1, 0, 0, 0, 0, 0, 1],
-            [0, 1, 0, 0, 0, 0, 1, 0],
-            [0, 0, 1, 0, 0, 0, 0, 2],
-            [1, 2, 2, 0, 0, 1, 0, 2],
-            [2, 0, 2, 0, 0, 0, 2, 0],
             [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0]
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 2, 0, 0, 0, 0],
+            [0, 0, 0, 0, 3, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 4, 0, 0, 0, 0, 0, 0]
         ]
     
     #bugged 2: 
@@ -746,7 +707,7 @@ class Board:
         ]
                                             
          
-    layout7 = [
+    layout = [
                 [0, 0, 0, 0, 0, 0, 0, 0],
                 [1, 1, 1, 1, 1, 1, 1, 1],
                 [1, 1, 1, 1, 1, 1, 1, 1],
@@ -761,22 +722,21 @@ class Board:
 
     layout2 = [
                 # create this board
-#         0 0 0 0 0 0 0 0
-#         0 0 0 0 0 1 0 0
-# 1 1 0 0 2 0 0 1
-# 1 0 0 1 1 1 0 0
-# 2 0 0 0 0 0 0 2
-# 2 2 0 2 0 2 0 2
-# 0 0 0 0 0 0 0 0
-# 0 0 0 0 0 0 0 0
-
-                [0, 0, 0, 0, 0, 0, 0, 0]
-                ,[0, 0, 0, 0, 0, 1, 0, 0]
-                ,[1, 1, 0, 0, 2, 0, 0, 1]
-                ,[1, 0, 0, 1, 1, 1, 0, 0]
-                ,[2, 0, 0, 0, 0, 0, 0, 2]
-                ,[2, 2, 0, 2, 0, 2, 0, 2]
-                ,[0, 0, 0, 0, 0, 0, 0, 0]
+                # 0 0 0 0 0 0 0 4 
+                # 1 1 0 0 0 1 0 0 
+                # 1 1 1 0 0 0 0 0 
+                # 1 1 1 0 0 0 0 0 
+                # 2 0 0 2 0 0 0 0 
+                # 2 2 0 0 2 0 2 2 
+                # 0 2 0 1 0 0 0 0 
+                # 0 0 0 0 0 0 0 0 
+                [0, 0, 0, 0, 0, 0, 0, 4]
+                ,[1, 1, 0, 0, 0, 1, 0, 0]
+                ,[1, 1, 1, 0, 0, 0, 0, 0]
+                ,[1, 1, 1, 0, 0, 0, 0, 0]
+                ,[2, 0, 0, 2, 0, 0, 0, 0]
+                ,[2, 2, 0, 0, 2, 0, 2, 2]
+                ,[0, 2, 0, 1, 0, 0, 0, 0]
                 ,[0, 0, 0, 0, 0, 0, 0, 0]
                 ]
     
@@ -2375,7 +2335,6 @@ def eat_max2(row, col, board_layout, parent_list,  color, eat_direction):
     else:
         return []
 
-
 def check_for_move(b1, b2, color):
     i=0
     while i<8:
@@ -2431,7 +2390,6 @@ def printBoardOnScreen(screen):
                     screen.blit(redDama, (10+j*100, 10 + i*100))
         pygame.display.flip()
 
-
 #CHANGE Starting turn and AI turn
 turn = 2
 AI_TURN = 1
@@ -2477,11 +2435,11 @@ for i in range(1):
     #check_for_piece_akel(3, 0, 1, test)
     #moves2.append(test)
     #evaluate_int(test, 2)
-    print(eat_max2(0, 4, test, [[(0, 4), (4, 3)], [(0, 4), (4, 4)], [(0, 4), (4, 5)], [(0, 4), (4, 6)]], 3, ''))
+    # print(eat_max2(0, 4, test, [[(0, 4), (4, 3)], [(0, 4), (4, 4)], [(0, 4), (4, 5)], [(0, 4), (4, 6)]], 3, ''))
     pass
 end2 = time.time()
 
-print("The elapsed time python: ", end2-start2)
+# print("The elapsed time python: ", end2-start2)
 
 #main run loop
 force_list=np.array([])
@@ -2540,7 +2498,13 @@ while running:
         current_board_layout = deepcopy(board.layout)
         
         # Execute the compiled binary
-        execute_command = ['./sombol1']
+
+        #check if os is Linux or Windows
+        if platform.system() == 'Windows':
+            execute_command = ['sombol1.exe']
+        else:
+            execute_command = ['./sombol1']
+            
         subprocess.run(execute_command)
 
         board.layout = []

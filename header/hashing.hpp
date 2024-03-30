@@ -29,4 +29,14 @@ void writeGameHistoryToFile(const std::unordered_map<uint64_t, int>& gameHistory
 
 void readGameHistoryFromFile(std::unordered_map<uint64_t, int>& gameHistory, const std::string& filename);
 
+void writeTranspositionTableToFile(std::unordered_map<BitmaskBoard, TTValue>& transpositionTable, const std::string& filename);
 
+void readTranspositionTableFromFile(std::unordered_map<BitmaskBoard, TTValue>& transpositionTable, const std::string& filename);
+
+std::ostream& operator<<(std::ostream& os, const TTValue& value);
+
+std::istream& operator>>(std::istream& is, TTValue& value);
+
+std::ostream& operator<<(std::ostream& os, const BitmaskBoard& board);
+
+std::istream& operator>>(std::istream& is, BitmaskBoard& board);

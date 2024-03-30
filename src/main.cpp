@@ -34,38 +34,51 @@ int main()
         return 1;
     }
 
-    auto test3 = test2;
     for(int i=0; i<8; i++)
         for(int j=0; j<8; j++)
-        {
             test2[i][j]-='0';
-        }
+        
+
     std::pair<int, BitmaskBoard> minimaxResult;
 
-    int nb_of_pieces = 0;
     BitmaskBoard curr_board;
     for(int i=0; i<8; i++)
     {
         for(int j=0; j<8; j++)
         {
-            
             curr_board.set(i, j, test2[i][j]);
-            if(curr_board.get(i, j) != 0)
-                nb_of_pieces++;
         }
     }
 
     clock_t begin = clock();
 
     // initialize TT
-    std::unordered_map<BitmaskBoard, TTValue> transpositionTable3;
+    std::unordered_map<BitmaskBoard, TTValue> transpositionTable;
+
+    // read transposition table from file
+    // readTranspositionTableFromFile(transpositionTable, "transposition_table.dat");
 
     // get game history from file
     std::unordered_map<uint64_t, int> gameHistory;
     readGameHistoryFromFile(gameHistory, "game_history.txt");
 
     // run iterative deepening
-    minimaxResult = iterativeDeepening(curr_board, MAX_DEPTH, AI_IS_WHITE, transpositionTable3, MAX_TIME_SECONDS, gameHistory);
+    minimaxResult = iterativeDeepening(curr_board, MAX_DEPTH, AI_IS_WHITE, transpositionTable, MAX_TIME_SECONDS, gameHistory);
+
+
+    // test get_all_moves
+    // std::vector<BitmaskBoard> moves;
+    // bool isEmptyForceList;
+    // std::tie(moves, isEmptyForceList) = get_all_moves(minimaxResult.second, 2);
+
+    // for(auto move : moves)
+    // {
+    //     printBoard(move);
+    //     std::cout<<"\n";
+    // }
+
+    // save transposition table to file
+    // writeTranspositionTableToFile(transpositionTable, "transposition_table.dat");
 
     // save game history to file
     writeGameHistoryToFile(gameHistory, "game_history.txt");
