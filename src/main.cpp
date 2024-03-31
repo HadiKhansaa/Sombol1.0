@@ -5,6 +5,7 @@
 #include "util.hpp"
 #include "AI.hpp"
 #include "globals.hpp"
+#include "robin_hood.h"
 
 int main()
 {
@@ -53,14 +54,17 @@ int main()
     clock_t begin = clock();
 
     // initialize TT
-    std::unordered_map<BitmaskBoard, TTValue> transpositionTable;
+    // std::unordered_map<BitmaskBoard, TTValue> transpositionTable;
+    robin_hood::unordered_map<BitmaskBoard, TTValue> transpositionTable;
 
 
     // read transposition table from file
     // readTranspositionTableFromFile(transpositionTable, "transposition_table.dat");
 
     // get game history from file
-    std::unordered_map<uint64_t, int> gameHistory;
+    // std::unordered_map<uint64_t, int> gameHistory;
+
+    robin_hood::unordered_map<uint64_t, int> gameHistory;
     readGameHistoryFromFile(gameHistory, "game_history.txt");
 
     // run iterative deepening

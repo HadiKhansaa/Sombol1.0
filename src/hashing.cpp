@@ -1,9 +1,5 @@
 #include "BitmaskBoard.hpp"
-
-typedef struct TTValue {
-    int depth;
-    int eval;
-} TTValue;
+#include "hashing.hpp"
 
 std::ostream& operator<<(std::ostream& os, const TTValue& value) {
     os << value.depth << " " << value.eval;
@@ -15,7 +11,7 @@ std::istream& operator>>(std::istream& is, TTValue& value) {
     return is;
 }
 
-void writeGameHistoryToFile(const std::unordered_map<uint64_t, int>& gameHistory, const std::string& filename) {
+void writeGameHistoryToFile(const robin_hood::unordered_map<uint64_t, int>& gameHistory, const std::string& filename) {
     std::ofstream outFile(filename);
     if (!outFile.is_open()) {
         std::cerr << "Failed to open file for writing: " << filename << std::endl;
@@ -28,7 +24,7 @@ void writeGameHistoryToFile(const std::unordered_map<uint64_t, int>& gameHistory
     outFile.close();
 }
 
-void readGameHistoryFromFile(std::unordered_map<uint64_t, int>& gameHistory, const std::string& filename) {
+void readGameHistoryFromFile(robin_hood::unordered_map<uint64_t, int>& gameHistory, const std::string& filename) {
     std::ifstream inFile(filename);
     if (!inFile.is_open()) {
         std::cerr << "Failed to open file for reading: " << filename << std::endl;
@@ -63,7 +59,7 @@ std::istream& operator>>(std::istream& is, BitmaskBoard& board) {
 }
 
 // Function to read transposition table from file
-void readTranspositionTableFromFile(std::unordered_map<BitmaskBoard, TTValue>& transpositionTable, const std::string& filename) {
+void readTranspositionTableFromFile(robin_hood::unordered_map<BitmaskBoard, TTValue>& transpositionTable, const std::string& filename) {
     std::ifstream inFile(filename);
     if (!inFile.is_open()) {
         std::cerr << "Error: Unable to open file for reading: " << filename << std::endl;
@@ -79,7 +75,7 @@ void readTranspositionTableFromFile(std::unordered_map<BitmaskBoard, TTValue>& t
 }
 
 // Function to write transposition table to file
-void writeTranspositionTableToFile(std::unordered_map<BitmaskBoard, TTValue>& transpositionTable, const std::string& filename) {
+void writeTranspositionTableToFile(robin_hood::unordered_map<BitmaskBoard, TTValue>& transpositionTable, const std::string& filename) {
     std::ofstream outFile(filename);
     if (!outFile.is_open()) {
         std::cerr << "Error: Unable to open file for writing: " << filename << std::endl;

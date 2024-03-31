@@ -18,6 +18,7 @@
 #include <unordered_set>   
 // #include <unordered_map>
 #include <functional>
+#include "robin_hood.h"
 
 class BitmaskBoard {
 private:
@@ -232,7 +233,7 @@ public:
         return false; // Return false for any other turn value
     }
 
-    int evaluate_board(std::unordered_map<uint64_t, int> &gameHistory) {
+    int evaluate_board(robin_hood::unordered_map<uint64_t, int> &gameHistory) {
 
         // if there is a single move
         // auto [moves, isEmptyForceList] = get_all_moves(*this, isWhiteTurn ? 2 : 1);
@@ -297,8 +298,11 @@ public:
         
         // in early game only advance at the edges
         if(total_pieces > 26) {
-            sum += 10 * (int)(__builtin_popcountll(blackPawns & (advancementMaskBlack & leftEdgeMask)) - __builtin_popcountll(whitePawns & (advancementMaskWhite & leftEdgeMask)));
-            sum += 10 * (int)(__builtin_popcountll(blackPawns & (advancementMaskBlack & rightEdgeMask)) - __builtin_popcountll(whitePawns & (advancementMaskWhite & rightEdgeMask)));
+            sum += 10 * (int)(__builtin_popcountll(blackPawns & (advancementMaskBlack & leftEdgeMask)));
+            sum += 10 * (int)(__builtin_popcountll(blackPawns & (advancementMaskBlack & rightEdgeMask)));
+            
+            // even here don't let whit push
+            sum += 10 * (int)( - __builtin_popcountll(whitePawns & advancementMaskWhite));
         }
         else // in middle ad endgame reward any advancement
             sum += 10 * (int)(__builtin_popcountll(blackPawns & advancementMaskBlack) - __builtin_popcountll(whitePawns & advancementMaskWhite));
@@ -347,9 +351,9 @@ public:
         if((nb_black_pieces == 1) && (nb_white_pieces == 1))
             return 0;
         // if one of sides is on 1 piece its a draw
-        if((nb_black_pieces == 1) && sum > 0)
+        if((nb_black_pieces == 1) && (nb_white_pieces > 1) && sum > 0)
             sum = 0;
-        if(nb_white_pieces == 1 && sum < 0)
+        if((nb_white_pieces == 1) && (nb_white_pieces > 1) && sum < 0)
             sum = 0;
 
         return sum;
@@ -515,7 +519,7 @@ public:
         // Treat isWhiteTurn as an additional bit in the hash computation. 
         // You can use a simple conditional to add a unique value (like a small prime number) 
         // to distinguish between the two possible states.
-        // hashValue = hashValue * 31 + (isWhiteTurn ? 1231 : 1237); // Prime numbers for true/false
+        hashValue = hashValue * 31 + (isWhiteTurn ? 1231 : 1237); // Prime numbers for true/false
 
         return hashValue;
     }

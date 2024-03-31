@@ -201,7 +201,7 @@ std::pair<std::vector<char*>, char> get_valid_moves(char row, char col, char col
             }
             
             i=1;
-            while(row-i>0 && board_layout.get(row-i, col) == 0)
+            while(row-i>=0 && board_layout.get(row-i, col) == 0)
             {
                 v_move = new char[2];
                 v_move[0] = row-i;
@@ -221,7 +221,7 @@ std::pair<std::vector<char*>, char> get_valid_moves(char row, char col, char col
             }
             
             i=1;
-            while(col-i>0 && row>0 && row<8 && col-i<8 && board_layout.get(row, col-i) == 0)
+            while(col-i>=0 && row>0 && row<8 && col-i<8 && board_layout.get(row, col-i) == 0)
             {
                 v_move = new char[2];
                 v_move[0] = row;
@@ -411,7 +411,7 @@ std::pair<std::vector<char*>, char> get_valid_moves(char row, char col, char col
             }
             
             i=1;
-            while(row-i>0 && board_layout.get(row-i, col) == 0)
+            while(row-i>=0 && board_layout.get(row-i, col) == 0)
             {
                 v_move = new char[2];
                 v_move[0] = row-i;
@@ -431,7 +431,7 @@ std::pair<std::vector<char*>, char> get_valid_moves(char row, char col, char col
             }
             
             i=1;
-            while(col-i>0 && board_layout.get(row, col-i) == 0)
+            while(col-i>=0 && board_layout.get(row, col-i) == 0)
             {
                 v_move = new char[2];
                 v_move[0] = row;

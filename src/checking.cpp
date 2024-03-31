@@ -1,6 +1,7 @@
 #include "checking.hpp"
 #include "moveGeneration.hpp"
 #include "globals.hpp"
+#include "robin_hood.h"
 
 bool check_if_piece_can_capture(char row, char col, BitmaskBoard& board_layout, char turn){
 
@@ -419,7 +420,7 @@ std::vector<char*> check_for_force(BitmaskBoard& board_layout, char turn, std::v
         return {};
     bool aktar_flag = false;
     std::vector<char*> aktar_list;
-    std::unordered_set<char*> aktar_set;
+    robin_hood::unordered_set<char*> aktar_set;
     std::vector<char*> force_list;
     char maxLength = 3, listSize = 0;
 

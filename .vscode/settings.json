@@ -60,7 +60,23 @@
         "thread": "cpp",
         "dense_hash_map": "cpp",
         "map": "cpp",
-        "cinttypes": "cpp"
+        "cinttypes": "cpp",
+        "any": "cpp",
+        "bitset": "cpp",
+        "cfenv": "cpp",
+        "codecvt": "cpp",
+        "csignal": "cpp",
+        "forward_list": "cpp",
+        "list": "cpp",
+        "optional": "cpp",
+        "regex": "cpp",
+        "future": "cpp",
+        "iomanip": "cpp",
+        "scoped_allocator": "cpp",
+        "typeindex": "cpp",
+        "valarray": "cpp",
+        "variant": "cpp",
+        "shared_mutex": "cpp"
     },
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter"

@@ -19,16 +19,11 @@
 // #include <unordered_map>
 #include <functional>
 #include "BitmaskBoard.hpp"
+#include "robin_hood.h"
 
 struct BitmaskBoardHash {
-    std::size_t operator()(const BitmaskBoard& board) const {
-        return board.hash();  // Assuming BitmaskBoard has a hash() method.
-    }
-};
-
-struct BitmaskBoardEqual {
-    bool operator()(const BitmaskBoard& lhs, const BitmaskBoard& rhs) const {
-        return lhs == rhs;  // Assuming BitmaskBoard has an operator== defined.
+    size_t operator()(const BitmaskBoard& board) const {
+        return board.hash();
     }
 };
 
@@ -37,13 +32,13 @@ typedef struct TTValue {
     int eval;
 } TTValue;
 
-void writeGameHistoryToFile(const std::unordered_map<uint64_t, int>& gameHistory, const std::string& filename);
+void writeGameHistoryToFile(const robin_hood::unordered_map<uint64_t, int>& gameHistory, const std::string& filename);
 
-void readGameHistoryFromFile(std::unordered_map<uint64_t, int>& gameHistory, const std::string& filename);
+void readGameHistoryFromFile(robin_hood::unordered_map<uint64_t, int>& gameHistory, const std::string& filename);
 
-void writeTranspositionTableToFile(std::unordered_map<BitmaskBoard, TTValue>& transpositionTable, const std::string& filename);
+void writeTranspositionTableToFile(robin_hood::unordered_map<BitmaskBoard, TTValue>& transpositionTable, const std::string& filename);
 
-void readTranspositionTableFromFile(std::unordered_map<BitmaskBoard, TTValue>& transpositionTable, const std::string& filename);
+void readTranspositionTableFromFile(robin_hood::unordered_map<BitmaskBoard, TTValue>& transpositionTable, const std::string& filename);
 
 std::ostream& operator<<(std::ostream& os, const TTValue& value);
 
