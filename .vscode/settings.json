@@ -57,7 +57,10 @@
         "mutex": "cpp",
         "semaphore": "cpp",
         "stop_token": "cpp",
-        "thread": "cpp"
+        "thread": "cpp",
+        "dense_hash_map": "cpp",
+        "map": "cpp",
+        "cinttypes": "cpp"
     },
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter"

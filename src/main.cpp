@@ -55,6 +55,7 @@ int main()
     // initialize TT
     std::unordered_map<BitmaskBoard, TTValue> transpositionTable;
 
+
     // read transposition table from file
     // readTranspositionTableFromFile(transpositionTable, "transposition_table.dat");
 

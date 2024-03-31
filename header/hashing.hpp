@@ -20,6 +20,18 @@
 #include <functional>
 #include "BitmaskBoard.hpp"
 
+struct BitmaskBoardHash {
+    std::size_t operator()(const BitmaskBoard& board) const {
+        return board.hash();  // Assuming BitmaskBoard has a hash() method.
+    }
+};
+
+struct BitmaskBoardEqual {
+    bool operator()(const BitmaskBoard& lhs, const BitmaskBoard& rhs) const {
+        return lhs == rhs;  // Assuming BitmaskBoard has an operator== defined.
+    }
+};
+
 typedef struct TTValue {
     int depth;
     int eval;

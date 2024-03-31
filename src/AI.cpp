@@ -3,6 +3,7 @@
 #include "moveGeneration.hpp"
 #include "globals.hpp"
 
+
 void order_moves2(
     BitmaskBoard& board, 
     std::vector<BitmaskBoard>& moves, 
@@ -123,13 +124,19 @@ int search2(
 
         // return instantly if win
 
-        if(gameHistory[move.hash()] >= 3)
-            eval = 0; // threefold draw
+        if(board_layout.black_won())
+            eval = 10000;
+        else if(board_layout.white_won())
+            eval = -10000;
+        else if(gameHistory[move.hash()] >= 3)
+            eval = 0; // draw
         else if (!isEmptyForceList && akel_depth < 10) // if akel don't decrease depth
             eval = search2(depth, !max_player, move, alpha, beta, !max_player, akel_depth+1, true, transpositionTable, bestMove, maxDepth, gameHistory);
         else
         {
-            if((akel_player == !max_player) && akel_depth>5) // akling path cut
+            if(board_layout.draw()) // if no more akels and a single piece each
+                eval = 0;
+            else if((akel_player == !max_player) && akel_depth>5) // akling path cut
                 // eval = max_player ? INT_MAX : INT_MIN; // throw line
                 eval = search2(depth-1, !max_player, move, alpha, beta, !max_player, 100, false, transpositionTable, best_move, maxDepth, gameHistory);
             else
@@ -141,6 +148,8 @@ int search2(
                 bestEval = eval;
                 if((depth == maxDepth) && (akel_depth == 0))
                     bestMove = move;
+                if(bestEval == 10000) // if win return instantly
+                    break;
             }
             alpha = std::max(alpha, bestEval);
         } else {
@@ -148,6 +157,8 @@ int search2(
                 bestEval = eval;
                 if((depth == maxDepth) && (akel_depth == 0))
                     bestMove = move;
+                if(bestEval == -10000) // if win return instantly
+                    break;
             }
             beta = std::min(beta, bestEval);
         }
