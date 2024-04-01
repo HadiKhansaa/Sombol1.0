@@ -1174,7 +1174,7 @@ BitmaskBoard move_piece(char* piece, char* move, BitmaskBoard& board_layout, std
 std::pair<std::vector<BitmaskBoard>, bool> get_all_moves(BitmaskBoard& board_layout, char color)
 {
     std::vector<BitmaskBoard> moves;
-    // std::unordered_set<BitmaskBoard> moves_set;
+    // robin_hood::unordered_set<BitmaskBoard> moves_set;
     std::vector<char *> pieces;
     counter++;
     //create force list

@@ -3,6 +3,7 @@
 #include "moveGeneration.hpp"
 #include "globals.hpp"
 #include "robin_hood.h"
+#include "util.hpp"
 
 
 void order_moves2(
@@ -33,32 +34,63 @@ void order_moves2(
         // If only one move is found, prioritize it
         else if (itA != transpositionTable.end()) {
             // try to find b in the opposite turn
-            b.setTurn(isMaxPlayer ? 0 : 1);
-            auto itB = transpositionTable.find(b);
-            if(itB != transpositionTable.end())
-            {
-                if(isMaxPlayer)
-                    return itA->second.eval > itB->second.eval;
-                else
-                    return itA->second.eval < itB->second.eval;
-            }
+            // b.setTurn(isMaxPlayer ? 0 : 1);
+            // auto itB = transpositionTable.find(b);
+            // if(itB != transpositionTable.end())
+            // {
+            //     if(isMaxPlayer)
+            //         return itA->second.eval > itB->second.eval;
+            //     else
+            //         return itA->second.eval < itB->second.eval;
+            // }
+
+            // if not found, compare with the evaluation of the board
+            int evalB = b.evaluate_board();
+            if(isMaxPlayer)
+                return itA->second.eval > evalB;
+            else
+                return itA->second.eval < evalB;
             
             return true;
         }
         else if (itB != transpositionTable.end()) {
             // try to find a in the opposite turn
-            a.setTurn(isMaxPlayer ? 0 : 1);
-            auto itA = transpositionTable.find(a);
-            if(itA != transpositionTable.end())
-            {
-                if(isMaxPlayer)
-                    return itA->second.eval > itB->second.eval;
-                else
-                    return itA->second.eval < itB->second.eval;
-            }
+            // a.setTurn(isMaxPlayer ? 0 : 1);
+            // auto itA = transpositionTable.find(a);
+            // if(itA != transpositionTable.end())
+            // {
+            //     if(isMaxPlayer)
+            //         return itA->second.eval > itB->second.eval;
+            //     else
+            //         return itA->second.eval < itB->second.eval;
+            // }
+
+            // if not found, compare with the evaluation of the board
+            int evalA = a.evaluate_board();
+            if(isMaxPlayer)
+                return evalA > itB->second.eval;
+            else
+                return evalA < itB->second.eval;
             return false;
         }
-        // If neither move is found, do simple evaluation of both boards
+        
+        // If neither move is found, prioritize the one with the higher evaluation
+        // int evalA = a.evaluate_board();
+        // int evalB = b.evaluate_board();
+
+        // // save in TT
+        // TTValue value = {0, evalA};
+        // transpositionTable[a] = value;
+
+        // value = {0, evalB};
+        // transpositionTable[b] = value;
+
+
+        // if(isMaxPlayer)
+        //     return evalA > evalB;
+        // else
+        //     return evalA < evalB;
+
 
         return false;
     };
@@ -202,6 +234,14 @@ std::pair<int, BitmaskBoard> iterativeDeepening(BitmaskBoard& initialBoard, char
 
     // if there is only a single move possible play it instantly
     auto [moves, isEmptyForceList] = get_all_moves(initialBoard, isMaxPlayer ? 1 : 2);
+
+    // std::cout<<"Number of moves: "<<moves.size()<<"\n";
+    // for(auto move : moves)
+    // {
+    //     printBoard(move);
+    //     std::cout<<"\n";
+    // }
+
     if (moves.size() == 1) {
         // add best move to game history (white move)
         hashKey = moves[0].hash();

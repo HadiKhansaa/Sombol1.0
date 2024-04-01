@@ -246,7 +246,7 @@ public:
         // }
 
         // draw if threefold
-        if(gameHistory[hash()] >= 3)
+        if(gameHistory[hash()] >= 2)
             return 0;
 
         // Count pieces using popcount (population count - counts the number of set bits)
@@ -362,8 +362,6 @@ public:
     // overrided version without game history
     int evaluate_board() {
 
-        // if there is akel, eat the pieces
-
         // Count pieces using popcount (population count - counts the number of set bits)
         int nb_black_pawns = __builtin_popcountll(blackPawns);
         int nb_white_pawns = __builtin_popcountll(whitePawns);
@@ -371,6 +369,8 @@ public:
         int nb_white_kings = __builtin_popcountll(whiteKings);
 
         int total_pieces = nb_black_pawns + nb_white_pawns + nb_black_kings + nb_white_kings;
+        int nb_black_pieces = nb_black_pawns + nb_black_kings;
+        int nb_white_pieces = nb_white_pawns + nb_white_kings;
 
         int sum = 0;
         double scaling_factor = 1;
@@ -385,17 +385,16 @@ public:
 
         // Base scores for pawns and kings
         sum += scaling_factor * (100 * (nb_black_pawns - nb_white_pawns)); // Pawn difference
-        sum += (450 * (nb_black_kings - nb_white_kings)); // King difference
+        sum += scaling_factor * (450 * (nb_black_kings - nb_white_kings)); // King difference
 
+        
+        constexpr uint64_t leftEdgeMask = 0x0101010101010101; // Left edge of the board
+        constexpr uint64_t rightEdgeMask = 0x8080808080808080; // Right edge of the board
+        
         // Edge bonuses specifically for the right and left edges
-
         // if in endgame dont give edge bonus
-
         if(total_pieces > 16)
         {
-            constexpr uint64_t leftEdgeMask = 0x0101010101010101; // Left edge of the board
-            constexpr uint64_t rightEdgeMask = 0x8080808080808080; // Right edge of the board
-
             int edge_bonus_black = 3 * (__builtin_popcountll(blackPawns & leftEdgeMask) + __builtin_popcountll(blackPawns & rightEdgeMask) + __builtin_popcountll(blackKings & leftEdgeMask) + __builtin_popcountll(blackKings & rightEdgeMask));
             int edge_bonus_white = 3 * (__builtin_popcountll(whitePawns & leftEdgeMask) + __builtin_popcountll(whitePawns & rightEdgeMask) + __builtin_popcountll(whiteKings & leftEdgeMask) + __builtin_popcountll(whiteKings & rightEdgeMask));
             sum += edge_bonus_black - edge_bonus_white;
@@ -409,7 +408,17 @@ public:
         // More advancement bonuses
         advancementMaskWhite = 0x00000000FF000000ULL; // 3rd row from the opponent's side for black
         advancementMaskBlack = 0x000000FF00000000ULL; // 3rd row from the opponent's side for white
-        sum += 10 * (int)(__builtin_popcountll(blackPawns & advancementMaskBlack) - __builtin_popcountll(whitePawns & advancementMaskWhite));
+        
+        // in early game only advance at the edges
+        if(total_pieces > 26) {
+            sum += 10 * (int)(__builtin_popcountll(blackPawns & (advancementMaskBlack & leftEdgeMask)));
+            sum += 10 * (int)(__builtin_popcountll(blackPawns & (advancementMaskBlack & rightEdgeMask)));
+            
+            // even here don't let whit push
+            sum += 10 * (int)( - __builtin_popcountll(whitePawns & advancementMaskWhite));
+        }
+        else // in middle ad endgame reward any advancement
+            sum += 10 * (int)(__builtin_popcountll(blackPawns & advancementMaskBlack) - __builtin_popcountll(whitePawns & advancementMaskWhite));
 
         // Extra for closer pawns
         advancementMaskWhite = 0x0000000000FF0000ULL; // 4th row from the opponent's side for black
@@ -442,15 +451,22 @@ public:
             }
         }
         
-        // game end
+
+        // game finished
         // wins
-        if((nb_black_kings + nb_black_pawns) == 0)
+        if(nb_black_pieces == 0)
             return -10000;
-        if((nb_white_kings + nb_white_pawns )== 0)
+        if(nb_white_pieces == 0)
             return 10000;
         // draw
-        if((nb_black_kings + nb_black_pawns == 1) && (nb_white_kings + nb_white_pawns == 1))
+        if((nb_black_pieces == 1) && (nb_white_pieces == 1))
             return 0;
+        // if one of sides is on 1 piece its a draw
+        if((nb_black_pieces == 1) && (nb_white_pieces > 1) && sum > 0)
+            sum = 0;
+        if((nb_white_pieces == 1) && (nb_white_pieces > 1) && sum < 0)
+            sum = 0;
+
         return sum;
     }
 
