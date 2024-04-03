@@ -414,6 +414,13 @@ bool passage_is_clear(BitmaskBoard& board_layout, char row, char col, char turn)
 
 std::vector<char*> check_for_force(BitmaskBoard& board_layout, char turn, std::vector<char*> *pieces = { })
 {
+    // new, needs more testing
+    // if(!board_layout.getBlackKings() && !board_layout.getWhiteKings() &&!board_layout.capture_available(turn == 1 ? 0 : 1))
+    // {
+    //     *pieces = get_all_pieces(board_layout, turn);
+    //     return {};
+    // }
+
     auto [pieces2, check] = check_for_possible_capture(board_layout, turn);
     *pieces = pieces2;
     if(check == false)

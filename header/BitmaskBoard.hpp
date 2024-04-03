@@ -204,6 +204,11 @@ public:
         uint64_t notBFile = 0b1011111110111111101111111011111110111111101111111011111110111111;
         uint64_t notGFile = 0b1111110111111101111111011111110111111101111111011111110111111101;
 
+        uint64_t notRank8 = 0b1111111111111111111111111111111111111111111111111111111100000000;
+        uint64_t notRank7 = 0b1111111111111111111111111111111111111111111111110000000011111111;
+        uint64_t notRank1 = 0b1111111100000000111111111111111111111111111111111111111111111111;
+        uint64_t notRank0 = 0b0000000011111111111111111111111111111111111111111111111111111111;
+
         // Combine all pieces into one bitboard for checking empty squares
         uint64_t allPieces = whitePawns | blackPawns | whiteKings | blackKings;
         uint64_t emptySquares = ~allPieces;
@@ -212,25 +217,32 @@ public:
         uint64_t playerPieces = isWhiteTurn ? whitePawns | whiteKings : blackPawns | blackKings;
         
         auto playerPiecesForLeft = playerPieces & notAFile & notBFile;
+        auto opponentPiecesForLeft = opponentPieces & notAFile;
         auto playerPiecesForRight = playerPieces & notHFile & notGFile;
+        auto opponentPiecesForRight = opponentPieces & notHFile;
         // Check horizontal captures
         // Right captures: piece, opponent piece, empty square
-        bool leftCapture = ( (playerPiecesForLeft << 1) & opponentPieces) && 
-                            (((playerPiecesForLeft << 2) & emptySquares));
+        bool leftCapture = ( (playerPiecesForLeft << 1) & opponentPiecesForLeft) && 
+                            (((playerPiecesForLeft << 2) & (opponentPiecesForLeft << 1) & emptySquares));
         // Left captures: piece, opponent piece, empty square
-        bool rightCapture = ((playerPiecesForRight >> 1) & opponentPieces) && 
-                           (((playerPiecesForRight >> 2) & emptySquares));
+        bool rightCapture = ((playerPiecesForRight >> 1) & opponentPiecesForRight) && 
+                           (((playerPiecesForRight >> 2) & (opponentPiecesForRight >> 1) & emptySquares));
 
         // Check vertical captures for pawns
         bool upCapture = false, downCapture = false;
-        if (!isWhiteTurn) { // White's turn
+
+        auto playerPiecesForUp = playerPieces & notRank1 & notRank0;
+        auto opponentPiecesForUp = opponentPieces & notRank0;
+        auto playerPiecesForDowm = playerPieces & notRank7 & notRank8;
+        auto opponentPiecesForDown = opponentPieces & notRank8;
+        if (isWhiteTurn) { // White's turn
             // Up captures: piece, opponent piece, empty square
-            upCapture = ((playerPieces << 8) & opponentPieces) && 
-                        (((playerPieces << 16) & emptySquares)); 
+            upCapture = ((playerPiecesForUp << 8) & opponentPiecesForUp) && 
+                        (((playerPiecesForUp << 16) & (opponentPiecesForUp << 8) & emptySquares)); 
         } else { // Black's turn
             // Down captures: piece, opponent piece, empty square
-            downCapture = ((playerPieces >> 8) & opponentPieces) && 
-                          (((playerPieces >> 16) & emptySquares));
+            downCapture = ((playerPiecesForDowm >> 8) & opponentPiecesForDown) && 
+                          (((playerPiecesForDowm >> 16) & (opponentPiecesForDown >> 8) & emptySquares));
         }
 
         return rightCapture || leftCapture || upCapture || downCapture;
@@ -374,7 +386,7 @@ public:
 
         // Base scores for pawns and kings
         sum += scaling_factor * (100 * (nb_black_pawns - nb_white_pawns)); // Pawn difference
-        sum += scaling_factor * (450 * (nb_black_kings - nb_white_kings)); // King difference
+        sum += scaling_factor * (430 * (nb_black_kings - nb_white_kings)); // King difference
 
         
         constexpr uint64_t leftEdgeMask = 0x0101010101010101; // Left edge of the board
@@ -442,16 +454,19 @@ public:
         sum -= 2 * (balance_black - balance_white); // Penalize imbalance more subtly than before, adjusting the weight as needed
         
         // if passage is clear, give a bonus
-        for(int j=0; j<8; j++)
+
+        if(!blackKings && !whiteKings) // bo damas on board
         {
-            if(!isWhiteTurn && check_index_has_blackPawn(4, j) && passage_is_clear(*this, 4, j, 1)) {
-                sum += 70;
-            }
-            if(isWhiteTurn && check_index_has_whitePawn(3, j) && passage_is_clear(*this, 3, j, 2)) {
-                sum -= 70;
+            for(int j=0; j<8; j++)
+            {
+                if(!isWhiteTurn && check_index_has_blackPawn(4, j) && passage_is_clear(*this, 4, j, 1)) {
+                    sum += 70;
+                }
+                if(isWhiteTurn && check_index_has_whitePawn(3, j) && passage_is_clear(*this, 3, j, 2)) {
+                    sum -= 70;
+                }
             }
         }
-        
         
 
 

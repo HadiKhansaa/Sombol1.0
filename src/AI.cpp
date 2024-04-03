@@ -174,8 +174,8 @@ int search2(
     bool isEmptyForceList = false;
     auto moves = get_all_moves(board_layout, max_player ? 1 : 2, isEmptyForceList);
 
-    // std:: cout << isEmptyForceList << " "<<board_layout.capture_available()<<"\n";
-    // if(board_layout.capture_available())
+    // std:: cout << isEmptyForceList << " "<<board_layout.capture_available(!max_player)<<"\n";
+    // if(board_layout.capture_available(!max_player))
     // {
     //     std::cout<<board_layout.getTurn()<<"\n";
     //     printBoard(board_layout);
@@ -242,7 +242,7 @@ int search2(
         // move.setTurn(0); //arbitrarly
         // gameHistory[move.hash()]--;
 
-        if(beta <= alpha) {
+        if(akel_depth==0 && beta <= alpha) {
             break; // Alpha-beta pruning
         }
     }
