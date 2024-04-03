@@ -674,7 +674,28 @@ class Board:
             [0, 0, 0, 0, 0, 0, 0, 0],
             [0, 4, 0, 0, 0, 0, 0, 0]
         ]
-    
+
+    layout10 = [
+                # create this board
+                # 0 0 0 0 0 0 0 0
+                # 1 1 1 1 0 1 1 1
+                # 1 1 0 0 1 0 1 1
+                # 0 0 0 0 0 0 1 1
+                # 2 2 0 0 2 2 2 0
+                # 2 0 0 2 2 0 2 2
+                # 2 0 0 2 0 0 2 2
+                # 0 0 0 0 0 0 0 0 
+
+
+                [0, 0, 0, 0, 0, 0, 0, 0]
+                ,[1, 1, 0, 1, 0, 1, 1, 1]
+                ,[1, 1, 1, 0, 1, 0, 1, 1]
+                ,[0, 0, 0, 0, 0, 0, 1, 1]
+                ,[2, 0, 0, 2, 2, 2, 2, 0]
+                ,[2, 0, 0, 2, 2, 0, 2, 2]
+                ,[2, 0, 0, 2, 0, 0, 2, 2]
+                ,[0, 0, 0, 0, 0, 0, 0, 0]
+    ]   
     layout9 = [
                 # create this board
                 # 0 0 0 0 0 0 0 3
@@ -708,14 +729,14 @@ class Board:
             # 0 0 0 0 0 0 0 2
             # 0 0 0 3 0 0 0 0
         
-            [0, 0, 0, 4, 0, 0, 0, 0]
-            ,[1, 0, 0, 0, 0, 0, 0, 0]
-            ,[1, 0, 0, 0, 0, 0, 0, 0]
-            ,[1, 0, 0, 0, 0, 0, 1, 1]
-            ,[2, 0, 0, 0, 0, 0, 0, 0]
-            ,[2, 2, 0, 0, 0, 0, 0, 2]
-            ,[0, 0, 0, 0, 0, 0, 0, 2]
-            ,[0, 0, 0, 3, 0, 0, 0, 0]
+             [0, 0, 0, 0, 0, 0, 0, 0]
+            ,[0, 0, 0, 1, 1, 0, 0, 0]
+            ,[1, 0, 0, 1, 1, 1, 0, 1]
+            ,[0, 0, 0, 1, 1, 0, 0, 0]
+            ,[2, 2, 4, 0, 0, 0, 0, 2]
+            ,[0, 0, 2, 2, 2, 0, 2, 2]
+            ,[0, 0, 2, 0, 0, 0, 0, 2]
+            ,[0, 0, 0, 0, 0, 3, 0, 0]
 
             # [0, 0, 0, 0, 0, 0, 0, 0]
             # ,[1, 2, 1, 1, 1, 0, 1, 1]
@@ -2388,31 +2409,82 @@ def readFromFile(board_layout):
             board_layout.append(row)
     return board_layout
 
+def writeToFile(board_layout):
+    with open('minimaxResult.txt', 'w') as f:
+        # Iterate over each row in the board_layout array
+        for row in board_layout:
+            # Convert the row to a string of integers separated by spaces
+            line = ' '.join(map(str, row))
+            # Write the line to the file
+            f.write(line + '\n')
+
 #function to get board from sombolBoard and display it on the screen
 def printBoardOnScreen(screen):
-    while True:
-        board_layout = []
-        with open('sombolBoard.txt', 'r') as f:
-            # Iterate over each line in the file
-            for line in f:
-                # Split the line into a list of integers
-                row = list(map(int, line.split()))
-                # Append the row to the board_layout array
-                board_layout.append(row)
-        screen.fill((255, 255, 255))
-        screen.blit(board.surf,(0, 0))
-        for i in range(0, 8):
-            for j in range(0, 8):
-                if board_layout[i][j]==1:
-                    screen.blit(blackpiece.surf, (10+j*100, 10 + i*100))
-                elif board_layout[i][j]==2:
-                    screen.blit(whitepiece.surf, (10+j*100, 10 + i*100))
-                elif board_layout[i][j]==3:
-                    screen.blit(blackDama, (10+j*100, 10 + i*100))
-                elif board_layout[i][j]==4:
-                    screen.blit(redDama, (10+j*100, 10 + i*100))
-        pygame.display.flip()
+    board_layout = []
+    with open('minimaxResult.txt', 'r') as f:
+        # Iterate over each line in the file
+        for line in f:
+            # Split the line into a list of integers
+            row = list(map(int, line.split()))
+            # Append the row to the board_layout array
+            board_layout.append(row)
+    screen.fill((255, 255, 255))
+    screen.blit(board.surf,(0, 0))
+    for i in range(0, 8):
+        for j in range(0, 8):
+            if board_layout[i][j]==1:
+                screen.blit(blackpiece.surf, (10+j*100, 10 + i*100))
+            elif board_layout[i][j]==2:
+                screen.blit(whitepiece.surf, (10+j*100, 10 + i*100))
+            elif board_layout[i][j]==3:
+                screen.blit(blackDama, (10+j*100, 10 + i*100))
+            elif board_layout[i][j]==4:
+                screen.blit(redDama, (10+j*100, 10 + i*100))
+    pygame.display.flip()
 
+def AI_VS_AI():
+    printBoardOnScreen(screen)
+    writeToFile(board.layout)
+    delete_game_history("game_history.txt")
+    turn = 2
+
+    while True:
+
+        if turn == 2:
+            # get board from minimaxResult.txt 
+            board.layout = readFromFile(board.layout)
+            
+            #execute sombol1.exe
+            subprocess.run(['sombol1.exe'], check=True)
+
+            # print the board on the screen
+            printBoardOnScreen(screen)
+            pygame.display.flip()
+
+            # change the turn
+            turn = 1
+        else:
+            # get board from minimaxResult.txt 
+            board.layout = readFromFile(board.layout)
+            
+            #execute sombol2.exe
+            subprocess.run(['sombol2.exe'], check=True)
+
+            # print the board on the screen
+            printBoardOnScreen(screen)
+            pygame.display.flip()
+
+            # change the turn
+            turn = 2
+        
+        # check if the game is over
+        if count_pieces(board.layout, 1) == 0 or count_pieces(board.layout, 2) == 0:
+            exit()
+
+
+#AI vs AI
+# AI_VS_AI()
+            
 #CHANGE Starting turn and AI turn
 turn = 2
 AI_TURN = 1
@@ -2511,6 +2583,9 @@ try:
 except subprocess.CalledProcessError as e:
     print(f"Error during make: {e}")
 
+# write initial board to minimaxResult.txt
+writeToFile(board.layout)
+
 while running:
     clock.tick(30)
     screen.fill((255, 255, 255))
@@ -2607,67 +2682,91 @@ while running:
 
         # print()
         # print()
-        
+        turn = 3 - turn
         # flip turn
-        turn -= 1
-        if(turn == 0):
-            turn = 2
+        # turn -= 1
+        # if(turn == 0):
+        #     turn = 2
 
 
     
     #red ai move
     if False and turn == 2:
+
         current_board_layout = deepcopy(board.layout)
-        calculations = 0
-        positions_seen = 0
-
-        try:
-            game_history[str(current_board_layout)]+=1
-        except:
-            game_history[str(current_board_layout)]=1
         
-        start = time.time()
+        # Execute the compiled binary
 
-        if False and not dama_in_board(current_board_layout) and (count_pieces(current_board_layout, 1) + count_pieces(current_board_layout, 2)<10):
-            print("hi")
-            value, new_board_layout = deepcopy(minimax(6, False, current_board_layout, float('-inf'), float('inf'), 6, 0))
+        #check if os is Linux or Windows
+        if platform.system() == 'Windows':
+            execute_command = ['sombol2.exe']
         else:
-            #value, new_board_layout = deepcopy(classic_minimax(5, False, current_board_layout, float('-inf'), float('inf')))
-            #value, new_board_layout = minimax(4, False, current_board_layout, float('-inf'), float('inf'), 4, 50000)
-            #value, new_board_layout = minimax_depth1(screen, False, current_board_layout, 0, float('-inf'), float('inf'), {})
-            value, new_board_layout = deepcopy(minimax_pro2(5, False, current_board_layout, float('-inf'), float('inf'), 0, False, False, {}))
+            execute_command = ['./sombol2']
+            
+        subprocess.run(execute_command)
 
-        if False:
-            value2, new_board_layout2 = minimax_depth1(screen, False, current_board_layout, 0, float('-inf'), float('inf'), {})
+        board.layout = []
+        with open('minimaxResult.txt', 'r') as file:
+            for line in file:
+                row = [int(num) for num in line.strip().split()]
+                board.layout.append(row)
+        
+        turn = 3 - turn
+        printBoardOnScreen(screen)
+        pygame.display.flip()
 
-            if value2<value and abs(value - value2)>99:
-                value = value2
-                new_board_layout = new_board_layout2
-                print("hi")
+        # current_board_layout = deepcopy(board.layout)
+        # calculations = 0
+        # positions_seen = 0
 
-        end = time.time()
-        try:
-            game_history[str(new_board_layout)]+=1
-        except:
-            game_history[str(new_board_layout)]=0
+        # try:
+        #     game_history[str(current_board_layout)]+=1
+        # except:
+        #     game_history[str(current_board_layout)]=1
+        
+        # start = time.time()
 
-        try:
-            row_save, col_save = check_for_move(board.layout, new_board_layout, 2)
-        except:
-            pass
+        # if False and not dama_in_board(current_board_layout) and (count_pieces(current_board_layout, 1) + count_pieces(current_board_layout, 2)<10):
+        #     print("hi")
+        #     value, new_board_layout = deepcopy(minimax(6, False, current_board_layout, float('-inf'), float('inf'), 6, 0))
+        # else:
+        #     #value, new_board_layout = deepcopy(classic_minimax(5, False, current_board_layout, float('-inf'), float('inf')))
+        #     #value, new_board_layout = minimax(4, False, current_board_layout, float('-inf'), float('inf'), 4, 50000)
+        #     #value, new_board_layout = minimax_depth1(screen, False, current_board_layout, 0, float('-inf'), float('inf'), {})
+        #     value, new_board_layout = deepcopy(minimax_pro2(5, False, current_board_layout, float('-inf'), float('inf'), 0, False, False, {}))
+
+        # if False:
+        #     value2, new_board_layout2 = minimax_depth1(screen, False, current_board_layout, 0, float('-inf'), float('inf'), {})
+
+        #     if value2<value and abs(value - value2)>99:
+        #         value = value2
+        #         new_board_layout = new_board_layout2
+        #         print("hi")
+
+        # end = time.time()
+        # try:
+        #     game_history[str(new_board_layout)]+=1
+        # except:
+        #     game_history[str(new_board_layout)]=0
+
+        # try:
+        #     row_save, col_save = check_for_move(board.layout, new_board_layout, 2)
+        # except:
+        #     pass
         clickSound.play()
 
         #test time
 
-        print("calculations: ", calculations)
-        print("evaluation: ", value)
-        print("positions seen: ", positions_seen)
-        print("time: ", end - start)
-        print()
-        print()
-        board.layout = deepcopy(new_board_layout)
+        # print("calculations: ", calculations)
+        # print("evaluation: ", value)
+        # print("positions seen: ", positions_seen)
+        # print("time: ", end - start)
+        # print()
+        # print()
+        # board.layout = deepcopy(new_board_layout)
         
-        turn = 1
+        turn = 3 - turn
+        continue
         
 
     for  event in pygame.event.get():
@@ -2880,4 +2979,3 @@ while running:
         print("draw")
         time.sleep(5)
         break
-    

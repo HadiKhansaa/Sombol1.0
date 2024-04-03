@@ -34,3 +34,6 @@ bool passage_is_clear(BitmaskBoard& board_layout, char row, char col, char turn)
 
 std::vector<char*> check_for_force(BitmaskBoard& board_layout, char turn, std::vector<char*> *pieces);
 
+bool dama_is_captured(BitmaskBoard& board_layout, BitmaskBoard& move, char turn);
+
+bool kingMoved(BitmaskBoard& board_layout, BitmaskBoard& move, char turn);

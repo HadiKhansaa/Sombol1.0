@@ -9,4 +9,4 @@ const int NUM_TURNS = 2;  // Number of possible turns
 
 const int MAX_DEPTH = 12;  // Depth of the search tree
 
-const int MAX_TIME_SECONDS = 12;  // Maximum time allowed for the AI to make a move
+const int MAX_TIME_SECONDS = 10;  // Maximum time allowed for the AI to make a move

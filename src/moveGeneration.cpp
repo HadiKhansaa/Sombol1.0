@@ -1,6 +1,7 @@
 #include "moveGeneration.hpp"
 #include "checking.hpp"
 #include "globals.hpp"
+#include <omp.h>
 
 std::pair<std::vector<char*>, char> get_valid_moves(char row, char col, char color, char streak, BitmaskBoard& board_layout, char eat_direction)
 {
@@ -821,7 +822,7 @@ char get_piece_to_eat(BitmaskBoard& board_layout, char row, char col, char r, ch
     return 0;
 }
 
-std::pair<BitmaskBoard, char> eat_piece_if_possible(BitmaskBoard& board_layout, char row, char col, char r, char c, char color)
+char eat_piece_if_possible(BitmaskBoard& board_layout, char row, char col, char r, char c, char color)
 {
     char eat_direction = 0;
     char sumRowOver2;
@@ -839,12 +840,12 @@ std::pair<BitmaskBoard, char> eat_piece_if_possible(BitmaskBoard& board_layout, 
         if (board_layout.check_index_has_whitePawn(sumRowOver2, col) || board_layout.check_index_has_whiteKing(sumRowOver2, col))
         {
             board_layout.clearPosition(sumRowOver2, col);
-            return std::make_pair(board_layout, eat_direction);
+            return eat_direction;
         }
         else if (board_layout.check_index_has_whitePawn(row, sumColOver2) || board_layout.check_index_has_whiteKing(row, sumColOver2))
         {
             board_layout.clearPosition(row, sumColOver2);
-            return std::make_pair(board_layout, eat_direction);
+            return eat_direction;
         }
     }
     else if (color == 2)
@@ -852,12 +853,12 @@ std::pair<BitmaskBoard, char> eat_piece_if_possible(BitmaskBoard& board_layout, 
         if (board_layout.check_index_has_blackPawn(sumRowOver2, col) || board_layout.check_index_has_blackKing(sumRowOver2, col))
         {
             board_layout.clearPosition(sumRowOver2, col);
-            return std::make_pair(board_layout, eat_direction);
+            return eat_direction;
         }
         else if (board_layout.check_index_has_blackPawn(row, sumColOver2) || board_layout.check_index_has_blackKing(row, sumColOver2))
         {
             board_layout.clearPosition(row, sumColOver2);
-            return std::make_pair(board_layout, eat_direction);
+            return eat_direction;
         }
     }
     else if (color == 3)
@@ -882,7 +883,7 @@ std::pair<BitmaskBoard, char> eat_piece_if_possible(BitmaskBoard& board_layout, 
                 if (board_layout.check_index_has_whitePawn(k, c) || board_layout.check_index_has_whiteKing(k, c))
                 {
                     board_layout.clearPosition(k, c);
-                    return std::make_pair(board_layout, eat_direction);
+                    return eat_direction;
                 }
             }
         }
@@ -906,7 +907,7 @@ std::pair<BitmaskBoard, char> eat_piece_if_possible(BitmaskBoard& board_layout, 
                 if (board_layout.check_index_has_whitePawn(r, k) || board_layout.check_index_has_whiteKing(r, k))
                 {
                     board_layout.clearPosition(r, k);
-                    return std::make_pair(board_layout, eat_direction);
+                    return eat_direction;
                 }
             }
         }
@@ -933,7 +934,7 @@ std::pair<BitmaskBoard, char> eat_piece_if_possible(BitmaskBoard& board_layout, 
                 if (board_layout.check_index_has_blackPawn(k, c) || board_layout.check_index_has_blackKing(k, c))
                 {
                     board_layout.clearPosition(k, c);
-                    return std::make_pair(board_layout, eat_direction);
+                    return eat_direction;
                 }
             }
         }
@@ -957,12 +958,12 @@ std::pair<BitmaskBoard, char> eat_piece_if_possible(BitmaskBoard& board_layout, 
                 if (board_layout.check_index_has_blackPawn(r, k) || board_layout.check_index_has_blackKing(r, k))
                 {
                     board_layout.clearPosition(r, k);
-                    return std::make_pair(board_layout, eat_direction);
+                    return eat_direction;
                 }
             }
         }
     }
-    return std::make_pair(board_layout, eat_direction);
+    return eat_direction;
 }
 
 std::vector<std::vector<char*>> eat_max2(char row, char col, BitmaskBoard& board_layout,  std::vector<std::vector<char*>> parent_list, char color, char eat_direction) {
@@ -1034,7 +1035,7 @@ std::vector<std::vector<char*>> eat_max2(char row, char col, BitmaskBoard& board
             BitmaskBoard board_layout2 = board_layout;
 
             // remove the piece
-            eat_direction = eat_piece_if_possible(board_layout2, row, col, move[0], move[1], color).second;
+            eat_direction = eat_piece_if_possible(board_layout2, row, col, move[0], move[1], color);
             board_layout2.clearPosition(row, col); // added
             board_layout2.set(move[0], move[1], color);
 
@@ -1114,7 +1115,7 @@ std::vector<char*> get_all_pieces(BitmaskBoard& board_layout, char color)
     return pieces;
 }
 
-BitmaskBoard move_piece(char* piece, char* move, BitmaskBoard& board_layout, std::vector<std::vector<char*>>& parent_list, char color)
+void move_piece(char* piece, char* move, BitmaskBoard& board_layout, std::vector<std::vector<char*>>& parent_list, char color)
 {
     char row = piece[0];
     char col = piece[1];
@@ -1136,17 +1137,17 @@ BitmaskBoard move_piece(char* piece, char* move, BitmaskBoard& board_layout, std
             {
                 char z=0;
                 for(z = 0; z<value_length - 1; z++)
-                    eat_piece_if_possible(board_layout, value[z][0], value[z][1], value[z+1][0], value[z+1][1], color).first;
+                    eat_piece_if_possible(board_layout, value[z][0], value[z][1], value[z+1][0], value[z+1][1], color);
                 break;
             }
             index++;
         }
         parent_list.erase(parent_list.begin()+index);
         if(value_length==0)  
-            return board_layout;
+            return ;
     }
     else
-        board_layout = eat_piece_if_possible(board_layout, row, col, r, c, color).first;
+        eat_piece_if_possible(board_layout, row, col, r, c, color);
 
     char aux;
     aux = board_layout.get(row, col);
@@ -1168,10 +1169,9 @@ BitmaskBoard move_piece(char* piece, char* move, BitmaskBoard& board_layout, std
     if(r==7 && color==1)
         board_layout.set_blackKing(r, c);
     
-    return board_layout;
 }
 
-std::pair<std::vector<BitmaskBoard>, bool> get_all_moves(BitmaskBoard& board_layout, char color)
+std::vector<BitmaskBoard> get_all_moves(BitmaskBoard& board_layout, char color, bool& isEmptyForceList)
 {
     std::vector<BitmaskBoard> moves;
     // robin_hood::unordered_set<BitmaskBoard> moves_set;
@@ -1180,17 +1180,18 @@ std::pair<std::vector<BitmaskBoard>, bool> get_all_moves(BitmaskBoard& board_lay
     //create force list
     std::vector<char *> force_list;
     std::vector<char *> valid_moves;
-    bool forceListEmpty = false;
     std::vector<std::vector<char *>> parent_list;
     bool dama_nom = false, fff = false;
-
+    
+    isEmptyForceList = false;
     force_list = check_for_force(board_layout, color, &pieces);
-
+    
     if(!force_list.empty())
         pieces = force_list;
     else
-        forceListEmpty = true;
+        isEmptyForceList = true;
     
+
     for(char* piece : pieces)
     {
         char color2 = board_layout.get(piece[0], piece[1]);
@@ -1283,7 +1284,7 @@ std::pair<std::vector<BitmaskBoard>, bool> get_all_moves(BitmaskBoard& board_lay
                 }   
             }
         }
-
+        
         for(char* move : valid_moves)
         {
             // std::cout<<int(piece[0])<<" "<<int(piece[1])<<" "<<int(move[0])<<" "<<int(move[1])<<"\n";
@@ -1298,5 +1299,126 @@ std::pair<std::vector<BitmaskBoard>, bool> get_all_moves(BitmaskBoard& board_lay
         }
     }
 
-    return std::make_pair(moves, forceListEmpty);
+    return moves;
 }
+
+// parallel version
+std::vector<BitmaskBoard> get_all_moves2(BitmaskBoard& board_layout, char color, bool& isEmptyForceList) {
+    std::vector<BitmaskBoard> globalMoves; // This will hold the combined results
+    std::vector<char *> pieces;
+    std::vector<char *> force_list = check_for_force(board_layout, color, &pieces);
+
+    isEmptyForceList = force_list.empty();
+    if (!isEmptyForceList) {
+        pieces = force_list;
+    }
+
+    #pragma omp parallel
+    {
+        std::vector<BitmaskBoard> localMoves; // Each thread collects moves here
+
+        #pragma omp for nowait // Distribute pieces across threads, don't wait at the end
+        for (size_t i = 0; i < pieces.size(); ++i) {
+            char* piece = pieces[i];
+            char color2 = board_layout.get(piece[0], piece[1]);
+            auto fff = false;
+            auto dama_nom = false;
+            if(color2 == 1 || color2 == 2)
+            {
+                std::pair<std::vector<char*>, char> validMovesAndEatingPiece;
+                validMovesAndEatingPiece  = get_valid_moves(piece[0], piece[1], color2, 0, board_layout, 0);
+                
+                auto valid_moves = validMovesAndEatingPiece.first;
+                char eating_piece = validMovesAndEatingPiece.second;
+
+                fff = (eating_piece!=0);
+
+                if(fff)
+                {
+                    bool fff2 = false;
+                    std::vector<std::vector<char*>> parent_list2;
+                    std::vector<char*> tempValue;
+                    tempValue.push_back(piece);
+                    parent_list2.push_back(tempValue);
+                    for(char* move : valid_moves)
+                    {
+                        // std::vector<char*> tempValue = std::vector<char*>();
+                        // tempValue.push_back(piece);
+                        // tempValue.push_back(move);
+                        // parent_list2.push_back(tempValue);
+                        // auto eat_direction = get_eat_direction(piece[0], piece[1], move[0], move[1]);
+
+                        if(check_if_piece_can_capture(move[0], move[1], board_layout, color))
+                            fff2 = true;
+                    }
+
+                    if(fff2)
+                    {
+                        auto parent_list = eat_max2(piece[0], piece[1], board_layout, parent_list2, color2, 0);
+                        std::vector<char*> aux_list;
+                        if(!parent_list.empty())
+                        {
+                            for(std::vector<char*> value: parent_list)
+                                aux_list.push_back(value[char(value.size()) - 1]);
+                            valid_moves = aux_list;
+                        }
+                    }
+
+                }
+            }
+
+            if (color2 == 3 || color2 == 4)
+            {
+                std::pair<std::vector<char*>, char> validMovesAndEatingPiece;
+                validMovesAndEatingPiece  = get_valid_moves(piece[0], piece[1], color2, 0, board_layout, 0);
+                
+                auto valid_moves = validMovesAndEatingPiece.first;
+                char eating_piece = validMovesAndEatingPiece.second;
+
+                dama_nom = (eating_piece=='d');
+
+                if(dama_nom)
+                {
+                    bool dama_nom2 = false;
+                    std::vector<std::vector<char*>> parent_list2;
+                    std::vector<char*> tempList;
+                    tempList.push_back(piece);
+                    parent_list2.push_back(tempList);
+                    for(char* move : valid_moves)
+                    {
+                        // std::vector<char*> tempValue = std::vector<char*>();
+                        // tempValue.push_back(piece);
+                        // tempValue.push_back(move);
+                        // parent_list2.push_back(tempValue);
+
+                        auto eat_direction = get_eat_direction(piece[0], piece[1], move[0], move[1]);
+
+                        if(check_dama_has_akel(move[0], move[1], color2, board_layout, eat_direction))
+                            dama_nom2 = true;
+                        // cout<<move[0]<<" "<<move[1]<<"\n";
+                    }
+                    if(dama_nom2)
+                    {
+                        auto parent_list = eat_max2(piece[0], piece[1], board_layout, parent_list2, color2, 0);
+                        std::vector<char*> aux_list;
+
+                        if(!parent_list.empty())
+                        {
+                            for(std::vector<char*> value: parent_list)
+                                aux_list.push_back(value[char(value.size()) - 1]);
+                            valid_moves = aux_list;
+                        }
+                    }   
+                }
+            }
+        }
+
+        #pragma omp critical // Safely merge localMoves into globalMoves
+        {
+            globalMoves.insert(globalMoves.end(), localMoves.begin(), localMoves.end());
+        }
+    }
+
+    return globalMoves;
+}
+

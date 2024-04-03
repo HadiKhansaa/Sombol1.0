@@ -1,26 +1,45 @@
 #include "AI.hpp"
 #include "constant.hpp"
 #include "moveGeneration.hpp"
+#include "checking.hpp"
 #include "globals.hpp"
 #include "robin_hood.h"
 #include "util.hpp"
+#include <omp.h>
 
 
 void order_moves2(
     BitmaskBoard& board, 
     std::vector<BitmaskBoard>& moves, 
     robin_hood::unordered_map<BitmaskBoard, TTValue>& transpositionTable, 
-    char previousDepth, bool isMaxPlayer) 
+    char previousDepth, bool isMaxPlayer, int maxDepth) 
 {
 
+    board.setTurn(isMaxPlayer ? 0 : 1);
+    auto itBoard = transpositionTable.find(board);
+
     // Sorting lambda function
-    auto compareMoves = [&transpositionTable, isMaxPlayer](BitmaskBoard& a, BitmaskBoard& b) -> bool {
+    auto compareMoves = [&transpositionTable, isMaxPlayer, previousDepth, maxDepth, itBoard, &board](BitmaskBoard& a, BitmaskBoard& b) -> bool {
 
         a.setTurn(isMaxPlayer ? 1 : 0);
         b.setTurn(isMaxPlayer ? 1 : 0);
         auto itA = transpositionTable.find(a);
         auto itB = transpositionTable.find(b);
 
+        // if move was best move in previous depth consider it first
+        if(itBoard != transpositionTable.end())
+        {
+            if(itBoard->second.bestMove == a)
+            {
+                // std::cout<<"Best move found\n";
+                return true;
+            }
+            if(itBoard->second.bestMove == b)
+            {
+                // std::cout<<"Best move found\n";
+                return false;
+            }
+        }
         // If both moves are found, compare their evaluations
         if (itA != transpositionTable.end() && itB != transpositionTable.end()) {
             // Prioritize higher evaluations for simplicity; adjust based on your game's needs
@@ -29,69 +48,71 @@ void order_moves2(
                 return itA->second.eval > itB->second.eval;
             else
                 return itA->second.eval < itB->second.eval;
-            // return itA->second.getEval() > itB->second.getEval();
         }
         // If only one move is found, prioritize it
         else if (itA != transpositionTable.end()) {
-            // try to find b in the opposite turn
-            // b.setTurn(isMaxPlayer ? 0 : 1);
-            // auto itB = transpositionTable.find(b);
-            // if(itB != transpositionTable.end())
-            // {
-            //     if(isMaxPlayer)
-            //         return itA->second.eval > itB->second.eval;
-            //     else
-            //         return itA->second.eval < itB->second.eval;
-            // }
-
-            // if not found, compare with the evaluation of the board
-            int evalB = b.evaluate_board();
-            if(isMaxPlayer)
-                return itA->second.eval > evalB;
-            else
-                return itA->second.eval < evalB;
-            
             return true;
         }
         else if (itB != transpositionTable.end()) {
-            // try to find a in the opposite turn
-            // a.setTurn(isMaxPlayer ? 0 : 1);
-            // auto itA = transpositionTable.find(a);
-            // if(itA != transpositionTable.end())
-            // {
-            //     if(isMaxPlayer)
-            //         return itA->second.eval > itB->second.eval;
-            //     else
-            //         return itA->second.eval < itB->second.eval;
-            // }
-
-            // if not found, compare with the evaluation of the board
-            int evalA = a.evaluate_board();
-            if(isMaxPlayer)
-                return evalA > itB->second.eval;
-            else
-                return evalA < itB->second.eval;
             return false;
         }
+
+        bool boardCapture = board.capture_available();
+        bool aCapture = a.capture_available();
+        bool bCapture = b.capture_available();
+
+        bool boardHasWhiteKing = board.hasWhiteKing();
+        bool boardHasBlackKing = board.hasBlackKing();
+
+        char turn = isMaxPlayer ? 1 : 2;
+
+        // if its a kesh proiritize closing it
+        if(boardCapture && !aCapture && bCapture)
+            return true;
         
-        // If neither move is found, prioritize the one with the higher evaluation
-        // int evalA = a.evaluate_board();
-        // int evalB = b.evaluate_board();
+        if(boardCapture && aCapture && !bCapture)
+            return false;
 
-        // // save in TT
-        // TTValue value = {0, evalA};
-        // transpositionTable[a] = value;
+        // if move can Capture King prioritize it
+        if(dama_is_captured(board, a, turn) && !dama_is_captured(board, b, turn))
+            return true;
+        
+        if(dama_is_captured(board, b, turn) && !dama_is_captured(board, a, turn))
+            return false;
 
-        // value = {0, evalB};
-        // transpositionTable[b] = value;
+        // prioritize promotion
+        if(!isMaxPlayer && !board.hasWhiteKing() && a.hasWhiteKing() && !b.hasWhiteKing())
+            return true;
+        
+        if(isMaxPlayer && !board.hasBlackKing() && a.hasBlackKing() && !b.hasBlackKing())
+            return true;
 
+        if(!isMaxPlayer && !board.hasWhiteKing() && !a.hasWhiteKing() && b.hasWhiteKing())
+            return false;
+        
+        if(isMaxPlayer && !board.hasBlackKing() && !a.hasBlackKing() && b.hasBlackKing())
+            return false;
+        
+        // if its a kol move its usually bad
+        if(!boardCapture && aCapture && !bCapture)
+            return false;
+        
+        if(!boardCapture && !aCapture && bCapture)
+            return true;
 
-        // if(isMaxPlayer)
-        //     return evalA > evalB;
-        // else
-        //     return evalA < evalB;
-
-
+        // prioritize dama movements
+        if(turn == 1 && boardHasBlackKing && kingMoved(board, a, 1) && !kingMoved(board, b, 1))
+            return true;
+        
+        if(turn == 1 && boardHasBlackKing && !kingMoved(board, a, 1) && kingMoved(board, b, 1))
+            return false;
+        
+        if(turn == 2 && boardHasWhiteKing && kingMoved(board, a, 2) && !kingMoved(board, b, 2))
+            return true;
+        
+        if(turn == 2 && boardHasWhiteKing && !kingMoved(board, a, 2) && kingMoved(board, b, 2))
+            return false;
+        
         return false;
     };
 
@@ -105,13 +126,7 @@ int search2(
      robin_hood::unordered_map<BitmaskBoard, TTValue>& transpositionTable,
       BitmaskBoard& best_move, char maxDepth, robin_hood::unordered_map<uint64_t, int>& gameHistory)
 {
-
-    // board_layout.setTurn(0); //arbitrarly
-    // gameHistory[board_layout.hash()]++;
-
     int total_depth = depth;
-    // if(akel_depth > 2)
-    //     std::cout<<"Depth: "<<int(depth)<<" Akel Depth: "<<int(akel_depth)<<"\n";
 
     // First, check if this board state is already in the transposition table
     board_layout.setTurn(max_player ? 0 : 1);
@@ -122,9 +137,6 @@ int search2(
         if(ttValue.depth >= total_depth) {
             // If so, use the stored evaluation and potentially best move
             cacheHits++; // Assuming cacheHits is a metric you're tracking
-
-            // board_layout.setTurn(0); //arbitrarly
-            // gameHistory[board_layout.hash()]--;
             return ttValue.eval;
         }
     }
@@ -134,19 +146,28 @@ int search2(
         int eval = board_layout.evaluate_board(gameHistory); // Assuming evaluate_board is defined elsewhere
         // TTValue value = {depth, eval};
         // transpositionTable[board_layout] = value;
-
-        // board_layout.setTurn(0); //arbitrarly
-        // gameHistory[board_layout.hash()]--;
         return eval;
     }
 
-    auto [moves, isEmptyForceList] = get_all_moves(board_layout, max_player ? 1 : 2);
+    bool isEmptyForceList = false;
+    auto moves = get_all_moves(board_layout, max_player ? 1 : 2, isEmptyForceList);
+
+    // std:: cout << isEmptyForceList << " "<<board_layout.capture_available()<<"\n";
+    // if(board_layout.capture_available())
+    // {
+    //     std::cout<<board_layout.getTurn()<<"\n";
+    //     printBoard(board_layout);
+    //     std::cout<<"\n";
+    //     Sleep(100);
+    // }
+        
 
     // Order moves based on transposition table
-    order_moves2(board_layout, moves, transpositionTable, total_depth - 1, max_player);
+    order_moves2(board_layout, moves, transpositionTable, total_depth - 1, max_player, maxDepth);
 
     int bestEval = max_player ? INT_MIN : INT_MAX;
-    BitmaskBoard bestMove;
+    BitmaskBoard bestMove = board_layout;
+
 
     for(auto move : moves) {
         int eval;
@@ -155,8 +176,7 @@ int search2(
         // move.setTurn(0); //arbitrarly
         // gameHistory[move.hash()]++;
 
-        // return instantly if win
-
+        // check instantly if win -> dont search furthur
         if(board_layout.black_won())
             eval = 10000;
         else if(board_layout.white_won())
@@ -195,32 +215,32 @@ int search2(
             }
             beta = std::min(beta, bestEval);
         }
-
+        
         // remove the move from the game history
         // move.setTurn(0); //arbitrarly
         // gameHistory[move.hash()]--;
 
-        if(akel_depth == 0 && beta <= alpha) {
+        if(beta <= alpha) {
             break; // Alpha-beta pruning
         }
     }
 
     // Update transposition table if needed
+    bestMove.setTurn(max_player ? 1 : 0);
     if(!transpositionTable.count(board_layout) || transpositionTable[board_layout].depth < total_depth) {
 
         // if equal depth take the higher akel depth
-        TTValue value = {total_depth, bestEval};
+        TTValue value = {total_depth, bestEval, bestMove};
         transpositionTable[board_layout] = value;
     }
 
     if((depth == maxDepth) && (akel_depth == 0) && ((AI_IS_WHITE && max_player) || (!AI_IS_WHITE && !max_player)))
         best_move = bestMove;
     
-    // board_layout.setTurn(0); //arbitrarly
-    // gameHistory[board_layout.hash()]--;
 
     return bestEval;
 }
+
 
 std::pair<int, BitmaskBoard> iterativeDeepening(BitmaskBoard& initialBoard, char maxDepth, bool isMaxPlayer, robin_hood::unordered_map<BitmaskBoard, TTValue>& transpositionTable, int maxTimeSeconds, robin_hood::unordered_map<uint64_t, int>& gameHistory) {    
     int bestEval = isMaxPlayer ? INT_MIN : INT_MAX;
@@ -233,14 +253,8 @@ std::pair<int, BitmaskBoard> iterativeDeepening(BitmaskBoard& initialBoard, char
     gameHistory[hashKey]++;
 
     // if there is only a single move possible play it instantly
-    auto [moves, isEmptyForceList] = get_all_moves(initialBoard, isMaxPlayer ? 1 : 2);
-
-    // std::cout<<"Number of moves: "<<moves.size()<<"\n";
-    // for(auto move : moves)
-    // {
-    //     printBoard(move);
-    //     std::cout<<"\n";
-    // }
+    bool isEmptyForceList = false;
+    auto moves = get_all_moves(initialBoard, isMaxPlayer ? 1 : 2, isEmptyForceList);
 
     if (moves.size() == 1) {
         // add best move to game history (white move)
@@ -249,21 +263,24 @@ std::pair<int, BitmaskBoard> iterativeDeepening(BitmaskBoard& initialBoard, char
         return std::make_pair(0, moves[0]);
     }
 
+
     double time_spent = 0.0;
     for (char depth = 2; depth <= maxDepth; ++depth) {
         auto begin = clock();
 
 
         // Call minimax for the current depth
+        initialBoard.setTurn(isMaxPlayer ? 0 : 1);
         bestMove = initialBoard;
         auto eval = search2(depth, isMaxPlayer, initialBoard, INT_MIN, INT_MAX, isMaxPlayer, 0, false, transpositionTable, bestMove, depth, gameHistory);
         auto end = clock();
+
+        initialBoard.setTurn(isMaxPlayer ? 0 : 1); 
+        transpositionTable[initialBoard] = {depth, eval, bestMove}; // update depth in TT
         
         time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
 
         bestEval = eval;
-
-        // std::cout<<transpositionTable.size()<<"\n";
         
         // check for time constraints here
         if (time_spent > 0.1*maxTimeSeconds) {

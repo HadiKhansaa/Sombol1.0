@@ -30,6 +30,9 @@ struct BitmaskBoardHash {
 typedef struct TTValue {
     int depth;
     int eval;
+    BitmaskBoard bestMove;
+    // copy assignment
+
 } TTValue;
 
 void writeGameHistoryToFile(const robin_hood::unordered_map<uint64_t, int>& gameHistory, const std::string& filename);

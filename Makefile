@@ -1,7 +1,7 @@
 GCC = g++
 GCC_FLAGS = -Ofast -faggressive-loop-optimizations
 OBJ_DIR = bin
-INCL_DIR = header 
+INCL_DIR = header
 SRC_DIR = src
 OBJ = $(OBJ_DIR)/AI.o $(OBJ_DIR)/checking.o $(OBJ_DIR)/hashing.o $(OBJ_DIR)/moveGeneration.o $(OBJ_DIR)/util.o $(OBJ_DIR)/main.o $(OBJ_DIR)/globals.o 
 EXE = sombol1.exe

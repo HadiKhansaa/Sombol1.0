@@ -541,3 +541,40 @@ std::vector<char*> check_for_force(BitmaskBoard& board_layout, char turn, std::v
     }
     return force_list;
 }
+
+bool dama_is_captured(BitmaskBoard& board_layout, BitmaskBoard& move, char turn) {
+    if(turn == 1) {
+        if(board_layout.hasWhiteKing() && !move.hasWhiteKing()) {
+            return true;
+        }
+        return false;
+    }
+    else {
+        if(board_layout.hasBlackKing() && !move.hasBlackKing()) {
+            return true;
+        }
+        return false;
+    }
+}
+
+bool kingMoved(BitmaskBoard& board_layout, BitmaskBoard& move, char turn) {
+    if(turn == 1) {
+        if(board_layout.getBlackKings() != move.getBlackKings()) {
+            return true;
+        }
+        return false;
+    }
+    else {
+        if(board_layout.getWhiteKings() != move.getWhiteKings()) {
+            return true;
+        }
+        return false;
+    }
+}
+
+
+
+
+
+
+

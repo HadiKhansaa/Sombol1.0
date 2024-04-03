@@ -19,6 +19,7 @@
 // #include <unordered_map>
 #include <functional>
 #include "robin_hood.h"
+#include "constant.hpp"
 
 class BitmaskBoard {
 private:
@@ -63,6 +64,22 @@ public:
         if (whiteKings & pos) return 4;
         if (blackKings & pos) return 3;
         return 0; // Empty
+    }
+
+    uint64_t getWhiteKings()  {
+        return whiteKings;
+    }
+
+    uint64_t getBlackKings()  {
+        return blackKings;
+    }
+
+    uint64_t getWhitePawns()  {
+        return whitePawns;
+    }
+
+    uint64_t getBlackPawns()  {
+        return blackPawns;
     }
 
     void clearPosition(int i, int j) {
@@ -157,16 +174,69 @@ public:
         isWhiteTurn = turn;
     }
 
-    // Define the < operator
-    bool operator<(const BitmaskBoard& other) const {
-        // Implement comparison logic here
-        return blackKings + blackPawns < whiteKings + whitePawns;
+    bool getTurn() const {
+        return isWhiteTurn;
     }
+
+    // Define the < operator
+    // bool operator<(const BitmaskBoard& other) const {
+    //     // Implement comparison logic here
+    //     return blackKings + blackPawns < whiteKings + whitePawns;
+    // }
 
     bool operator==(const BitmaskBoard& other) const {
         return whitePawns == other.whitePawns && blackPawns == other.blackPawns &&
                whiteKings == other.whiteKings && blackKings == other.blackKings
                && isWhiteTurn == other.isWhiteTurn;
+    }
+
+    // more advanced methods
+
+    bool capture_available() const {
+        // Masks to prevent wrap-around horizontally
+        uint64_t notAFile = 0b0111111101111111011111110111111101111111011111110111111101111111;
+        uint64_t notHFile = 0b1111111011111110111111101111111011111110111111101111111011111110; 
+        uint64_t notBFile = 0b1011111110111111101111111011111110111111101111111011111110111111;
+        uint64_t notGFile = 0b1111110111111101111111011111110111111101111111011111110111111101;
+
+        // Combine all pieces into one bitboard for checking empty squares
+        uint64_t allPieces = whitePawns | blackPawns | whiteKings | blackKings;
+        uint64_t emptySquares = ~allPieces;
+
+        uint64_t opponentPieces = isWhiteTurn ? blackPawns | blackKings : whitePawns | whiteKings;
+        uint64_t playerPieces = isWhiteTurn ? whitePawns | whiteKings : blackPawns | blackKings;
+        
+        auto playerPiecesForLeft = playerPieces & notAFile & notBFile;
+        auto playerPiecesForRight = playerPieces & notHFile & notGFile;
+        // Check horizontal captures
+        // Right captures: piece, opponent piece, empty square
+        bool leftCapture = ( (playerPiecesForLeft << 1) & opponentPieces) && 
+                            (((playerPiecesForLeft << 2) & emptySquares));
+        // Left captures: piece, opponent piece, empty square
+        bool rightCapture = ((playerPiecesForRight >> 1) & opponentPieces) && 
+                           (((playerPiecesForRight >> 2) & emptySquares));
+
+        // Check vertical captures for pawns
+        bool upCapture = false, downCapture = false;
+        if (!isWhiteTurn) { // White's turn
+            // Up captures: piece, opponent piece, empty square
+            upCapture = ((playerPieces << 8) & opponentPieces) && 
+                        (((playerPieces << 16) & emptySquares)); 
+        } else { // Black's turn
+            // Down captures: piece, opponent piece, empty square
+            downCapture = ((playerPieces >> 8) & opponentPieces) && 
+                          (((playerPieces >> 16) & emptySquares));
+        }
+
+        return rightCapture || leftCapture || upCapture || downCapture;
+    }
+
+    bool hasWhiteKing() {
+        return whiteKings != 0;
+    }
+
+    bool hasBlackKing() {
+        return blackKings != 0;
     }
 
     bool passage_is_clear(BitmaskBoard& board_layout, char row, char col, char turn) {
@@ -298,11 +368,23 @@ public:
         
         // in early game only advance at the edges
         if(total_pieces > 26) {
-            sum += 10 * (int)(__builtin_popcountll(blackPawns & (advancementMaskBlack & leftEdgeMask)));
-            sum += 10 * (int)(__builtin_popcountll(blackPawns & (advancementMaskBlack & rightEdgeMask)));
-            
-            // even here don't let whit push
-            sum += 10 * (int)( - __builtin_popcountll(whitePawns & advancementMaskWhite));
+
+            if(AI_IS_WHITE)
+            {
+                sum += 10 * (int)(__builtin_popcountll(blackPawns & (advancementMaskBlack & leftEdgeMask)));
+                sum += 10 * (int)(__builtin_popcountll(blackPawns & (advancementMaskBlack & rightEdgeMask)));
+                
+                // even here don't let whit push
+                sum += 10 * (int)( - __builtin_popcountll(whitePawns & advancementMaskWhite));
+            }
+            else 
+            {
+                sum += - 10 * (int)(__builtin_popcountll(whitePawns & (advancementMaskWhite & leftEdgeMask)));
+                sum += - 10 * (int)(__builtin_popcountll(whitePawns & (advancementMaskWhite & rightEdgeMask)));
+                
+                // even here don't let whit push
+                sum += 10 * (int)(__builtin_popcountll(blackPawns & advancementMaskBlack));
+            }
         }
         else // in middle ad endgame reward any advancement
             sum += 10 * (int)(__builtin_popcountll(blackPawns & advancementMaskBlack) - __builtin_popcountll(whitePawns & advancementMaskWhite));
@@ -535,7 +617,7 @@ public:
         // Treat isWhiteTurn as an additional bit in the hash computation. 
         // You can use a simple conditional to add a unique value (like a small prime number) 
         // to distinguish between the two possible states.
-        hashValue = hashValue * 31 + (isWhiteTurn ? 1231 : 1237); // Prime numbers for true/false
+        // hashValue = hashValue * 31 + (isWhiteTurn ? 1231 : 1237); // Prime numbers for true/false
 
         return hashValue;
     }
