@@ -193,6 +193,11 @@ public:
     // more advanced methods
 
     bool capture_available() const {
+        return capture_available(isWhiteTurn);
+    }
+
+    bool capture_available(bool isWhiteTurn) const {
+
         // Masks to prevent wrap-around horizontally
         uint64_t notAFile = 0b0111111101111111011111110111111101111111011111110111111101111111;
         uint64_t notHFile = 0b1111111011111110111111101111111011111110111111101111111011111110; 
@@ -237,6 +242,33 @@ public:
 
     bool hasBlackKing() {
         return blackKings != 0;
+    }
+
+    int calculate_advancment_score() {
+        int sum = 0;
+
+        // Corrected masks and calculations for pawn advancement
+        uint64_t advancementMaskWhite = 0x000000FF00000000ULL; // 2nd row from the opponent's side for black
+        uint64_t advancementMaskBlack = 0x00000000FF000000ULL; // 2nd row from the opponent's side for white
+        sum += 5 * (int)(__builtin_popcountll(blackPawns & advancementMaskBlack) - __builtin_popcountll(whitePawns & advancementMaskWhite));
+
+        // More advancement bonuses
+        advancementMaskWhite = 0x00000000FF000000ULL; // 3rd row from the opponent's side for black
+        advancementMaskBlack = 0x000000FF00000000ULL; // 3rd row from the opponent's side for white
+        
+        // in early game only advance at the edges
+        sum += 10 * (int)(__builtin_popcountll(blackPawns & advancementMaskBlack) - __builtin_popcountll(whitePawns & advancementMaskWhite));
+
+        // Extra for closer pawns
+        advancementMaskWhite = 0x0000000000FF0000ULL; // 4th row from the opponent's side for black
+        advancementMaskBlack = 0x0000FF0000000000ULL; // 4th row from the opponent's side for white
+        sum += 15 * (int)(__builtin_popcountll(blackPawns & advancementMaskBlack) - __builtin_popcountll(whitePawns & advancementMaskWhite));
+
+        // Extra for closer pawns
+        advancementMaskWhite = 0x000000000000FF00ULL; // 4th row from the opponent's side for black
+        advancementMaskBlack = 0x00FF000000000000ULL; // 4th row from the opponent's side for white
+        sum +=  50 * (int)(__builtin_popcountll(blackPawns & advancementMaskBlack) - __builtin_popcountll(whitePawns & advancementMaskWhite));
+        return sum;
     }
 
     bool passage_is_clear(BitmaskBoard& board_layout, char row, char col, char turn) {

@@ -67,10 +67,10 @@ void order_moves2(
         char turn = isMaxPlayer ? 1 : 2;
 
         // if its a kesh proiritize closing it
-        if(boardCapture && !aCapture && bCapture)
+        if(board.capture_available(isMaxPlayer) && !a.capture_available(isMaxPlayer) && b.capture_available(isMaxPlayer))
             return true;
         
-        if(boardCapture && aCapture && !bCapture)
+        if(board.capture_available(isMaxPlayer) && a.capture_available(isMaxPlayer) && !b.capture_available(isMaxPlayer))
             return false;
 
         // if move can Capture King prioritize it
@@ -94,11 +94,27 @@ void order_moves2(
             return false;
         
         // if its a kol move its usually bad
-        if(!boardCapture && aCapture && !bCapture)
+        if(!board.capture_available(isMaxPlayer) && a.capture_available(isMaxPlayer) && !b.capture_available(isMaxPlayer))
             return false;
         
-        if(!boardCapture && !aCapture && bCapture)
+        if(!board.capture_available(isMaxPlayer) && !a.capture_available(isMaxPlayer) && b.capture_available(isMaxPlayer))
             return true;
+        
+        // we reached here so both moves arn't kol, so prioritize advancing
+        if(isMaxPlayer) 
+        {
+            if(a.calculate_advancment_score() > b.calculate_advancment_score())
+                return true;
+            else
+                return false;
+        }
+        else
+        {
+            if(a.calculate_advancment_score() < b.calculate_advancment_score())
+                return true;
+            else
+                return false;
+        }
 
         // prioritize dama movements
         if(turn == 1 && boardHasBlackKing && kingMoved(board, a, 1) && !kingMoved(board, b, 1))
@@ -112,7 +128,7 @@ void order_moves2(
         
         if(turn == 2 && boardHasWhiteKing && !kingMoved(board, a, 2) && kingMoved(board, b, 2))
             return false;
-        
+
         return false;
     };
 
@@ -126,6 +142,12 @@ int search2(
      robin_hood::unordered_map<BitmaskBoard, TTValue>& transpositionTable,
       BitmaskBoard& best_move, char maxDepth, robin_hood::unordered_map<uint64_t, int>& gameHistory)
 {
+    // if(maxDepth == 3){
+    //     printBoard(board_layout);
+    //     std::cout<<"\n";
+    //     Sleep(100);
+    // }
+        
     int total_depth = depth;
 
     // First, check if this board state is already in the transposition table
