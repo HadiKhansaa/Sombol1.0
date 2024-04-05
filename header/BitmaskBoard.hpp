@@ -664,7 +664,7 @@ public:
         // Treat isWhiteTurn as an additional bit in the hash computation. 
         // You can use a simple conditional to add a unique value (like a small prime number) 
         // to distinguish between the two possible states.
-        // hashValue = hashValue * 31 + (isWhiteTurn ? 1231 : 1237); // Prime numbers for true/false
+        hashValue = hashValue * 31 + (isWhiteTurn ? 1231 : 1237); // Prime numbers for true/false
 
         return hashValue;
     }
