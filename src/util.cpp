@@ -6,7 +6,16 @@ void printBoard(BitmaskBoard& board_layout)
     {
         for(char j=0;j<8; j++)
         {
-            std::cout<<int(board_layout.get(i, j))<<" ";
+            try
+            {
+                std::cout<<int(board_layout.get(i, j))<<" ";
+            }
+            catch(const std::exception& e)
+            {
+                std::cerr << e.what() << '\n';
+            }
+            
+            
         }
         std::cout<<"\n";
     }
