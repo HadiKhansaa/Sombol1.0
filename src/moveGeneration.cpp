@@ -1052,8 +1052,7 @@ std::vector<std::vector<char*>> eat_max2(char row, char col, BitmaskBoard& board
                     maxp = p2;
                 } else if (!p2.empty() && (p2[0].size() == maxp[0].size())) { 
                     for (auto li : p2) 
-                        if(doesnt_have(maxp, li))
-                            maxp.push_back(li);
+                        maxp.push_back(li);
                 }
             }
         }

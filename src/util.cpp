@@ -11,3 +11,18 @@ void printBoard(BitmaskBoard& board_layout)
         std::cout<<"\n";
     }
 }
+
+void addMoveToHistory(robin_hood::unordered_map<uint64_t, int>& gameHistory, BitmaskBoard& move, bool isMaxPlayer)
+{
+    move.setTurn(0); //arbitrarly
+    gameHistory[move.hash()]++;
+    move.setTurn(isMaxPlayer ? 1 : 0);
+}
+
+void removeMoveFromHistory(robin_hood::unordered_map<uint64_t, int>& gameHistory, BitmaskBoard& move, bool isMaxPlayer)
+{
+    move.setTurn(0); //arbitrarly
+    if(gameHistory.count(move.hash()))
+        gameHistory[move.hash()]--;
+    move.setTurn(isMaxPlayer ? 1 : 0);
+}

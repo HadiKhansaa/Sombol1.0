@@ -59,6 +59,8 @@ public:
     char get(int i, int j) const {
 
         uint64_t pos = 1ULL << (i * 8 + j);
+        // I want to right shift from MST to right
+        // uint64_t pos = MST_64 >> (i * 8 + j);
         if (whitePawns & pos) return 2;
         if (blackPawns & pos) return 1;
         if (whiteKings & pos) return 4;
@@ -349,19 +351,19 @@ public:
 
     int evaluate_board(robin_hood::unordered_map<uint64_t, int> &gameHistory) {
 
-        // if there is a single move
-        // auto [moves, isEmptyForceList] = get_all_moves(*this, isWhiteTurn ? 2 : 1);
-        // if (moves.size() == 1) {
-        //     // add best move to game history (white move)
-        //     moves[0].setTurn(isWhiteTurn? 1 : 0);
-        //     auto hashKey = moves[0].hash();
-        //     gameHistory[hashKey]++;
+        // bool swapped = false;
+        // // if there is a capture do it
+        // if(capture_available(!isWhiteTurn)) {
+        //     bool isEmptyForceList = false;
+        //     auto b2 = *this;
+        //     auto moves = get_all_moves(b2, isWhiteTurn ? 2 : 1, isEmptyForceList);
         //     *this = moves[0]; // play that single move
+        //     isWhiteTurn = !isWhiteTurn; // now its the other player's turn
+        //     swapped = true;
         // }
 
-        // draw if threefold
-        if(gameHistory[hash()] >= 2)
-            return 0;
+
+        
 
         // Count pieces using popcount (population count - counts the number of set bits)
         int nb_black_pawns = __builtin_popcountll(blackPawns);
@@ -372,6 +374,15 @@ public:
         int total_pieces = nb_black_pawns + nb_white_pawns + nb_black_kings + nb_white_kings;
         int nb_black_pieces = nb_black_pawns + nb_black_kings;
         int nb_white_pieces = nb_white_pawns + nb_white_kings;
+
+        // wins
+        if(nb_black_pieces == 0)
+            return MIN_EVAL;
+        if(nb_white_pieces == 0)
+            return MAX_EVAL;
+        // draw
+        if(draw(gameHistory))
+            return 0;
 
         int sum = 0;
         double scaling_factor = 1;
@@ -385,21 +396,28 @@ public:
             scaling_factor = 1.0 + (32.0 - total_pieces)/32.0; // in endgames, give more weight to the pawns and piece difference
 
         // Base scores for pawns and kings
-        sum += scaling_factor * (100 * (nb_black_pawns - nb_white_pawns)); // Pawn difference
-        sum += scaling_factor * (430 * (nb_black_kings - nb_white_kings)); // King difference
+        if(blackKings == 0 && whiteKings == 0) {
+            // add scaling factor
+            sum += scaling_factor * (100 * (nb_black_pawns - nb_white_pawns)); // Pawn difference
+            sum += scaling_factor * (430 * (nb_black_kings - nb_white_kings)); // King difference
+        }
+        else {
+            sum +=  (100 * (nb_black_pawns - nb_white_pawns)); // Pawn difference
+            sum +=  (430 * (nb_black_kings - nb_white_kings)); // King difference
+        }
+       
 
-        
         constexpr uint64_t leftEdgeMask = 0x0101010101010101; // Left edge of the board
         constexpr uint64_t rightEdgeMask = 0x8080808080808080; // Right edge of the board
         
         // Edge bonuses specifically for the right and left edges
         // if in endgame dont give edge bonus
-        if(total_pieces > 16)
-        {
+        // if(total_pieces > 16)
+        // {
             int edge_bonus_black = 3 * (__builtin_popcountll(blackPawns & leftEdgeMask) + __builtin_popcountll(blackPawns & rightEdgeMask) + __builtin_popcountll(blackKings & leftEdgeMask) + __builtin_popcountll(blackKings & rightEdgeMask));
             int edge_bonus_white = 3 * (__builtin_popcountll(whitePawns & leftEdgeMask) + __builtin_popcountll(whitePawns & rightEdgeMask) + __builtin_popcountll(whiteKings & leftEdgeMask) + __builtin_popcountll(whiteKings & rightEdgeMask));
             sum += edge_bonus_black - edge_bonus_white;
-        }
+        // }
 
         // Corrected masks and calculations for pawn advancement
         uint64_t advancementMaskWhite = 0x000000FF00000000ULL; // 2nd row from the opponent's side for black
@@ -443,7 +461,11 @@ public:
         advancementMaskBlack = 0x00FF000000000000ULL; // 4th row from the opponent's side for white
         sum +=  50 * (int)(__builtin_popcountll(blackPawns & advancementMaskBlack) - __builtin_popcountll(whitePawns & advancementMaskWhite));
 
-        // Note: Adjust the row targeting and bonus points as needed to fit the game's strategy.
+        // reward black kings that are on the first rank
+        sum += 10 * (int)(__builtin_popcountll(blackKings & 0x00000000000000FFULL));
+
+        // reward white kings that are on the last rank
+        sum += 10 * (int)(__builtin_popcountll(whiteKings & 0xFF00000000000000ULL));
 
 
         // Balance bonus: Favor spreading pieces between the left and right halves
@@ -468,14 +490,8 @@ public:
             }
         }
         
-
-
         // game finished
-        // wins
-        if(nb_black_pieces == 0)
-            return -10000;
-        if(nb_white_pieces == 0)
-            return 10000;
+        
         // draw
         if((nb_black_pieces == 1) && (nb_white_pieces == 1))
             return 0;
@@ -584,9 +600,9 @@ public:
         // game finished
         // wins
         if(nb_black_pieces == 0)
-            return -10000;
+            return MIN_EVAL;
         if(nb_white_pieces == 0)
-            return 10000;
+            return MAX_EVAL;
         // draw
         if((nb_black_pieces == 1) && (nb_white_pieces == 1))
             return 0;
@@ -620,6 +636,19 @@ public:
     bool draw() {
         if(((__builtin_popcountll(blackKings) + __builtin_popcountll(blackPawns)) == 1)
         && ((__builtin_popcountll(whiteKings) + __builtin_popcountll(whitePawns)) == 1))
+            return true;
+        
+        
+        return false;
+    }
+
+    bool draw(robin_hood::unordered_map<uint64_t, int> &gameHistory) {
+        if(player_won())
+            return false;
+        if(((__builtin_popcountll(blackKings) + __builtin_popcountll(blackPawns)) == 1)
+        && ((__builtin_popcountll(whiteKings) + __builtin_popcountll(whitePawns)) == 1))
+            return true;    
+        if(gameHistory[hash()] >= 3)
             return true;
         return false;
     }
@@ -664,7 +693,7 @@ public:
         // Treat isWhiteTurn as an additional bit in the hash computation. 
         // You can use a simple conditional to add a unique value (like a small prime number) 
         // to distinguish between the two possible states.
-        hashValue = hashValue * 31 + (isWhiteTurn ? 1231 : 1237); // Prime numbers for true/false
+        // hashValue = hashValue * 31 + (isWhiteTurn ? 1231 : 1237); // Prime numbers for true/false
 
         return hashValue;
     }

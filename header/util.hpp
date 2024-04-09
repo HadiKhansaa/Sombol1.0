@@ -21,3 +21,7 @@
 #include "BitmaskBoard.hpp"
 
 void printBoard(BitmaskBoard& board_layout);
+
+void addMoveToHistory(robin_hood::unordered_map<uint64_t, int>& gameHistory, BitmaskBoard& move, bool isMaxPlayer);
+
+void removeMoveFromHistory(robin_hood::unordered_map<uint64_t, int>& gameHistory, BitmaskBoard& move, bool isMaxPlayer);
