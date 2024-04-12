@@ -3,10 +3,10 @@
 #include "moveGeneration.hpp"
 #include "checking.hpp"
 #include "globals.hpp"
-#include <bitset>
+// #include <bitset>
 #include "robin_hood.h"
 #include "util.hpp"
-#include <omp.h>
+// #include <omp.h>
 
 
 void order_moves2(
@@ -74,6 +74,7 @@ void order_moves2(
 
         // bool boardHasWhiteKing = board.hasWhiteKing();
         // bool boardHasBlackKing = board.hasBlackKing();
+        bool board_has_damas = board.getBlackKings() || board.getWhiteKings();
 
         // char turn = isMaxPlayer ? 1 : 2;
 
@@ -83,7 +84,32 @@ void order_moves2(
         
         // if(board.capture_available(isMaxPlayer) && a.capture_available(isMaxPlayer) && !b.capture_available(isMaxPlayer))
         //     return false;
-
+        
+        if(!board_has_damas)
+        {
+            if(!a.capture_available(isMaxPlayer) && b.capture_available(isMaxPlayer))
+                return true;
+            
+            if(a.capture_available(isMaxPlayer) && !b.capture_available(isMaxPlayer))
+                return false;
+            
+            // // we reached here so both moves arn't kol, so prioritize advancing
+            if(isMaxPlayer) 
+            {
+                if(a.calculate_advancment_score() > b.calculate_advancment_score())
+                    return true;
+                else
+                    return false;
+            }
+            else
+            {
+                if(a.calculate_advancment_score() < b.calculate_advancment_score())
+                    return true;
+                else
+                    return false;
+            }
+        }
+        
         // // if move can Capture King prioritize it
         // if(dama_is_captured(board, a, turn) && !dama_is_captured(board, b, turn))
         //     return true;
@@ -197,7 +223,15 @@ int search2(
     }
 
     bool isEmptyForceList = false;
-    auto moves = get_all_moves(board_layout, max_player ? 1 : 2, isEmptyForceList);
+    auto moves = get_all_moves3(board_layout, max_player ? 1 : 2, isEmptyForceList);
+
+    // if(board_layout.capture_available(false))
+    // {
+    //     printBoard(board_layout);
+    //     std::cout<<"\n";
+    //     Sleep(100);
+    // }
+    
 
     // Order moves based on transposition table
     order_moves2(board_layout, moves, transpositionTable, total_depth - 1, max_player, maxDepth);
@@ -216,7 +250,7 @@ int search2(
         //     eval = MIN_EVAL;
         // else if(move.draw(gameHistory))
         //     eval = 0; // draw
-        if (!isEmptyForceList && akel_depth < 10) // if akel don't decrease depth
+        if (!isEmptyForceList && akel_depth < 100) // if akel don't decrease depth
             eval = search2(depth, !max_player, move, alpha, beta, !max_player, akel_depth+1, true, transpositionTable, bestMove, maxDepth, gameHistory);
         else
         {
@@ -235,7 +269,7 @@ int search2(
 
         // remove the move from the game history
         if(isEmptyForceList)
-            removeMoveFromHistory(gameHistory,  move, max_player);
+            removeMoveFromHistory(gameHistory, move, max_player);
 
         if(max_player && eval == MAX_EVAL)
         {
@@ -308,7 +342,7 @@ std::pair<int, BitmaskBoard> iterativeDeepening(BitmaskBoard& initialBoard, char
 
     // if there is only a single move possible play it instantly
     bool isEmptyForceList = false;
-    auto moves = get_all_moves(initialBoard, isMaxPlayer ? 1 : 2, isEmptyForceList);
+    auto moves = get_all_moves3(initialBoard, isMaxPlayer ? 1 : 2, isEmptyForceList);
 
     if (moves.size() == 1) {
         // add best move to game history (white move)

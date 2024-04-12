@@ -2,11 +2,6 @@
 #include <iostream>
 #include <time.h> 
 #include <vector>
-#include <windows.h>
-#include <fstream>
-#include <unordered_map>
-#include <unordered_set>   
-#include <functional>
 #include "BitmaskBoard.hpp"
 #include "hashing.hpp"
 #include "robin_hood.h"

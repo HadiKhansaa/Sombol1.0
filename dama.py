@@ -409,6 +409,8 @@ def check_for_force(board_layout, turn):
 running = True
 def main_menu():
     global running
+    global AI_TURN
+    global turn
 
     run = True
     while run:
@@ -472,11 +474,15 @@ def main_menu():
                     return jpg
                 elif timerRect.collidepoint(p):
                     startSound.play()
+                    AI_TURN = 2
+                    turn = 1
                     run = False
                     return ""
                 elif quitRect.collidepoint(p):
-                    leaveSound.play()
-                    running = False
+                    startSound.play()
+                    # running = False
+                    AI_TURN = 2
+                    turn = 2
                     run = False
                     return ""
         pygame.display.flip()
@@ -752,7 +758,7 @@ class Board:
         ]
                                             
          
-    layout = [
+    layout2 = [
                 [0, 0, 0, 0, 0, 0, 0, 0],
                 [1, 1, 1, 1, 1, 1, 1, 1],
                 [1, 1, 1, 1, 1, 1, 1, 1],
@@ -765,23 +771,24 @@ class Board:
 
     layout_photo = get_layout(testSurf)
 
-    layout2 = [
+    layout = [
                 # create this board
-                # 0 0 0 0 0 0 0 4 
-                # 1 1 0 0 0 1 0 0 
-                # 1 1 1 0 0 0 0 0 
-                # 1 1 1 0 0 0 0 0 
-                # 2 0 0 2 0 0 0 0 
-                # 2 2 0 0 2 0 2 2 
-                # 0 2 0 1 0 0 0 0 
-                # 0 0 0 0 0 0 0 0 
-                [0, 0, 0, 0, 0, 0, 0, 4]
-                ,[1, 1, 0, 0, 0, 1, 0, 0]
-                ,[1, 1, 1, 0, 0, 0, 0, 0]
-                ,[1, 1, 1, 0, 0, 0, 0, 0]
-                ,[2, 0, 0, 2, 0, 0, 0, 0]
-                ,[2, 2, 0, 0, 2, 0, 2, 2]
-                ,[0, 2, 0, 1, 0, 0, 0, 0]
+                # 0 0 0 0 0 0 0 0
+                # 1 0 0 0 0 1 0 1
+                # 0 0 1 0 0 1 1 0
+                # 2 0 1 0 1 0 0 2
+                # 2 0 0 1 0 0 2 2
+                # 0 0 2 0 2 2 0 2
+                # 0 0 2 0 1 0 0 0 
+                # 0 0 0 0 0 0 0 0
+                
+                 [0, 0, 0, 0, 0, 0, 0, 0]
+                ,[1, 0, 0, 0, 0, 1, 0, 1]
+                ,[0, 0, 1, 0, 0, 1, 1, 0]
+                ,[2, 0, 1, 0, 1, 0, 0, 2]
+                ,[2, 0, 0, 1, 0, 0, 2, 2]
+                ,[0, 0, 2, 0, 2, 2, 0, 2]
+                ,[0, 0, 2, 0, 1, 0, 0, 0]
                 ,[0, 0, 0, 0, 0, 0, 0, 0]
                 ]
     
@@ -2082,8 +2089,15 @@ def deepcopy2(board_layout):
 
 ###################################################### ai stuff ##########################################################
 
+#CHANGE Starting turn and AI turn
+turn = 2
+AI_TURN = 1
+
+
 board = Board()
 jpg = main_menu()
+
+
 if jpg!="":
     board.surf = pygame.image.load(jpg).convert()
 blackpiece = blackPiece()
@@ -2486,9 +2500,7 @@ def AI_VS_AI():
 #AI vs AI
 # AI_VS_AI()
             
-#CHANGE Starting turn and AI turn
-turn = 2
-AI_TURN = 1
+
 
 # printBoardOnScreen(screen)
 #time test 
@@ -2605,12 +2617,21 @@ while running:
         # Execute the compiled binary
 
         #check if os is Linux or Windows
-        if platform.system() == 'Windows':
-            execute_command = ['sombol1.exe']
+
+        if AI_TURN == 1:
+            if platform.system() == 'Windows':
+                execute_command = ['sombol1.exe']
+            else:
+                execute_command = ['./sombol1']
+                
+            subprocess.run(execute_command)
         else:
-            execute_command = ['./sombol1']
-            
-        subprocess.run(execute_command)
+            if platform.system() == 'Windows':
+                execute_command = ['sombol1_red.exe']
+            else:
+                execute_command = ['./sombol1_red']
+                
+            subprocess.run(execute_command)
 
         board.layout = []
         with open('minimaxResult.txt', 'r') as file:

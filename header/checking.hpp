@@ -1,23 +1,9 @@
 #pragma once
 #include <iostream>
-#include <tuple>
-#include <fstream>
-#include <sstream>
-#include <cstring>
-#include <random>
 #include <time.h> 
 #include <vector>
-#include <memory>
-#include <windows.h>
 #include <cstdlib>   // for rand() and srand()
-#include <ctime>
-#include <fstream>
-#include <string>
-#include <unordered_map>
-#include <set>
-#include <unordered_set>   
-// #include <unordered_map>
-#include <functional>
+#include "move.hpp"
 #include "BitmaskBoard.hpp"
 
 bool check_if_piece_can_capture(char row, char col, BitmaskBoard& board_layout, char turn);
@@ -32,8 +18,14 @@ bool doesnt_have(std::vector <std::vector<char*>>& a, std::vector<char*>& b);
 
 bool passage_is_clear(BitmaskBoard& board_layout, char row, char col, char turn);
 
-std::vector<char*> check_for_force(BitmaskBoard& board_layout, char turn, std::vector<char*> *pieces);
+std::vector<char*> check_for_force(BitmaskBoard& board_layout, char turn, std::vector<char*>& pieces, std::vector<std::vector<char*>>& main_parent_list);
 
 bool dama_is_captured(BitmaskBoard& board_layout, BitmaskBoard& move, char turn);
 
 bool kingMoved(BitmaskBoard& board_layout, BitmaskBoard& move, char turn);
+
+// new shit
+
+std::pair<std::vector<Piece>, bool> check_for_possible_capture2(BitmaskBoard& board_layout, char turn);
+
+std::vector<Move> check_for_force2(BitmaskBoard& board_layout, char turn, std::vector<Piece> &pieces, std::vector<std::vector<Piece>>& main_parent_list);

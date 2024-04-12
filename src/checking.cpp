@@ -2,15 +2,18 @@
 #include "moveGeneration.hpp"
 #include "globals.hpp"
 #include "robin_hood.h"
+#include "move.hpp"
 
 bool check_if_piece_can_capture(char row, char col, BitmaskBoard& board_layout, char turn){
 
     if((board_layout.check_index_has_blackKing(row, col) && turn==1) || (board_layout.check_index_has_whiteKing(row, col) && turn == 2))
     {
-        char eating_piece = get_valid_moves(row, col, board_layout.get(row, col), 0, board_layout, 0).second;
-        if(eating_piece!=0)
-            return true;
-        return false;
+        bool dama_nom = check_dama_has_akel(row, col, board_layout.get(row, col), board_layout, 0);
+        return dama_nom;
+        // char eating_piece = get_valid_moves(row, col, board_layout.get(row, col), 0, board_layout, 0).second;
+        // if(eating_piece!=0)
+        //     return true;
+        // return false;
     }
     else if(turn == 2){
         if(col-2>=0 && board_layout.get(row, col-2)==0 && (board_layout.check_index_has_blackPawn(row, col-1) || board_layout.check_index_has_blackKing(row, col-1)))
@@ -39,9 +42,12 @@ std::pair<std::vector<char*>, bool> check_for_possible_capture(BitmaskBoard& boa
         char col = piece[1];
         if((board_layout.check_index_has_blackKing(row, col) && turn==1) || (board_layout.check_index_has_whiteKing(row, col) && turn == 2))
         {
-            char eating_piece = get_valid_moves(row, col, board_layout.get(row, col), 0, board_layout, 0).second;
-            if(eating_piece!=0)
-                return std::make_pair(pieces, true);
+            bool dama_nom = check_dama_has_akel(row, col, board_layout.get(row, col), board_layout, 0);
+            if(dama_nom)
+                return {pieces, dama_nom};
+            // char eating_piece = get_valid_moves(row, col, board_layout.get(row, col), 0, board_layout, 0).second;
+            // if(eating_piece!=0)
+            //     return std::make_pair(pieces, true);
         }
         else if(turn == 2){
             if(col-2>=0 && board_layout.get(row, col-2)==0 && (board_layout.check_index_has_blackPawn(row, col-1) || board_layout.check_index_has_blackKing(row, col-1)))
@@ -412,24 +418,17 @@ bool passage_is_clear(BitmaskBoard& board_layout, char row, char col, char turn)
     return false; // Return false for any other turn value
 }
 
-std::vector<char*> check_for_force(BitmaskBoard& board_layout, char turn, std::vector<char*> *pieces = { })
+std::vector<char*> check_for_force(BitmaskBoard& board_layout, char turn, std::vector<char*> &pieces, std::vector<std::vector<char*>>& main_parent_list)
 {
-    // new, needs more testing
-    // if(!board_layout.getBlackKings() && !board_layout.getWhiteKings() &&!board_layout.capture_available(turn == 1 ? 0 : 1))
-    // {
-    //     *pieces = get_all_pieces(board_layout, turn);
-    //     return {};
-    // }
-
     auto [pieces2, check] = check_for_possible_capture(board_layout, turn);
-    *pieces = pieces2;
+    pieces = pieces2;
     if(check == false)
         return {};
     bool aktar_flag = false;
     std::vector<char*> aktar_list;
     robin_hood::unordered_set<char*> aktar_set;
     std::vector<char*> force_list;
-    char maxLength = 3, listSize = 0;
+    char maxLength = 2, listSize = 0;
 
     for(char* piece : pieces2)
     {
@@ -462,16 +461,6 @@ std::vector<char*> check_for_force(BitmaskBoard& board_layout, char turn, std::v
                     temp[0] = row2; temp[1] = col2;
                     tempValue.push_back(temp);
                     parent_list2.push_back(tempValue);
-                    // for(char* move : valid_moves)
-                    // {
-                    //     //parent_list2.append([(row2, col2), move])
-                    //     char* temp = new char[2];
-                    //     std::vector<char*> tempValue = std::vector<char*>();
-                    //     temp[0] = row2; temp[1] = col2;
-                    //     tempValue.push_back(temp);
-                    //     tempValue.push_back(move);
-                    //     parent_list2.push_back(tempValue);
-                    // }
 
                     std::vector<std::vector<char*>> parent_list;
                     parent_list = eat_max2(row2, col2, board_layout, parent_list2, color, 0);
@@ -482,12 +471,15 @@ std::vector<char*> check_for_force(BitmaskBoard& board_layout, char turn, std::v
                         if(listSize>maxLength){
                             aktar_set.clear();
                             // force_list.clear();
+                            main_parent_list.clear();
                         }
                         maxLength = listSize;
                         aktar_flag = true;
-                        for(std::vector<char*> value : parent_list)
+                        // auto bigger_parent_list(parent_list);
+                        for(std::vector<char*> value : parent_list) {
                             aktar_set.insert(value[0]);
-                        
+                            main_parent_list.push_back(value);
+                        }   
                     }
                 }
                 else if (color == 3 || color == 4)
@@ -499,17 +491,6 @@ std::vector<char*> check_for_force(BitmaskBoard& board_layout, char turn, std::v
                     tempValue.push_back(temp);
                     parent_list2.push_back(tempValue);
 
-                    // for(char* move : valid_moves)
-                    // {
-                    //     //parent_list2.append([(row2, col2), move])
-                    //     char* temp = new char[2];
-                    //     std::vector<char*> tempValue = std::vector<char*>();
-                    //     temp[0] = row2; temp[1] = col2;
-                    //     tempValue.push_back(temp);
-                    //     tempValue.push_back(move);
-                    //     parent_list2.push_back(tempValue);
-                    // }
-
                     std::vector<std::vector<char*>> parent_list;
                     parent_list = eat_max2(row2, col2, board_layout, parent_list2, color, 0);
                     if(!parent_list.empty())
@@ -519,11 +500,15 @@ std::vector<char*> check_for_force(BitmaskBoard& board_layout, char turn, std::v
                         if(listSize>maxLength){
                             aktar_set.clear();
                             // force_list.clear();
+                            main_parent_list.clear();
                         }
                         maxLength = listSize;
                         aktar_flag = true;
-                        for(std::vector<char*> value : parent_list)
+                        // auto bigger_parent_list(parent_list);
+                        for(std::vector<char*> value : parent_list) {
                             aktar_set.insert(value[0]);
+                            main_parent_list.push_back(value);
+                        }
                     }
                 }
 
@@ -533,6 +518,177 @@ std::vector<char*> check_for_force(BitmaskBoard& board_layout, char turn, std::v
                     piece[0] = row2; piece[1] = col2;
                     force_list.push_back(piece);
                     // aktar_set.insert(piece);
+
+                    // add to main parent list
+                    auto valid_moves = validMovesAndEatingPiece.first;
+                    for(char* move : valid_moves)
+                    {
+                        std::vector<char*> tempValue = std::vector<char*>();
+                        tempValue.push_back(piece);
+                        tempValue.push_back(move);
+                        main_parent_list.push_back(tempValue);
+                    }
+                    
+                }
+            }
+        }
+    }
+    if(aktar_flag)
+    {
+        force_list.clear();
+        for(auto element : aktar_set)
+        {
+            force_list.push_back(element);
+        }
+        // force_list = aktar_list;
+    }
+    return force_list;
+}
+
+// new shit
+
+std::pair<std::vector<Piece>, bool> check_for_possible_capture2(BitmaskBoard& board_layout, char turn)
+{
+    std::vector<Piece> pieces = get_all_pieces2(board_layout, turn);
+    for(auto piece:pieces){
+        char row = piece.getRow();
+        char col = piece.getCol();
+        if((board_layout.check_index_has_blackKing(row, col) && turn==1) || (board_layout.check_index_has_whiteKing(row, col) && turn == 2))
+        {
+            bool dama_nom = check_dama_has_akel(row, col, board_layout.get(row, col), board_layout, 0);
+            if(dama_nom)
+                return {pieces, dama_nom};
+            // char eating_piece = get_valid_moves(row, col, board_layout.get(row, col), 0, board_layout, 0).second;
+            // if(eating_piece!=0)
+            //     return std::make_pair(pieces, true);
+        }
+        else if(turn == 2){
+            if(col-2>=0 && board_layout.get(row, col-2)==0 && (board_layout.check_index_has_blackPawn(row, col-1) || board_layout.check_index_has_blackKing(row, col-1)))
+                return std::make_pair(pieces, true);
+            if(col+2<8 && board_layout.get(row, col+2)==0 && (board_layout.check_index_has_blackPawn(row, col+1) || board_layout.check_index_has_blackKing(row, col+1)))
+                return std::make_pair(pieces, true);
+            if(row-2>=0 && board_layout.get(row-2, col)==0 && (board_layout.check_index_has_blackPawn(row-1, col) || board_layout.check_index_has_blackKing(row-1, col)))
+                return std::make_pair(pieces, true);
+        }
+        else{
+            if(col-2>=0 && board_layout.get(row, col-2)==0 && (board_layout.check_index_has_whitePawn(row, col-1) || board_layout.check_index_has_whiteKing(row, col-1)))
+                return std::make_pair(pieces, true);
+            if(col+2<8 && board_layout.get(row, col+2)==0 && (board_layout.check_index_has_whitePawn(row, col+1) || board_layout.check_index_has_whiteKing(row, col+1)))
+                return std::make_pair(pieces, true);
+            if(row+2<8 && board_layout.get(row+2, col)==0 && (board_layout.check_index_has_whitePawn(row+1, col) || board_layout.check_index_has_whiteKing(row+1, col)))
+                return std::make_pair(pieces, true);
+        }
+    }
+    return std::make_pair(pieces, false);
+}
+
+std::vector<Move> check_for_force2(BitmaskBoard& board_layout, char turn, std::vector<Piece> &pieces, std::vector<std::vector<Piece>>& main_parent_list) 
+{
+    auto [pieces2, check] = check_for_possible_capture2(board_layout, turn);
+    pieces = pieces2;
+    if(check == false)
+        return {};
+    bool aktar_flag = false;
+    // std::vector<Move> aktar_list;
+    robin_hood::unordered_set<Move> aktar_set;
+    std::vector<Move> force_list;
+    char maxLength = 3, listSize = 0;
+
+    for(auto piece : pieces2)
+    {
+        char row2=piece.getRow(), col2=piece.getCol();
+
+        if(!check_if_piece_can_capture(row2, col2, board_layout, turn))
+            continue;
+        char color = board_layout.get(row2, col2);
+        if(((color==2 || color==4) && turn==2) || ((color==1 || color==3) && turn==1))
+        {
+            bool fff = false;
+            std::vector<std::vector<Piece>> parent_list2;
+            
+            //get_valid_moves stuff
+            std::pair<std::vector<Move>, char> validMovesAndEatingPiece;
+            validMovesAndEatingPiece  = get_valid_moves2(piece, 0, board_layout, 0);
+            
+            char eating_piece = validMovesAndEatingPiece.second;
+            bool dama_nom = (eating_piece == 'd');
+            fff = eating_piece!=0;
+
+            if(fff)
+            {
+                std::vector<Move> valid_moves = validMovesAndEatingPiece.first;
+                //std::vector<char*> parent_list = eat_max2_not_dama(row2, col2, board_layout, parent_list2, color, 0);
+                if(color == 1 || color == 2)
+                {
+                    parent_list2 = std::vector<std::vector<Piece>>();
+
+                    std::vector<Piece> tempValue;
+                    tempValue.push_back(piece);
+                    parent_list2.push_back(tempValue);
+
+                    auto parent_list = eat_max3(piece, board_layout, parent_list2, 0, color);
+                    if(!parent_list.empty())
+                        listSize = parent_list[0].size();
+                    if(!parent_list.empty() && listSize>=maxLength)
+                    {
+                        if(listSize>maxLength){
+                            aktar_set.clear();
+                            // force_list.clear();
+                            main_parent_list.clear();
+                        }
+                        maxLength = listSize;
+                        aktar_flag = true;
+                        // auto bigger_parent_list(parent_list);
+                        for(std::vector<Piece> value : parent_list) {
+                            aktar_set.insert(Move(value[0].getRow(), value[0].getCol(), value[value.size()-1].getRow(), value[value.size()-1].getCol()));
+                            main_parent_list.push_back(value);
+                        }   
+                    }
+                }
+                else if (color == 3 || color == 4)
+                {
+                    parent_list2 = std::vector<std::vector<Piece>>();
+                    std::vector<Piece> tempValue = std::vector<Piece>();
+                    tempValue.push_back(piece);
+                    parent_list2.push_back(tempValue);
+
+                    auto parent_list = eat_max3(piece, board_layout, parent_list2, 0, color);
+                    if(!parent_list.empty())
+                        listSize = parent_list[0].size();
+                    if(!parent_list.empty() && listSize>=maxLength)
+                    {
+                        if(listSize>maxLength){
+                            aktar_set.clear();
+                            // force_list.clear();
+                            main_parent_list.clear();
+                        }
+                        maxLength = listSize;
+                        aktar_flag = true;
+                        // auto bigger_parent_list(parent_list);
+                        for(std::vector<Piece> value : parent_list) {
+                            aktar_set.insert(Move(value[0].getRow(), value[0].getCol(), value[value.size()-1].getRow(), value[value.size()-1].getCol()));
+                            main_parent_list.push_back(value);
+                        }
+                    }
+                }
+
+                if(!aktar_flag)
+                {
+                    // force_list.push_back(piece);
+                    // aktar_set.insert(piece);
+
+                    // add to main parent list
+                    auto valid_moves = validMovesAndEatingPiece.first;
+                    for(auto move : valid_moves)
+                    {
+                        force_list.push_back(move);
+                        // aktar_set.insert(move);
+                        std::vector<Piece> tempValue;
+                        tempValue.push_back(piece);
+                        tempValue.push_back(Piece(move.getToRow(), move.getToCol(), color));
+                        main_parent_list.push_back(tempValue);
+                    }
+                    
                 }
             }
         }

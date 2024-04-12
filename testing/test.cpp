@@ -1,139 +1,123 @@
 #include <iostream>
-#include <tuple>
-#include <fstream>
-#include <cstring>
-#include <random>
 #include <time.h> 
 #include <vector>
-#include <set>
-#include <memory>
 #include <cstdlib>   // for rand() and srand()
-#include <ctime>
-#include <fstream>
-#include <string>
-#include <cstring>
-#include <algorithm>
+#include <BitmaskBoard.hpp>
+#include <moveGeneration.hpp>
+#include <util.hpp>
+#include <json.hpp>
+
 using namespace std;
+using json = nlohmann::json;
 
-class Coalesced2DArray {
-public:
-    Coalesced2DArray(int rows = 8, int cols = 8) : _rows(rows), _cols(cols), _data(new char[rows * cols]) {}
-
-    // Copy constructor for deep copying
-    Coalesced2DArray(const Coalesced2DArray& other) : _rows(other._rows), _cols(other._cols), _data(new char[other._rows * other._cols]) {
-        std::memcpy(_data, other._data, _rows * _cols * sizeof(char));
-    }
-
-    // Destructor to free allocated memory
-    ~Coalesced2DArray() {
-        delete[] _data;
-    }
-
-    // Assignment operator for deep copying
-    Coalesced2DArray& operator=(const Coalesced2DArray& other) {
-        if (this != &other) { // Protect against self-assignment/
-            delete[] _data; // Free existing resource
-            _rows = other._rows;
-            _cols = other._cols;
-            _data = new char[_rows * _cols];
-            std::memcpy(_data, other._data, _rows * _cols * sizeof(char));
+BitmaskBoard generateRandomBoard()
+{
+    BitmaskBoard board;
+    for(int i=0; i<8; i++)
+    {
+        for(int j=0; j<8; j++)
+        {
+            if(i > 0 && i < 4) { // rows 1 2 3
+                if(rand()%2 == 0) {
+                    board.set(i, j, 1); //2 for white
+                }
+                else {
+                    board.set(i, j, 0); //0 for empty
+                }
+            }
+            else if(i > 4 && i < 7) { // rows 5 6
+                if(rand()%2 == 0) {
+                    board.set(i, j, 2); //2 for white
+                }
+                else {
+                    board.set(i, j, 0); //0 for empty
+                }
+            }
+            else if(i==0) { // black damas
+                if(rand()%8 == 0) {
+                    board.set(i, j, 3); //3 for black dama small chance
+                }
+                else {
+                    board.set(i, j, 0); //0 for empty
+                }
+            }
+            else if(i==7) { // white damas
+                if(rand()%8 == 0) {
+                    board.set(i, j, 4); //4 for white dama small chance
+                }
+                else {
+                    board.set(i, j, 0); //0 for empty
+                }
+            }
+            else {
+                board.set(i, j, 0); //0 for empty
+            
+            }
         }
-        return *this;
     }
+    return board;
+}
 
-        // Non-const version of Row proxy
-    class Row {
-    public:
-        Row(char* row, int cols) : _row(row), _cols(cols) {}
-        char& operator[](int col) {
-            return _row[col];
+std::string boardToString(const BitmaskBoard& board) {
+    std::string boardStr;  // Use a std::string to accumulate the board representation
+    
+    for(int i = 0; i < 8; i++) {
+        for(int j = 0; j < 8; j++) {
+            const char piece = board.get(i, j);  // Assume this returns a char (numeric value)
+            
+            // Correct way to convert numeric value to character ('0', '1', ..., '9')
+            boardStr += (piece + '0');  // Convert the piece to its digit character
+            
+            boardStr += " ";  // Add a space between pieces
         }
-    private:
-        char* _row;
-        int _cols;
-    };
-
-    // Const version of Row proxy
-    class ConstRow {
-    public:
-        ConstRow(const char* row, int cols) : _row(row), _cols(cols) {}
-        const char& operator[](int col) const {
-            return _row[col];
-        }
-    private:
-        const char* _row;
-        int _cols;
-    };
-
-    // Non-const version of operator[]
-    Row operator[](int row) {
-        return Row(_data + (row * _cols), _cols);
+        boardStr.pop_back();  // Remove the trailing space at the end of each row
+        boardStr += "\n";  // Add a newline character at the end of each row
     }
 
-    // Const version of operator[]
-    ConstRow operator[](int row) const {
-        return ConstRow(_data + (row * _cols), _cols);
-    }
-
-private:
-    int _rows, _cols;
-    char* _data; // The underlying storage
-};
+    // jsonBoard["board"] = boardStr;  // Assign the constructed string to the "board" key in the JSON object
+    return boardStr;  // Return the JSON object
+}
 
 int main()
 {
-    // int n;
-    // cin>>n;
+    // I want to create unit tests for the move generation functions
+    // first create a random board
+    BitmaskBoard board = generateRandomBoard();
 
-    // // vector<Coalesced2DArray> all_moves(n);
-    
-    // // Coalesced2DArray arr(8, 8);
+    // test get_all_moves
+    bool isEmptyForceList = false;
+    std::vector<BitmaskBoard> movesBlack = get_all_moves(board, 1, isEmptyForceList);
 
-    // int arr[8][8];
+    std::vector<BitmaskBoard> movesWhite = get_all_moves(board, 2, isEmptyForceList);
 
+    // Creating a JSON object to store the data
+    json testData;
 
-    // for(int i=0; i<8; i++)
-    //     for(int j=0; j<8; j++)
-    //         arr[i][j] = 0;
-    
-    // // Coalesced2DArray arr2 = arr;
+    for(int i = 0; i<10000; i++) {
+        BitmaskBoard board = generateRandomBoard();
+        std::vector<BitmaskBoard> movesBlack = get_all_moves(board, 1, isEmptyForceList);
+        std::vector<BitmaskBoard> movesWhite = get_all_moves(board, 2, isEmptyForceList);
 
-    // // arr2[0][0] = 1;
+        testData.push_back({
+            {"board", boardToString(board)},
+            {"movesBlack", {}},
+            {"movesWhite", {}}
+        });
 
-    // printf("%c ", (char)arr[0][0]);
-
-
-
-    // clock_t begin = clock();
-    
-    // for(int i=0; i<n; i++)
-    //     arr[0][0] = rand()%4;
-    
-    // clock_t end = clock();
-    // double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-    // std::cout<<"Time: "<<time_spent<<endl;
-
-
-    std::mt19937_64 rng(42); // Fixed seed ensures repeatable results
-    std::uniform_int_distribution<uint64_t> dist;
-
-    std::cout << "std::array<std::array<uint64_t, 64>, 4> zobristTable = {{\n";
-    for (int piece = 0; piece < 4; ++piece) {
-        std::cout << "    {\n";
-        for (int square = 0; square < 64; ++square) {
-            uint64_t randomValue = dist(rng);
-            std::cout << "        0x" << std::hex << randomValue << "ULL";
-            if (square < 63) std::cout << ",";
-            std::cout << "\n";
+        for(const auto& move : movesBlack) {
+            testData.back()["movesBlack"].push_back(boardToString(move));
         }
-        std::cout << "    }";
-        if (piece < 3) std::cout << ",";
-        std::cout << "\n";
+
+        for(const auto& move : movesWhite) {
+            testData.back()["movesWhite"].push_back(boardToString(move));
+        }
+
     }
-    std::cout << "}};\n";
+
+    // Writing to a file
+    std::ofstream file("get_all_moves_normal_board_test.json");
+    file << testData.dump(4); // 4 spaces as indentation for pretty printing
+    file.close();
 
     return 0;
-
-
-
 }

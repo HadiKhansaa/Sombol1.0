@@ -1,23 +1,10 @@
 #pragma once
 #include <iostream>
-#include <tuple>
 #include <fstream>
 #include <sstream>
-#include <cstring>
-#include <random>
 #include <time.h> 
 #include <vector>
-#include <memory>
-#include <windows.h>
 #include <cstdlib>   // for rand() and srand()
-#include <ctime>
-#include <fstream>
-#include <string>
-#include <unordered_map>
-#include <set>
-#include <unordered_set>   
-// #include <unordered_map>
-#include <functional>
 #include "robin_hood.h"
 #include "constant.hpp"
 
@@ -201,10 +188,10 @@ public:
     bool capture_available(bool isWhiteTurn) const {
 
         // Masks to prevent wrap-around horizontally
-        uint64_t notAFile = 0b0111111101111111011111110111111101111111011111110111111101111111;
-        uint64_t notHFile = 0b1111111011111110111111101111111011111110111111101111111011111110; 
-        uint64_t notBFile = 0b1011111110111111101111111011111110111111101111111011111110111111;
-        uint64_t notGFile = 0b1111110111111101111111011111110111111101111111011111110111111101;
+        uint64_t notHFile = 0b0111111101111111011111110111111101111111011111110111111101111111;
+        uint64_t notAFile = 0b1111111011111110111111101111111011111110111111101111111011111110; 
+        uint64_t notGFile = 0b1011111110111111101111111011111110111111101111111011111110111111;
+        uint64_t notBFile = 0b1111110111111101111111011111110111111101111111011111110111111101;
 
         uint64_t notRank8 = 0b1111111111111111111111111111111111111111111111111111111100000000;
         uint64_t notRank7 = 0b1111111111111111111111111111111111111111111111110000000011111111;
@@ -224,11 +211,11 @@ public:
         auto opponentPiecesForRight = opponentPieces & notHFile;
         // Check horizontal captures
         // Right captures: piece, opponent piece, empty square
-        bool leftCapture = ( (playerPiecesForLeft << 1) & opponentPiecesForLeft) && 
-                            (((playerPiecesForLeft << 2) & (opponentPiecesForLeft << 1) & emptySquares));
+        bool leftCapture = ( (playerPiecesForLeft >> 1) & opponentPiecesForLeft) && 
+                            (((playerPiecesForLeft >> 2) & (opponentPiecesForLeft >> 1) & emptySquares));
         // Left captures: piece, opponent piece, empty square
-        bool rightCapture = ((playerPiecesForRight >> 1) & opponentPiecesForRight) && 
-                           (((playerPiecesForRight >> 2) & (opponentPiecesForRight >> 1) & emptySquares));
+        bool rightCapture = ((playerPiecesForRight << 1) & opponentPiecesForRight) && 
+                           (((playerPiecesForRight << 2) & (opponentPiecesForRight << 1) & emptySquares));
 
         // Check vertical captures for pawns
         bool upCapture = false, downCapture = false;
@@ -239,12 +226,12 @@ public:
         auto opponentPiecesForDown = opponentPieces & notRank8;
         if (isWhiteTurn) { // White's turn
             // Up captures: piece, opponent piece, empty square
-            upCapture = ((playerPiecesForUp << 8) & opponentPiecesForUp) && 
-                        (((playerPiecesForUp << 16) & (opponentPiecesForUp << 8) & emptySquares)); 
+            upCapture = ((playerPiecesForUp >> 8) & opponentPiecesForUp) && 
+                        (((playerPiecesForUp >> 16) & (opponentPiecesForUp >> 8) & emptySquares)); 
         } else { // Black's turn
             // Down captures: piece, opponent piece, empty square
-            downCapture = ((playerPiecesForDowm >> 8) & opponentPiecesForDown) && 
-                          (((playerPiecesForDowm >> 16) & (opponentPiecesForDown >> 8) & emptySquares));
+            downCapture = ((playerPiecesForDowm << 8) & opponentPiecesForDown) && 
+                          (((playerPiecesForDowm << 16) & (opponentPiecesForDown << 8) & emptySquares));
         }
 
         return rightCapture || leftCapture || upCapture || downCapture;
@@ -501,7 +488,7 @@ public:
         if((nb_white_pieces == 1) && (nb_white_pieces > 1) && sum < 0)
             sum = 0;
 
-        return sum;
+        return sum + rand() % 3; // add some randomness so that the AI doesn't always play the same moves
     }
 
     // overrided version without game history

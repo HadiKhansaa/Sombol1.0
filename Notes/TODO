@@ -15,3 +15,5 @@ Medium:
 
 Small:
 1. ✔ There is a bug in sombol logic, sometimes its playing fumb moves, fix it.
+2. give isEmptyForce to orderMoves
+3. let minimax start with an array of valid moves rather than playing everyone of them
