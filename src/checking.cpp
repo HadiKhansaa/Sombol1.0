@@ -589,8 +589,8 @@ std::vector<Move> check_for_force2(BitmaskBoard& board_layout, char turn, std::v
     if(check == false)
         return {};
     bool aktar_flag = false;
-    // std::vector<Move> aktar_list;
-    robin_hood::unordered_set<Move> aktar_set;
+    std::vector<Move> aktar_list;
+    // robin_hood::unordered_set<Move> aktar_set;
     std::vector<Move> force_list;
     char maxLength = 3, listSize = 0;
 
@@ -632,7 +632,7 @@ std::vector<Move> check_for_force2(BitmaskBoard& board_layout, char turn, std::v
                     if(!parent_list.empty() && listSize>=maxLength)
                     {
                         if(listSize>maxLength){
-                            aktar_set.clear();
+                            aktar_list.clear();
                             // force_list.clear();
                             main_parent_list.clear();
                         }
@@ -640,7 +640,7 @@ std::vector<Move> check_for_force2(BitmaskBoard& board_layout, char turn, std::v
                         aktar_flag = true;
                         // auto bigger_parent_list(parent_list);
                         for(std::vector<Piece> value : parent_list) {
-                            aktar_set.insert(Move(value[0].getRow(), value[0].getCol(), value[value.size()-1].getRow(), value[value.size()-1].getCol()));
+                            aktar_list.push_back(Move(value[0].getRow(), value[0].getCol(), value[value.size()-1].getRow(), value[value.size()-1].getCol()));
                             main_parent_list.push_back(value);
                         }   
                     }
@@ -658,7 +658,7 @@ std::vector<Move> check_for_force2(BitmaskBoard& board_layout, char turn, std::v
                     if(!parent_list.empty() && listSize>=maxLength)
                     {
                         if(listSize>maxLength){
-                            aktar_set.clear();
+                            aktar_list.clear();
                             // force_list.clear();
                             main_parent_list.clear();
                         }
@@ -666,7 +666,7 @@ std::vector<Move> check_for_force2(BitmaskBoard& board_layout, char turn, std::v
                         aktar_flag = true;
                         // auto bigger_parent_list(parent_list);
                         for(std::vector<Piece> value : parent_list) {
-                            aktar_set.insert(Move(value[0].getRow(), value[0].getCol(), value[value.size()-1].getRow(), value[value.size()-1].getCol()));
+                            aktar_list.push_back(Move(value[0].getRow(), value[0].getCol(), value[value.size()-1].getRow(), value[value.size()-1].getCol()));
                             main_parent_list.push_back(value);
                         }
                     }
@@ -695,11 +695,13 @@ std::vector<Move> check_for_force2(BitmaskBoard& board_layout, char turn, std::v
     }
     if(aktar_flag)
     {
-        force_list.clear();
-        for(auto element : aktar_set)
-        {
-            force_list.push_back(element);
-        }
+        return aktar_list;
+        
+        // force_list.clear();
+        // for(auto element : aktar_set)
+        // {
+        //     force_list.push_back(element);
+        // }
         // force_list = aktar_list;
     }
     return force_list;

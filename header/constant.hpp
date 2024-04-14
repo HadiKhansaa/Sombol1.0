@@ -1,5 +1,11 @@
 #pragma once
 #include <iostream>
+#include <windows.h>
+#include <unordered_map>
+#include <memory>
+#include <random>
+#include <set>
+#include <functional>
 
 const uint64_t MST_64 = 0b1000000000000000000000000000000000000000000000000000000000000000;  // 64 bits set to 1
 

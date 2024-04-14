@@ -190,6 +190,6 @@ void testGetAllMoves(const std::string& jsonFileName, std::vector<BitmaskBoard> 
 
 int main()
 {
-    testGetAllMoves("C:/Users/USER/Desktop/PROJECTS/dama/testing/get_all_moves_random_board_test.json", get_all_moves3);
+    testGetAllMoves("C:/Users/USER/Desktop/PROJECTS/dama/testing/get_all_moves_normal_board_test.json", get_all_moves);
     return 0;
 }

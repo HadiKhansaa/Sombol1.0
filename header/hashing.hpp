@@ -8,18 +8,16 @@
 #include "BitmaskBoard.hpp"
 #include "robin_hood.h"
 
-struct BitmaskBoardHash {
-    size_t operator()(const BitmaskBoard& board) const {
-        return board.hash();
-    }
-};
-
 typedef struct TTValue {
     int depth;
     int eval;
     BitmaskBoard bestMove;
-    // copy assignment
 
+    TTValue() : depth(0), eval(0), bestMove() {}
+
+    TTValue(int depth, int eval, BitmaskBoard bestMove) : 
+    depth(depth), eval(eval), bestMove(bestMove) {}
+    
 } TTValue;
 
 void writeGameHistoryToFile(const robin_hood::unordered_map<uint64_t, int>& gameHistory, const std::string& filename);

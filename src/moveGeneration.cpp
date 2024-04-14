@@ -33,9 +33,9 @@ std::pair<std::vector<char*>, char> get_valid_moves(char row, char col, char col
         {
             if (col+i >= 8)
                 break;
-            if (col+i<8 && board_layout.check_index_has_blackKing(row, col+i) || board_layout.check_index_has_blackPawn(row, col+i))
+            if (board_layout.check_index_has_blackKing(row, col+i) || board_layout.check_index_has_blackPawn(row, col+i))
                 break;
-            if (col+i<8 && board_layout.check_index_has_whiteKing(row, col+i) || board_layout.check_index_has_whitePawn(row, col+i))
+            if (board_layout.check_index_has_whiteKing(row, col+i) || board_layout.check_index_has_whitePawn(row, col+i))
             {
                 char pieceToEat = board_layout.get(row, col+i);
                 char j=1;
@@ -46,7 +46,7 @@ std::pair<std::vector<char*>, char> get_valid_moves(char row, char col, char col
                         i=10;
                         break;
                     }
-                    if (col+i+j<8 && board_layout.check_index_has_whiteKing(row, col+i+j) || board_layout.check_index_has_whitePawn(row, col+i+j) || board_layout.check_index_has_blackKing(row, col+i+j) || board_layout.check_index_has_blackPawn(row, col+i+j))
+                    if (board_layout.check_index_has_whiteKing(row, col+i+j) || board_layout.check_index_has_whitePawn(row, col+i+j) || board_layout.check_index_has_blackKing(row, col+i+j) || board_layout.check_index_has_blackPawn(row, col+i+j))
                     {
                         i=10;
                         break;
@@ -72,7 +72,7 @@ std::pair<std::vector<char*>, char> get_valid_moves(char row, char col, char col
         i=1;
         while(true && !ate_right)
         {
-            if (col-i < 0 || col>7 || row>7)
+            if (col-i < 0)
                 break;
             if (board_layout.check_index_has_blackKing(row, col-i) || board_layout.check_index_has_blackPawn(row, col-i))
                 break;
@@ -112,7 +112,7 @@ std::pair<std::vector<char*>, char> get_valid_moves(char row, char col, char col
         i=1; //down
         while(true && !ate_up)
         {
-            if (row+i>=8 || col>=8 || row+i<0 || col<0)
+            if (row+i>=8)
                 break;
             if (board_layout.check_index_has_blackKing(row+i, col) || board_layout.check_index_has_blackPawn(row+i, col))
                 break;
@@ -223,7 +223,7 @@ std::pair<std::vector<char*>, char> get_valid_moves(char row, char col, char col
             }
             
             i=1;
-            while(col-i>=0 && row>0 && row<8 && col-i<8 && board_layout.get(row, col-i) == 0)
+            while(col-i>=0 && board_layout.get(row, col-i) == 0)
             {
                 v_move = new char[2];
                 v_move[0] = row;
@@ -476,7 +476,6 @@ std::pair<std::vector<char*>, char> get_valid_moves(char row, char col, char col
             eating_piece = 'n';
         }
             
-
         if (col-2>=0 && (board_layout.check_index_has_whitePawn(row, col-1) || board_layout.check_index_has_whiteKing(row, col-1)) && board_layout.get(row, col-2)==0 && streak>=0 &&  !ate_right)
         {
             char pieceToEat = board_layout.get(row, col-1);
@@ -1320,9 +1319,9 @@ std::vector<BitmaskBoard> get_all_moves(BitmaskBoard& board_layout, char color, 
     
     isEmptyForceList = false;
 
-    if(board_layout.getBlackKings() == 0 && board_layout.getWhiteKings() == 0 && !board_layout.capture_available(color == 1 ? 0:1)) // if no king on board
-        pieces = get_all_pieces(board_layout, color);
-    else
+    // if(board_layout.getBlackKings() == 0 && board_layout.getWhiteKings() == 0 && !board_layout.capture_available(color == 1 ? 0:1)) // if no king on board
+    //     pieces = get_all_pieces(board_layout, color);
+    // else
         force_list = check_for_force(board_layout, color, pieces, parent_list);
     
     // if(!force_list.empty())
@@ -1411,9 +1410,9 @@ std::pair<std::vector<Move>, char> get_valid_moves2(Piece piece, char streak, Bi
         {
             if (col+i >= 8)
                 break;
-            if (col+i<8 && board_layout.check_index_has_blackKing(row, col+i) || board_layout.check_index_has_blackPawn(row, col+i))
+            if (board_layout.check_index_has_blackKing(row, col+i) || board_layout.check_index_has_blackPawn(row, col+i))
                 break;
-            if (col+i<8 && board_layout.check_index_has_whiteKing(row, col+i) || board_layout.check_index_has_whitePawn(row, col+i))
+            if (board_layout.check_index_has_whiteKing(row, col+i) || board_layout.check_index_has_whitePawn(row, col+i))
             {
                 char pieceToEat = board_layout.get(row, col+i);
                 char j=1;
@@ -1424,7 +1423,7 @@ std::pair<std::vector<Move>, char> get_valid_moves2(Piece piece, char streak, Bi
                         i=10;
                         break;
                     }
-                    if (col+i+j<8 && board_layout.check_index_has_whiteKing(row, col+i+j) || board_layout.check_index_has_whitePawn(row, col+i+j) || board_layout.check_index_has_blackKing(row, col+i+j) || board_layout.check_index_has_blackPawn(row, col+i+j))
+                    if (board_layout.check_index_has_whiteKing(row, col+i+j) || board_layout.check_index_has_whitePawn(row, col+i+j) || board_layout.check_index_has_blackKing(row, col+i+j) || board_layout.check_index_has_blackPawn(row, col+i+j))
                     {
                         i=10;
                         break;
@@ -1447,7 +1446,7 @@ std::pair<std::vector<Move>, char> get_valid_moves2(Piece piece, char streak, Bi
         i=1;
         while(true && !ate_right)
         {
-            if (col-i < 0 || col>7 || row>7)
+            if (col-i < 0)
                 break;
             if (board_layout.check_index_has_blackKing(row, col-i) || board_layout.check_index_has_blackPawn(row, col-i))
                 break;
@@ -1484,7 +1483,7 @@ std::pair<std::vector<Move>, char> get_valid_moves2(Piece piece, char streak, Bi
         i=1; //down
         while(true && !ate_up)
         {
-            if (row+i>=8 || col>=8 || row+i<0 || col<0)
+            if (row+i>=8)
                 break;
             if (board_layout.check_index_has_blackKing(row+i, col) || board_layout.check_index_has_blackPawn(row+i, col))
                 break;
@@ -1580,7 +1579,7 @@ std::pair<std::vector<Move>, char> get_valid_moves2(Piece piece, char streak, Bi
             }
             
             i=1;
-            while(col-i>=0 && row>0 && row<8 && col-i<8 && board_layout.get(row, col-i) == 0)
+            while(col-i>=0 && board_layout.get(row, col-i) == 0)
             {
                 valid_moves.push_back(Move(row, col, row, col-i));
                 i+=1;
@@ -1598,9 +1597,9 @@ std::pair<std::vector<Move>, char> get_valid_moves2(Piece piece, char streak, Bi
         {
             if (col+i >= 8)
                 break;
-            if (col+i<8 && board_layout.check_index_has_whiteKing(row, col+i) || board_layout.check_index_has_whitePawn(row, col+i))
+            if (board_layout.check_index_has_whiteKing(row, col+i) || board_layout.check_index_has_whitePawn(row, col+i))
                 break;
-            if (col+i<8 && board_layout.check_index_has_blackKing(row, col+i) || board_layout.check_index_has_blackPawn(row, col+i))
+            if (board_layout.check_index_has_blackKing(row, col+i) || board_layout.check_index_has_blackPawn(row, col+i))
             {
                 char pieceToEat = board_layout.get(row, col+i);
                 char j=1;
@@ -1945,9 +1944,9 @@ void move_piece2(Move move, BitmaskBoard& board_layout, std::vector<std::vector<
             }
             index++;
         }
-        // parent_list.erase(parent_list.begin()+index);
-        if(value_length==0)  
-            return;
+        parent_list.erase(parent_list.begin()+index); // remove this index so that later move with same src dst take different path in parent list
+        // if(value_length==0)  
+        //     return;
     }
     else
         eat_piece_if_possible(board_layout, row, col, r, c, color);
@@ -2130,6 +2129,7 @@ std::vector<Move> get_all_valid_moves(BitmaskBoard& board_layout, char color, bo
     
    
     if(!force_list.empty()) {
+        isEmptyForceList = false;
         return force_list;
     }
     else 
@@ -2154,26 +2154,36 @@ std::vector<BitmaskBoard> get_all_moves3(BitmaskBoard& board_layout, char color,
     std::vector<BitmaskBoard> moves;
     counter++;
     
-    if(!isEmptyForceList)
-    {
-        for (int moveIndex = 0; moveIndex<main_parent_list.size(); moveIndex++)
-        {
-            auto list = main_parent_list[moveIndex];
-            BitmaskBoard board_layout2 = board_layout;
-            auto listSize = list.size();
-            move_piece2(Move(list[0].getRow(), list[0].getCol(), list[listSize - 1].getRow(), list[listSize - 1].getCol()), board_layout2, main_parent_list, board_layout.get(list[0].getRow(), list[0].getCol()));
-            moves.push_back(board_layout2);
-        }
-    }
-    else 
-    {
+    // if(!isEmptyForceList)
+    // {
+    //     for (int moveIndex = 0; moveIndex<main_parent_list.size(); moveIndex++)
+    //     {
+    //         auto list = main_parent_list[moveIndex];
+    //         BitmaskBoard board_layout2 = board_layout;
+    //         auto listSize = list.size();
+    //         move_piece2(Move(list[0].getRow(), list[0].getCol(), list[listSize - 1].getRow(), list[listSize - 1].getCol()), board_layout2, main_parent_list, board_layout.get(list[0].getRow(), list[0].getCol()));
+    //         moves.push_back(board_layout2);
+    //     }
+    // }
+    // else 
+    // {
+        // if(all_valid_moves.size() == 1 && main_parent_list[0].size() > 9)
+        // {
+        //     // print main parent list
+        //     for(auto list : main_parent_list)
+        //     {
+        //         for(auto piece : list)
+        //             std::cout<<int(piece.getRow())<<"-"<<int(piece.getCol())<<" ";
+        //         std::cout<<"\n";
+        //     }
+        // }
         for(auto move : all_valid_moves)
         {
             BitmaskBoard board_layout2 = board_layout;
             move_piece2(move, board_layout2, main_parent_list, board_layout.get(move.getFromRow(), move.getFromCol()));
             moves.push_back(board_layout2);
         }
-    }
+    // }
     return moves;
 }
 

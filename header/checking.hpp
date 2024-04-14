@@ -3,6 +3,8 @@
 #include <time.h> 
 #include <vector>
 #include <cstdlib>   // for rand() and srand()
+#include <unordered_set>   
+#include <functional>
 #include "move.hpp"
 #include "BitmaskBoard.hpp"
 

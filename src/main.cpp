@@ -55,7 +55,7 @@ int main()
 
     // initialize TT
     // std::unordered_map<BitmaskBoard, TTValue> transpositionTable;
-    robin_hood::unordered_map<BitmaskBoard, TTValue> transpositionTable;
+    robin_hood::unordered_map<BitmaskBoard, TTValue, BitmaskBoardHash> transpositionTable;
 
 
     // read transposition table from file
@@ -119,7 +119,61 @@ int main()
         }
         outfile<<"\n";
     }
-    
+
+    // BitmaskBoard testBoard;
+
+    // create this board
+    // 0 0 0 0 4 0 0 0
+    // 1 1 1 1 0 1 1 1 
+    // 0 0 0 0 1 0 1 1
+    // 1 1 1 0 0 0 0 1
+    // 0 0 0 0 0 2 2 2
+    // 2 2 2 2 0 0 2 2
+    // 2 2 2 2 0 2 0 2
+    // 0 0 0 0 0 0 0 0
+
+    // testBoard.set(0, 4, 4);
+    // testBoard.set(1, 0, 1);
+    // testBoard.set(1, 1, 1);
+    // testBoard.set(1, 2, 1);
+    // testBoard.set(1, 3, 1);
+    // testBoard.set(1, 5, 1);
+    // testBoard.set(1, 6, 1);
+    // testBoard.set(1, 7, 1);
+    // testBoard.set(2, 4, 1);
+    // testBoard.set(2, 6, 1);
+    // testBoard.set(2, 7, 1);
+    // testBoard.set(3, 0, 1);
+    // testBoard.set(3, 1, 1);
+    // testBoard.set(3, 2, 1);
+    // testBoard.set(3, 7, 1);
+    // testBoard.set(4, 5, 2);
+    // testBoard.set(4, 6, 2);
+    // testBoard.set(4, 7, 2);
+    // testBoard.set(5, 0, 2);
+    // testBoard.set(5, 1, 2);
+    // testBoard.set(5, 2, 2);
+    // testBoard.set(5, 3, 2);
+    // testBoard.set(5, 6, 2);
+    // testBoard.set(5, 7, 2);
+    // testBoard.set(6, 0, 2);
+    // testBoard.set(6, 1, 2);
+    // testBoard.set(6, 2, 2);
+    // testBoard.set(6, 3, 2);
+    // testBoard.set(6, 5, 2);
+    // testBoard.set(6, 7, 2);
+
+    // // test get_all_moves
+    // std::vector<BitmaskBoard> moves;
+    // bool isEmptyForceList;
+    // moves = get_all_moves3(testBoard, 2, isEmptyForceList);
+
+    // for(auto move : moves)
+    // {
+    //     printBoard(move);
+    //     std::cout<<"\n";
+    // }
+
     time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
     std::cout<<"Positions/sec: "<<movesSeen/time_spent<<"\n";
     std::cout<<"get_all_moves: "<<counter<<"\n";

@@ -6,13 +6,14 @@
 // #include <bitset>
 #include "robin_hood.h"
 #include "util.hpp"
+#include "move.hpp"
 // #include <omp.h>
 
 
 void order_moves2(
     BitmaskBoard& board, 
     std::vector<BitmaskBoard>& moves, 
-    robin_hood::unordered_map<BitmaskBoard, TTValue>& transpositionTable, 
+    robin_hood::unordered_map<BitmaskBoard, TTValue, BitmaskBoardHash>& transpositionTable, 
     char previousDepth, bool isMaxPlayer, int maxDepth) 
 {
 
@@ -176,7 +177,7 @@ void order_moves2(
 int search2(
     char depth, bool max_player, BitmaskBoard& board_layout,
     int alpha, int beta, char akel_player, char akel_depth, bool akling,
-     robin_hood::unordered_map<BitmaskBoard, TTValue>& transpositionTable,
+     robin_hood::unordered_map<BitmaskBoard, TTValue, BitmaskBoardHash>& transpositionTable,
       BitmaskBoard& best_move, char maxDepth, robin_hood::unordered_map<uint64_t, int>& gameHistory)
 {  
     int total_depth = depth;
@@ -187,59 +188,57 @@ int search2(
         movesSeen++;
         int eval = board_layout.evaluate_board(gameHistory); // Assuming evaluate_board is defined elsewhere
         // TTValue value = {depth, eval};
-        // transpositionTable[board_layout] = value;      
-        // if((depth == maxDepth) && (akel_depth == 0) && ((AI_IS_WHITE && max_player) || (!AI_IS_WHITE && !max_player)))
-        //     best_move = board_layout;
-        
+        // transpositionTable[board_layout] = value;             
         return eval;
     }
 
     // if draw
-    board_layout.setTurn(0); //arbitrarly
-    if(board_layout.draw(gameHistory))
-    {  
-        // save in TT
-        // TTValue value = {100, 0, board_layout};
-        // transpositionTable[board_layout] = value;
+    // board_layout.setTurn(0); //arbitrarly
+    // if(board_layout.draw(gameHistory))
+    // {  
+    //     // save in TT
+    //     // TTValue value = {100, 0, board_layout};
+    //     // transpositionTable[board_layout] = value;
 
-        return 0;
-    }
+    //     return 0;
+    // }
 
     // First, check if this board state is already in the transposition table
     board_layout.setTurn(max_player ? 0 : 1);
     auto it = transpositionTable.find(board_layout);
-    if(!(depth == maxDepth && akel_depth == 0) && it != transpositionTable.end()) {
+    if(it != transpositionTable.end()) {
         TTValue& ttValue = it->second;
         // Ensure that the depth stored in the transposition table is at least as deep as the current search depth
         if(ttValue.depth >= total_depth) {
             // If so, use the stored evaluation and potentially best move
             cacheHits++; // Assuming cacheHits is a metric you're tracking
 
-            // if((depth == maxDepth) && (akel_depth == 0) && ((AI_IS_WHITE && max_player) || (!AI_IS_WHITE && !max_player)))
-            //     best_move = ttValue.bestMove;
+            if((depth == maxDepth) && (akel_depth == 0) && ((AI_IS_WHITE && max_player) || (!AI_IS_WHITE && !max_player)))
+                best_move = ttValue.bestMove;
             
             return ttValue.eval;
         }
     }
 
-    bool isEmptyForceList = false;
+    bool isEmptyForceList;
+    // counter++;
     auto moves = get_all_moves3(board_layout, max_player ? 1 : 2, isEmptyForceList);
+    // instead of playing moves directly we will get valid moves, sort them, play them one by one
+    // std::vector<std::vector<Piece>> main_parent_list = std::vector<std::vector<Piece>>();
+    // auto all_valid_moves = get_all_valid_moves(board_layout, max_player ? 1 : 2, isEmptyForceList, main_parent_list);
 
-    // if(board_layout.capture_available(false))
-    // {
-    //     printBoard(board_layout);
-    //     std::cout<<"\n";
-    //     Sleep(100);
-    // }
-    
-
-    // Order moves based on transposition table
+    // Order moves
     order_moves2(board_layout, moves, transpositionTable, total_depth - 1, max_player, maxDepth);
 
     int bestEval = max_player ? MIN_EVAL : MAX_EVAL;
     BitmaskBoard bestMove;
     for(auto move : moves) {
-        // move.setTurn(0);
+    // for(Move valid_move : all_valid_moves) {
+
+        // copy board into move
+        // BitmaskBoard move = board_layout;
+        // move_piece2(valid_move, move, main_parent_list, move.get(valid_move.getFromRow(), valid_move.getFromCol())); // play the move
+        // move.setTurn(max_player ? 1 : 0);
         int eval;
         // mimic playing the move
 
@@ -255,8 +254,8 @@ int search2(
         else
         {
             // mimic playing the move
-            if(isEmptyForceList)
-                addMoveToHistory(gameHistory, move, max_player);
+            // if(isEmptyForceList)
+            //     addMoveToHistory(gameHistory, move, max_player);
             
             // if(move.draw(gameHistory)) // if no more akels and a single piece each
             //     eval = 0;
@@ -268,8 +267,8 @@ int search2(
         }
 
         // remove the move from the game history
-        if(isEmptyForceList)
-            removeMoveFromHistory(gameHistory, move, max_player);
+        // if(isEmptyForceList)
+        //     removeMoveFromHistory(gameHistory, move, max_player);
 
         if(max_player && eval == MAX_EVAL)
         {
@@ -277,6 +276,7 @@ int search2(
             bestEval = eval;
             // save in TT
             TTValue value = {100, eval, bestMove};
+            board_layout.setTurn(max_player ? 0 : 1);
             transpositionTable[board_layout] = value;
             break;
         }
@@ -286,6 +286,7 @@ int search2(
             bestEval = eval;
             // save in TT
             TTValue value = {100, eval, bestMove};
+            board_layout.setTurn(max_player ? 0 : 1);
             transpositionTable[board_layout] = value;
             break;
         }
@@ -314,6 +315,7 @@ int search2(
     // Update transposition table if needed
     if(!(bestEval == MAX_EVAL || bestEval == MIN_EVAL) && !transpositionTable.count(board_layout) || transpositionTable[board_layout].depth < total_depth) {
         bestMove.setTurn(max_player ? 1 : 0);
+        board_layout.setTurn(max_player ? 0 : 1);
         // if equal depth take the higher akel depth
         TTValue value = {total_depth, bestEval, bestMove};
         transpositionTable[board_layout] = value;
@@ -330,7 +332,7 @@ int search2(
 }
 
 
-std::pair<int, BitmaskBoard> iterativeDeepening(BitmaskBoard& initialBoard, char maxDepth, bool isMaxPlayer, robin_hood::unordered_map<BitmaskBoard, TTValue>& transpositionTable, int maxTimeSeconds, robin_hood::unordered_map<uint64_t, int>& gameHistory) {    
+std::pair<int, BitmaskBoard> iterativeDeepening(BitmaskBoard& initialBoard, char maxDepth, bool isMaxPlayer, robin_hood::unordered_map<BitmaskBoard, TTValue, BitmaskBoardHash>& transpositionTable, int maxTimeSeconds, robin_hood::unordered_map<uint64_t, int>& gameHistory) {    
     int bestEval = isMaxPlayer ? MIN_EVAL : MAX_EVAL;
     BitmaskBoard bestMove;
 
@@ -356,22 +358,22 @@ std::pair<int, BitmaskBoard> iterativeDeepening(BitmaskBoard& initialBoard, char
     for (char depth = 2; depth <= maxDepth; ++depth) {
         auto begin = clock();
 
-        // BitmaskBoard bestMove;
-
         // Call minimax for the current depth
         initialBoard.setTurn(isMaxPlayer ? 0 : 1);
         auto eval = search2(depth, isMaxPlayer, initialBoard, MIN_EVAL, MAX_EVAL, isMaxPlayer, 0, false, transpositionTable, bestMove, depth, gameHistory);
         auto end = clock();
-
-        // printBoard(bestMove);
-        // std::cout<<"\nhi";
         
         bestMove.setTurn(isMaxPlayer ? 1 : 0);
+        initialBoard.setTurn(isMaxPlayer ? 0 : 1);
         transpositionTable[initialBoard] = {depth, eval, bestMove}; // update depth in TT
         
         time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
 
         bestEval = eval;
+
+        // std::cout<<"Depth reached: "<<int(depth)<<"\n\n";
+        // printBoard(bestMove);
+        // std::cout<<"\n\n";
         
         // check for time constraints here
         if (time_spent > 0.1*maxTimeSeconds) {
@@ -389,7 +391,7 @@ std::pair<int, BitmaskBoard> iterativeDeepening(BitmaskBoard& initialBoard, char
 }
 
 
-std::pair<int, BitmaskBoard> iterativeDeepening2(BitmaskBoard& initialBoard, char maxDepth, bool isMaxPlayer, robin_hood::unordered_map<BitmaskBoard, TTValue>& transpositionTable, int maxTimeSeconds, robin_hood::unordered_map<uint64_t, int>& gameHistory) {
+std::pair<int, BitmaskBoard> iterativeDeepening2(BitmaskBoard& initialBoard, char maxDepth, bool isMaxPlayer, robin_hood::unordered_map<BitmaskBoard, TTValue, BitmaskBoardHash>& transpositionTable, int maxTimeSeconds, robin_hood::unordered_map<uint64_t, int>& gameHistory) {
     int windowSize = 50; // Example window size
     int alpha = -10000;
     int beta = 10000;

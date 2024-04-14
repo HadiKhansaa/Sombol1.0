@@ -3,6 +3,10 @@
 #include <time.h> 
 #include <vector>
 #include <cstdlib>   // for rand() and srand()
+#include <memory>
+#include <windows.h>
+#include <unordered_set>
+#include <functional>
 #include "BitmaskBoard.hpp"
 #include "move.hpp"
 
@@ -33,5 +37,7 @@ std::vector<Piece> get_all_pieces2(BitmaskBoard& board_layout, char color);
 std::vector<std::vector<Piece>> eat_max3(Piece piece, BitmaskBoard& board_layout,  std::vector<std::vector<Piece>> parent_list, char eat_direction, char color);
 
 std::vector<Move> get_all_valid_moves(BitmaskBoard& board_layout, char color, bool& isEmptyForceList, std::vector<std::vector<Piece>>& main_parent_list);
+
+void move_piece2(Move move, BitmaskBoard& board_layout, std::vector<std::vector<Piece>>& parent_list, char color);
 
 std::vector<BitmaskBoard> get_all_moves3(BitmaskBoard& board_layout, char color, bool& isEmptyForceList);

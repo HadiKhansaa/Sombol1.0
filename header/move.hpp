@@ -14,6 +14,15 @@ private:
 public:
     Piece() : data(0) {}
 
+    // copy constructor
+    Piece(const Piece& other) : data(other.data) {}
+
+    // copy assignment
+    Piece& operator=(const Piece& other) {
+        data = other.data;
+        return *this;
+    }
+
     Piece(uint8_t row, uint8_t col, uint8_t color) : data(0) {
         setPosition(row, col);
         setColor(color);
@@ -64,6 +73,16 @@ private:
 public:
     Move() : from(0), to(0) {}
 
+    // copy constructor
+    Move(const Move& other) : from(other.from), to(other.to) {}
+
+    // copy assignment
+    Move& operator=(const Move& other) {
+        from = other.from;
+        to = other.to;
+        return *this;
+    }
+
     Move(uint8_t fromRow, uint8_t fromCol, uint8_t toRow, uint8_t toCol) {
         setPosition(from, fromRow, fromCol);
         setPosition(to, toRow, toCol);
@@ -108,7 +127,7 @@ public:
     }
 };
 
-namespace robin_hood {
+namespace std {
     template<>
     struct hash<Move> {
         std::size_t operator()(const Move& move) const noexcept {
@@ -117,7 +136,7 @@ namespace robin_hood {
     };
 }
 
-namespace robin_hood {
+namespace std {
     template<>
     struct hash<Piece> {
         std::size_t operator()(const Piece& piece) const noexcept {

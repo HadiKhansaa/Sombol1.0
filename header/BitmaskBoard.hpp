@@ -4,6 +4,11 @@
 #include <sstream>
 #include <time.h> 
 #include <vector>
+#include <random>
+#include <unordered_map>
+#include <set>
+#include <unordered_set>
+#include <functional>
 #include <cstdlib>   // for rand() and srand()
 #include "robin_hood.h"
 #include "constant.hpp"
@@ -452,7 +457,7 @@ public:
         sum += 10 * (int)(__builtin_popcountll(blackKings & 0x00000000000000FFULL));
 
         // reward white kings that are on the last rank
-        sum += 10 * (int)(__builtin_popcountll(whiteKings & 0xFF00000000000000ULL));
+        sum -= 10 * (int)(__builtin_popcountll(whiteKings & 0xFF00000000000000ULL));
 
 
         // Balance bonus: Favor spreading pieces between the left and right halves
@@ -488,7 +493,7 @@ public:
         if((nb_white_pieces == 1) && (nb_white_pieces > 1) && sum < 0)
             sum = 0;
 
-        return sum + rand() % 3; // add some randomness so that the AI doesn't always play the same moves
+        return sum; // add some randomness so that the AI doesn't always play the same moves
     }
 
     // overrided version without game history
@@ -680,19 +685,34 @@ public:
         // Treat isWhiteTurn as an additional bit in the hash computation. 
         // You can use a simple conditional to add a unique value (like a small prime number) 
         // to distinguish between the two possible states.
-        // hashValue = hashValue * 31 + (isWhiteTurn ? 1231 : 1237); // Prime numbers for true/false
+        hashValue = hashValue * 31 + (isWhiteTurn ? 1231 : 1237); // Prime numbers for true/false
 
         return hashValue;
     }
 
 };
 
+struct BitmaskBoardHash {
+    std::size_t operator()(const BitmaskBoard& board) const noexcept {
+        return board.hash();  // Assuming `hash()` returns a size_t-compatible value
+    }
+};
+
+
+// namespace std {
+//     template<>
+//     struct hash<BitmaskBoard> {
+//         std::size_t operator()(const BitmaskBoard& board) const noexcept {
+//             return board.hash(); // Use the hash method of BitmaskBoard
+//         }
+//     };
+// }
 
 namespace std {
     template<>
     struct hash<BitmaskBoard> {
         std::size_t operator()(const BitmaskBoard& board) const noexcept {
-            return board.hash(); // Use the hash method of BitmaskBoard
+            return board.hash();  // Use the custom hash function defined in BitmaskBoard
         }
     };
 }
