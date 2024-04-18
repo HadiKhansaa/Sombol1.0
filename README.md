@@ -30,7 +30,7 @@ To play the Turkish Checkers game, follow these steps:
 
 1. Clone the repository to your local machine.
 2. Ensure you have Python and a C++ compiler (with the needed libraries) installed on your system.
-3. If you only plan on playing the engine and not checking the code you can install only the game from [Dama](./github.com/HadiKhansaa/dama).
+3. If you only plan on playing the engine and not checking the code you can install only the game from [Dama](https://github.com/HadiKhansaa/dama).
 4. Install pygame by running this command: `pip install pygame`.
 5. Navigate to the repository directory.
 6. Run the `dama.py` script using Python: `python dama.py`.
