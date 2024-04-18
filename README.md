@@ -14,14 +14,24 @@ Turkish Checkers, commonly known as Dama, is a popular board game played on an 8
 - **New Game Options**: The game interface allows players to start new games and select various options, providing flexibility and customization for gameplay.
 - **Rules Enforcement**: The game strictly follows the rules of Turkish Checkers, ensuring an authentic and fair gaming experience.
 
+## Engine Features
+ - bitboard board representation
+ - Transposition Table
+ - encoding moves and pieces as 8-bit numbers
+ - copy/make approach for making moves
+ - minimax search with alpha beta pruning
+ - PV/killer/history move ordering
+ - iterative deepening
+ - PVS (Principle Variation Search)
+
 ## Getting Started
 
 To play the Turkish Checkers game, follow these steps:
 
 1. Clone the repository to your local machine.
-2. Ensure you have Python and a C++ compiler installed on your system.
-3. Install pygame by running this command: `pip install pygame`.
-4. Navigate to the repository directory.
-5. Run the `dama.py` script using Python: `python dama.py`.
-6. Select "New Game" from the menu to start a new game (check other menu options for more flexibility with theme and time).
-7. Enjoy playing against the AI engine!
+2. Ensure you have Python and a C++ compiler (with the needed libraries) installed on your system.
+3. If you only plan on playing the engine and not checking the code you can install only the game from "github.com/HadiKhansaa/dama".
+4. Install pygame by running this command: `pip install pygame`.
+5. Navigate to the repository directory.
+6. Run the `dama.py` script using Python: `python dama.py`.
+7. Use the GUI to choose your best settings and you're ready to go!
