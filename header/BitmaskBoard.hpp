@@ -48,7 +48,7 @@ public:
         return BitmaskBoard();
     }
 
-    char get(int i, int j) const {
+    char get(const int i, const int j) const {
 
         uint64_t pos = 1ULL << (i * 8 + j);
         // I want to right shift from MST to right
@@ -60,23 +60,23 @@ public:
         return 0; // Empty
     }
 
-    uint64_t getWhiteKings()  {
+    uint64_t getWhiteKings() const {
         return whiteKings;
     }
 
-    uint64_t getBlackKings()  {
+    uint64_t getBlackKings() const {
         return blackKings;
     }
 
-    uint64_t getWhitePawns()  {
+    uint64_t getWhitePawns() const {
         return whitePawns;
     }
 
-    uint64_t getBlackPawns()  {
+    uint64_t getBlackPawns() const {
         return blackPawns;
     }
 
-    void clearPosition(int i, int j) {
+    void clearPosition(const int i, const int j) {
         uint64_t pos = ~(1ULL << (i * 8 + j));
         whitePawns &= pos;
         blackPawns &= pos;
@@ -84,7 +84,7 @@ public:
         blackKings &= pos;
     }
 
-    void set(int i, int j, char piece) {
+    void set(const int i, const int j, const char piece) {
         clearPosition(i, j); // Clear the piece at (i, j) if any
         uint64_t pos = 1ULL << (i * 8 + j);
         switch (piece) {
@@ -96,67 +96,67 @@ public:
         }
     }
 
-    void set_whitePawn(int i, int j) {
-        // clearPosition(i, j);
+    void set_whitePawn(const int i, const int j) {
+        clearPosition(i, j);
         uint64_t pos = 1ULL << (i * 8 + j);
         whitePawns |= pos;
     }
 
-    void set_blackPawn(int i, int j) {
-        // clearPosition(i, j);
+    void set_blackPawn(const int i, const int j) {
+        clearPosition(i, j);
         uint64_t pos = 1ULL << (i * 8 + j);
         blackPawns |= pos;
     }
 
-    void set_whiteKing(int i, int j) {
-        // clearPosition(i, j);
+    void set_whiteKing(const int i, const int j) {
+        clearPosition(i, j);
 
-        uint64_t mask = ~(1ULL << (i * 8 + j));
-        whitePawns &= mask;
+        // uint64_t mask = ~(1ULL << (i * 8 + j));
+        // whitePawns &= mask;
 
         uint64_t pos = 1ULL << (i * 8 + j);
         whiteKings |= pos;
     }
 
-    void set_blackKing(int i, int j) {
-        // clearPosition(i, j);
+    void set_blackKing(const int i, const int j) {
+        clearPosition(i, j);
 
-        uint64_t mask = ~(1ULL << (i * 8 + j));
-        blackPawns &= mask;
+        // uint64_t mask = ~(1ULL << (i * 8 + j));
+        // blackPawns &= mask;
 
         uint64_t pos = 1ULL << (i * 8 + j);
         blackKings |= pos;
     }
 
-    bool check_index_has_whitePawn(int i, int j) {
+    bool check_index_has_whitePawn(const int i, const int j) const {
         uint64_t pos = 1ULL << (i * 8 + j);
         if(whitePawns & pos)
             return true;
         return false;
     }
 
-    bool check_index_has_blackPawn(int i, int j) {
+    bool check_index_has_blackPawn(const int i, const int j) const {
         uint64_t pos = 1ULL << (i * 8 + j);
         if(blackPawns & pos)
             return true;
         return false;
     }
 
-    bool check_index_has_whiteKing(int i, int j) {
+    bool check_index_has_whiteKing(const int i, const int j) const {
         uint64_t pos = 1ULL << (i * 8 + j);
         if(whiteKings & pos)
             return true;
         return false;
     }
 
-    bool check_index_has_blackKing(int i, int j) {
+    bool check_index_has_blackKing(const int i, const int j) const {
         uint64_t pos = 1ULL << (i * 8 + j);
         if(blackKings & pos)
             return true;
         return false;
     }
 
-    uint64_t get_color_mask(char color) {
+    uint64_t get_color_mask(const char color) const {
         if(color == 1)
             return blackPawns | blackKings;
         else
@@ -164,7 +164,7 @@ public:
     }
 
     // 0 for black, 1 for white
-    void setTurn(bool turn) {
+    void setTurn(const bool turn) {
         isWhiteTurn = turn;
     }
 
@@ -277,7 +277,7 @@ public:
         return sum;
     }
 
-    bool passage_is_clear(BitmaskBoard& board_layout, char row, char col, char turn) {
+    bool passage_is_clear(const BitmaskBoard& board_layout, const char row, const char col, const char turn) const {
         if (turn == 1) {
             if (col == 7) {
                 if (!board_layout.check_index_has_whitePawn(6, 7) && !board_layout.check_index_has_whitePawn(6, 6) && !board_layout.check_index_has_whiteKing(6, 7) && !board_layout.check_index_has_whiteKing(6, 6)) {
@@ -343,20 +343,6 @@ public:
 
     int evaluate_board(robin_hood::unordered_map<uint64_t, int> &gameHistory) {
 
-        // bool swapped = false;
-        // // if there is a capture do it
-        // if(capture_available(!isWhiteTurn)) {
-        //     bool isEmptyForceList = false;
-        //     auto b2 = *this;
-        //     auto moves = get_all_moves(b2, isWhiteTurn ? 2 : 1, isEmptyForceList);
-        //     *this = moves[0]; // play that single move
-        //     isWhiteTurn = !isWhiteTurn; // now its the other player's turn
-        //     swapped = true;
-        // }
-
-
-        
-
         // Count pieces using popcount (population count - counts the number of set bits)
         int nb_black_pawns = __builtin_popcountll(blackPawns);
         int nb_white_pawns = __builtin_popcountll(whitePawns);
@@ -373,8 +359,8 @@ public:
         if(nb_white_pieces == 0)
             return MAX_EVAL;
         // draw
-        if(draw(gameHistory))
-            return 0;
+        // if(draw(gameHistory))
+        //     return 0;
 
         int sum = 0;
         double scaling_factor = 1;
@@ -391,11 +377,11 @@ public:
         if(blackKings == 0 && whiteKings == 0) {
             // add scaling factor
             sum += scaling_factor * (100 * (nb_black_pawns - nb_white_pawns)); // Pawn difference
-            sum += scaling_factor * (430 * (nb_black_kings - nb_white_kings)); // King difference
+            sum += scaling_factor * (440 * (nb_black_kings - nb_white_kings)); // King difference
         }
         else {
             sum +=  (100 * (nb_black_pawns - nb_white_pawns)); // Pawn difference
-            sum +=  (430 * (nb_black_kings - nb_white_kings)); // King difference
+            sum +=  (440 * (nb_black_kings - nb_white_kings)); // King difference
         }
        
 
@@ -406,8 +392,8 @@ public:
         // if in endgame dont give edge bonus
         // if(total_pieces > 16)
         // {
-            int edge_bonus_black = 1*(__builtin_popcountll(blackPawns & leftEdgeMask) + __builtin_popcountll(blackPawns & rightEdgeMask) + __builtin_popcountll(blackKings & leftEdgeMask) + __builtin_popcountll(blackKings & rightEdgeMask));
-            int edge_bonus_white = 1*(__builtin_popcountll(whitePawns & leftEdgeMask) + __builtin_popcountll(whitePawns & rightEdgeMask) + __builtin_popcountll(whiteKings & leftEdgeMask) + __builtin_popcountll(whiteKings & rightEdgeMask));
+            int edge_bonus_black = 2*(__builtin_popcountll(blackPawns & leftEdgeMask) + __builtin_popcountll(blackPawns & rightEdgeMask) + __builtin_popcountll(blackKings & leftEdgeMask) + __builtin_popcountll(blackKings & rightEdgeMask));
+            int edge_bonus_white = 2*(__builtin_popcountll(whitePawns & leftEdgeMask) + __builtin_popcountll(whitePawns & rightEdgeMask) + __builtin_popcountll(whiteKings & leftEdgeMask) + __builtin_popcountll(whiteKings & rightEdgeMask));
             sum += edge_bonus_black - edge_bonus_white;
         // }
 
@@ -428,15 +414,15 @@ public:
                 sum += 10 * (int)(__builtin_popcountll(blackPawns & (advancementMaskBlack & leftEdgeMask)));
                 sum += 10 * (int)(__builtin_popcountll(blackPawns & (advancementMaskBlack & rightEdgeMask)));
                 
-                // even here don't let whit push
-                sum += 10 * (int)( - __builtin_popcountll(whitePawns & advancementMaskWhite));
+                // even here don't let white push anywhere
+                sum -= 10 * (int)( __builtin_popcountll(whitePawns & advancementMaskWhite));
             }
             else 
             {
-                sum += - 10 * (int)(__builtin_popcountll(whitePawns & (advancementMaskWhite & leftEdgeMask)));
-                sum += - 10 * (int)(__builtin_popcountll(whitePawns & (advancementMaskWhite & rightEdgeMask)));
+                sum -= 10 * (int)(__builtin_popcountll(whitePawns & (advancementMaskWhite & leftEdgeMask)));
+                sum -= 10 * (int)(__builtin_popcountll(whitePawns & (advancementMaskWhite & rightEdgeMask)));
                 
-                // even here don't let whit push
+                // even here don't let black push anywhere
                 sum += 10 * (int)(__builtin_popcountll(blackPawns & advancementMaskBlack));
             }
         }
@@ -461,11 +447,11 @@ public:
 
 
         // Balance bonus: Favor spreading pieces between the left and right halves
-        constexpr uint64_t leftHalfMask = 0x0F0F0F0F0F0F0F0F; // Left 4 columns
-        constexpr uint64_t rightHalfMask = 0xF0F0F0F0F0F0F0F0; // Right 4 columns
-        int balance_black = abs(__builtin_popcountll(blackPawns & leftHalfMask) - __builtin_popcountll(blackPawns & rightHalfMask));
-        int balance_white = abs(__builtin_popcountll(whitePawns & leftHalfMask) - __builtin_popcountll(whitePawns & rightHalfMask));
-        sum -= 2 * (balance_black - balance_white); // Penalize imbalance more subtly than before, adjusting the weight as needed
+        // constexpr uint64_t leftHalfMask = 0x0F0F0F0F0F0F0F0F; // Left 4 columns
+        // constexpr uint64_t rightHalfMask = 0xF0F0F0F0F0F0F0F0; // Right 4 columns
+        // int balance_black = abs(__builtin_popcountll(blackPawns & leftHalfMask) - __builtin_popcountll(blackPawns & rightHalfMask));
+        // int balance_white = abs(__builtin_popcountll(whitePawns & leftHalfMask) - __builtin_popcountll(whitePawns & rightHalfMask));
+        // sum -= 2 * (balance_black - balance_white); // Penalize imbalance more subtly than before, adjusting the weight as needed
         
         // if passage is clear, give a bonus
 
@@ -488,144 +474,33 @@ public:
         if((nb_black_pieces == 1) && (nb_white_pieces == 1))
             return 0;
         // if one of sides is on 1 piece its a draw
-        if((nb_black_pieces == 1) && (nb_white_pieces > 1) && sum > 0)
-            sum = 0;
-        if((nb_white_pieces == 1) && (nb_white_pieces > 1) && sum < 0)
-            sum = 0;
+        // if((nb_black_pieces == 1) && (nb_white_pieces > 1) && sum > 0)
+        //     sum = 0;
+        // if((nb_white_pieces == 1) && (nb_white_pieces > 1) && sum < 0)
+        //     sum = 0;
 
         return sum; // add some randomness so that the AI doesn't always play the same moves
     }
 
-    // overrided version without game history
-    int evaluate_board() {
-
-        // Count pieces using popcount (population count - counts the number of set bits)
-        int nb_black_pawns = __builtin_popcountll(blackPawns);
-        int nb_white_pawns = __builtin_popcountll(whitePawns);
-        int nb_black_kings = __builtin_popcountll(blackKings);
-        int nb_white_kings = __builtin_popcountll(whiteKings);
-
-        int total_pieces = nb_black_pawns + nb_white_pawns + nb_black_kings + nb_white_kings;
-        int nb_black_pieces = nb_black_pawns + nb_black_kings;
-        int nb_white_pieces = nb_white_pawns + nb_white_kings;
-
-        int sum = 0;
-        double scaling_factor = 1;
-        if(total_pieces >= 16)
-            scaling_factor = 1.0 + (32.0 - total_pieces)/128.0; 
-        else if (total_pieces >= 12)
-            scaling_factor = 1.0 + (32.0 - total_pieces)/100.0; // in endgames, give more weight to the pawns and piece difference
-        else if (total_pieces >= 8)
-            scaling_factor = 1.0 + (32.0 - total_pieces)/64.0; // in endgames, give more weight to the pawns and piece difference
-        else
-            scaling_factor = 1.0 + (32.0 - total_pieces)/32.0; // in endgames, give more weight to the pawns and piece difference
-
-        // Base scores for pawns and kings
-        sum += scaling_factor * (100 * (nb_black_pawns - nb_white_pawns)); // Pawn difference
-        sum += scaling_factor * (450 * (nb_black_kings - nb_white_kings)); // King difference
-
-        
-        constexpr uint64_t leftEdgeMask = 0x0101010101010101; // Left edge of the board
-        constexpr uint64_t rightEdgeMask = 0x8080808080808080; // Right edge of the board
-        
-        // Edge bonuses specifically for the right and left edges
-        // if in endgame dont give edge bonus
-        if(total_pieces > 16)
-        {
-            int edge_bonus_black = 3 * (__builtin_popcountll(blackPawns & leftEdgeMask) + __builtin_popcountll(blackPawns & rightEdgeMask) + __builtin_popcountll(blackKings & leftEdgeMask) + __builtin_popcountll(blackKings & rightEdgeMask));
-            int edge_bonus_white = 3 * (__builtin_popcountll(whitePawns & leftEdgeMask) + __builtin_popcountll(whitePawns & rightEdgeMask) + __builtin_popcountll(whiteKings & leftEdgeMask) + __builtin_popcountll(whiteKings & rightEdgeMask));
-            sum += edge_bonus_black - edge_bonus_white;
-        }
-
-        // Corrected masks and calculations for pawn advancement
-        uint64_t advancementMaskWhite = 0x000000FF00000000ULL; // 2nd row from the opponent's side for black
-        uint64_t advancementMaskBlack = 0x00000000FF000000ULL; // 2nd row from the opponent's side for white
-        sum += 5 * (int)(__builtin_popcountll(blackPawns & advancementMaskBlack) - __builtin_popcountll(whitePawns & advancementMaskWhite));
-
-        // More advancement bonuses
-        advancementMaskWhite = 0x00000000FF000000ULL; // 3rd row from the opponent's side for black
-        advancementMaskBlack = 0x000000FF00000000ULL; // 3rd row from the opponent's side for white
-        
-        // in early game only advance at the edges
-        if(total_pieces > 26) {
-            sum += 10 * (int)(__builtin_popcountll(blackPawns & (advancementMaskBlack & leftEdgeMask)));
-            sum += 10 * (int)(__builtin_popcountll(blackPawns & (advancementMaskBlack & rightEdgeMask)));
-            
-            // even here don't let whit push
-            sum += 10 * (int)( - __builtin_popcountll(whitePawns & advancementMaskWhite));
-        }
-        else // in middle ad endgame reward any advancement
-            sum += 10 * (int)(__builtin_popcountll(blackPawns & advancementMaskBlack) - __builtin_popcountll(whitePawns & advancementMaskWhite));
-
-        // Extra for closer pawns
-        advancementMaskWhite = 0x0000000000FF0000ULL; // 4th row from the opponent's side for black
-        advancementMaskBlack = 0x0000FF0000000000ULL; // 4th row from the opponent's side for white
-        sum += 15 * (int)(__builtin_popcountll(blackPawns & advancementMaskBlack) - __builtin_popcountll(whitePawns & advancementMaskWhite));
-
-        // Extra for closer pawns
-        advancementMaskWhite = 0x000000000000FF00ULL; // 4th row from the opponent's side for black
-        advancementMaskBlack = 0x00FF000000000000ULL; // 4th row from the opponent's side for white
-        sum +=  50 * (int)(__builtin_popcountll(blackPawns & advancementMaskBlack) - __builtin_popcountll(whitePawns & advancementMaskWhite));
-
-        // Note: Adjust the row targeting and bonus points as needed to fit the game's strategy.
-
-
-        // Balance bonus: Favor spreading pieces between the left and right halves
-        constexpr uint64_t leftHalfMask = 0x0F0F0F0F0F0F0F0F; // Left 4 columns
-        constexpr uint64_t rightHalfMask = 0xF0F0F0F0F0F0F0F0; // Right 4 columns
-        int balance_black = abs(__builtin_popcountll(blackPawns & leftHalfMask) - __builtin_popcountll(blackPawns & rightHalfMask));
-        int balance_white = abs(__builtin_popcountll(whitePawns & leftHalfMask) - __builtin_popcountll(whitePawns & rightHalfMask));
-        sum -= 2 * (balance_black - balance_white); // Penalize imbalance more subtly than before, adjusting the weight as needed
-        
-        // if passage is clear, give a bonus
-        for(int j=0; j<8; j++)
-        {
-            if(!isWhiteTurn && check_index_has_blackPawn(4, j) && passage_is_clear(*this, 4, j, 1)) {
-                sum += 70;
-            }
-            if(isWhiteTurn && check_index_has_whitePawn(3, j) && passage_is_clear(*this, 3, j, 2)) {
-                sum -= 70;
-            }
-        }
-        
-
-        // game finished
-        // wins
-        if(nb_black_pieces == 0)
-            return MIN_EVAL;
-        if(nb_white_pieces == 0)
-            return MAX_EVAL;
-        // draw
-        if((nb_black_pieces == 1) && (nb_white_pieces == 1))
-            return 0;
-        // if one of sides is on 1 piece its a draw
-        if((nb_black_pieces == 1) && (nb_white_pieces > 1) && sum > 0)
-            sum = 0;
-        if((nb_white_pieces == 1) && (nb_white_pieces > 1) && sum < 0)
-            sum = 0;
-
-        return sum;
-    }
-
-    bool player_won() {
+    bool player_won() const {
         if(((__builtin_popcountll(blackKings) + __builtin_popcountll(blackPawns)) == 0) || ((__builtin_popcountll(whiteKings) + __builtin_popcountll(whitePawns)) == 0))
             return true;
         return false;
     }
 
-    bool black_won() {
+    bool black_won() const {
         if(((__builtin_popcountll(whiteKings) + __builtin_popcountll(whitePawns)) == 0))
             return true;
         return false;
     }
 
-    bool white_won() {
+    bool white_won() const {
         if(((__builtin_popcountll(blackKings) + __builtin_popcountll(blackPawns)) == 0))
             return true;
         return false;
     }
 
-    bool draw() {
+    bool draw() const {
         if(((__builtin_popcountll(blackKings) + __builtin_popcountll(blackPawns)) == 1)
         && ((__builtin_popcountll(whiteKings) + __builtin_popcountll(whitePawns)) == 1))
             return true;
@@ -637,9 +512,9 @@ public:
     bool draw(robin_hood::unordered_map<uint64_t, int> &gameHistory) {
         if(player_won())
             return false;
-        if(((__builtin_popcountll(blackKings) + __builtin_popcountll(blackPawns)) == 1)
-        && ((__builtin_popcountll(whiteKings) + __builtin_popcountll(whitePawns)) == 1))
-            return true;    
+        // if(((__builtin_popcountll(blackKings) + __builtin_popcountll(blackPawns)) == 1)
+        // && ((__builtin_popcountll(whiteKings) + __builtin_popcountll(whitePawns)) == 1))
+        //     return true;    
         if(gameHistory[hash()] >= 3)
             return true;
         return false;

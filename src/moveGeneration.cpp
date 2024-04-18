@@ -2,6 +2,7 @@
 #include "checking.hpp"
 #include "globals.hpp"
 #include "move.hpp"
+#include "util.hpp"
 // #include <omp.h>
 
 std::pair<std::vector<char*>, char> get_valid_moves(char row, char col, char color, char streak, BitmaskBoard& board_layout, char eat_direction)
@@ -827,6 +828,13 @@ char eat_piece_if_possible(BitmaskBoard& board_layout, char row, char col, char 
     char eat_direction = 0;
     char sumRowOver2;
     char sumColOver2;
+
+    // Optimization: if row,col is adjacent to r,c, then no need to check for eating
+    // if (abs(row-r) == 1 && abs(col-c) == 0)
+    //     return eat_direction;
+    // if (abs(row-r) == 0 && abs(col-c) == 1)
+    //     return eat_direction;
+
     if (color == 1 || color == 2)
     {
         sumRowOver2 = (row + r)/2;
@@ -837,7 +845,7 @@ char eat_piece_if_possible(BitmaskBoard& board_layout, char row, char col, char 
 
     if (color == 1)
     {
-        if (board_layout.check_index_has_whitePawn(sumRowOver2, col) || board_layout.check_index_has_whiteKing(sumRowOver2, col))
+        if (eat_direction == 'd' && board_layout.check_index_has_whitePawn(sumRowOver2, col) || board_layout.check_index_has_whiteKing(sumRowOver2, col))
         {
             board_layout.clearPosition(sumRowOver2, col);
             return eat_direction;
@@ -850,7 +858,7 @@ char eat_piece_if_possible(BitmaskBoard& board_layout, char row, char col, char 
     }
     else if (color == 2)
     {
-        if (board_layout.check_index_has_blackPawn(sumRowOver2, col) || board_layout.check_index_has_blackKing(sumRowOver2, col))
+        if (eat_direction == 'u' && board_layout.check_index_has_blackPawn(sumRowOver2, col) || board_layout.check_index_has_blackKing(sumRowOver2, col))
         {
             board_layout.clearPosition(sumRowOver2, col);
             return eat_direction;
@@ -1152,9 +1160,9 @@ void move_piece(char* piece, char* move, BitmaskBoard& board_layout, std::vector
     char aux;
     aux = board_layout.get(row, col);
 
-    if(aux == 1)
+    if(aux == 1 && r!=0)
         board_layout.set_blackPawn(r, c);
-    else if(aux == 2)
+    else if(aux == 2 && r!=7)
         board_layout.set_whitePawn(r, c);
     else if(aux == 3)
         board_layout.set_blackKing(r, c);
@@ -1164,9 +1172,9 @@ void move_piece(char* piece, char* move, BitmaskBoard& board_layout, std::vector
     board_layout.clearPosition(row, col);
 
     //check for dama promotion
-    if(r==0 && color==2)
+    if(r==0 && aux==2)
         board_layout.set_whiteKing(r, c);
-    if(r==7 && color==1)
+    if(r==7 && aux==1)
         board_layout.set_blackKing(r, c);
     
 }
@@ -1292,6 +1300,11 @@ std::vector<BitmaskBoard> get_all_moves2(BitmaskBoard& board_layout, char color,
         for(char* move : valid_moves)
         {
             // std::cout<<int(piece[0])<<" "<<int(piece[1])<<" "<<int(move[0])<<" "<<int(move[1])<<"\n";
+
+            printBoard(board_layout);
+            std::cout<<std::endl;
+
+
             BitmaskBoard board_layout2 = board_layout;
             move_piece(piece, move, board_layout2, parent_list, color2);
             // if(moves_set.find(board_layout2) == moves_set.end())
@@ -1300,6 +1313,11 @@ std::vector<BitmaskBoard> get_all_moves2(BitmaskBoard& board_layout, char color,
             //     moves.push_back(board_layout2);
             // }
             moves.push_back(board_layout2);
+
+            printBoard(board_layout2);
+            std::cout<<std::endl;
+
+            Sleep(1000);
         }
     }
 
@@ -1948,15 +1966,15 @@ void move_piece2(Move move, BitmaskBoard& board_layout, std::vector<std::vector<
         // if(value_length==0)  
         //     return;
     }
-    else
-        eat_piece_if_possible(board_layout, row, col, r, c, color);
+    // else
+        // eat_piece_if_possible(board_layout, row, col, r, c, color);
 
     char aux;
     aux = board_layout.get(row, col);
 
-    if(aux == 1)
+    if(aux == 1 && r!=0)
         board_layout.set_blackPawn(r, c);
-    else if(aux == 2)
+    else if(aux == 2 && r!=7)
         board_layout.set_whitePawn(r, c);
     else if(aux == 3)
         board_layout.set_blackKing(r, c);
@@ -1966,9 +1984,9 @@ void move_piece2(Move move, BitmaskBoard& board_layout, std::vector<std::vector<
     board_layout.clearPosition(row, col);
 
     //check for dama promotion
-    if(r==0 && color==2)
+    if(r==0 && aux==2)
         board_layout.set_whiteKing(r, c);
-    if(r==7 && color==1)
+    if(r==7 && aux==1)
         board_layout.set_blackKing(r, c);
 }
 
@@ -2082,7 +2100,16 @@ std::vector<std::vector<Piece>> eat_max3(Piece piece, BitmaskBoard& board_layout
             // remove the piece
             eat_direction = eat_piece_if_possible(board_layout2, piece.getRow(), piece.getCol(), move.getToRow(), move.getToCol(), color);
             board_layout2.clearPosition(piece.getRow(), piece.getCol()); // added
-            board_layout2.set(move.getToRow(), move.getToCol(), color);
+            // board_layout2.set(move.getToRow(), move.getToCol(), color);
+
+            if(color == 1)
+                board_layout2.set_blackPawn(move.getToRow(), move.getToCol());
+            else if(color == 2)
+                board_layout2.set_whitePawn(move.getToRow(), move.getToCol());
+            else if(color == 3)
+                board_layout2.set_blackKing(move.getToRow(), move.getToCol());
+            else if(color == 4)
+                board_layout2.set_whiteKing(move.getToRow(), move.getToCol());
 
 
             if(color == 1 || color == 2)
@@ -2179,11 +2206,29 @@ std::vector<BitmaskBoard> get_all_moves3(BitmaskBoard& board_layout, char color,
         // }
         for(auto move : all_valid_moves)
         {
+            // if(!isEmptyForceList && main_parent_list.size() > 1)
+            // {
+            //     printBoard(board_layout);
+            //     std::cout<<std::endl;
+            // }
+            
+            // if(main_parent_list.size() == 0 && !isEmptyForceList)
+            //     break;
             BitmaskBoard board_layout2 = board_layout;
             move_piece2(move, board_layout2, main_parent_list, board_layout.get(move.getFromRow(), move.getFromCol()));
             moves.push_back(board_layout2);
+
+            // if(!isEmptyForceList && main_parent_list.size() > 1)
+            // {
+            //     printBoard(board_layout2);
+            //     std::cout<<std::endl;
+            //     std::cout<<"-------------------\n";
+            //     // Sleep(1000);
+            // }
         }
     // }
+    // if(main_parent_list.size() > 0 && !isEmptyForceList)
+    //     std::cout<<main_parent_list.size();
     return moves;
 }
 

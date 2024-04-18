@@ -33,24 +33,13 @@ void order_moves2(
         {
             // if(a == b)
             //     std::cout<<"akalna khara";
+            itBoard->second.bestMove.setTurn(isMaxPlayer ? 1 : 0);
             if(itBoard->second.bestMove == a && !(itBoard->second.bestMove == b))
-            {
-                // if(previousDepth == 4)
-                // {
-                //     printBoard(board);
-                //     std::cout<<"\n";
-                //     printBoard(a);
-                //     std::cout<<"------------------\n";
-                //     Sleep(500);
-                    
-                // }
                 return true;
-            }
+            
             if(itBoard->second.bestMove == b && !(itBoard->second.bestMove == a))
-            {
-                // std::cout<<"Best move found\n";
+            
                 return false;
-            }
         }
         // If both moves are found, compare their evaluations
         if (itA != transpositionTable.end() && itB != transpositionTable.end()) {
@@ -174,51 +163,116 @@ void order_moves2(
     std::sort(moves.begin(), moves.end(), compareMoves);
 }
 
+// do a serch until there is no more captures
+int quiescenceSearch(bool max_player, BitmaskBoard& board_layout, int alpha, int beta, robin_hood::unordered_map<uint64_t, int>& gameHistory)
+{   
+    std::vector<Piece> pieces;
+    std::vector<std::vector<Piece>> main_parent_list;
+    auto capture_moves = check_for_force2(board_layout, max_player ? 1 : 2, pieces, main_parent_list);
+    if(capture_moves.size() == 0){
+        movesSeen++;
+        return board_layout.evaluate_board(gameHistory);
+    }
+    
+    // there are captures available
+    int bestEval = max_player ? MIN_EVAL : MAX_EVAL;
+    BitmaskBoard bestMove;
+    for(Move capture_move : capture_moves) {
+        auto move = board_layout;
+        move_piece2(capture_move, move, main_parent_list, move.get(capture_move.getFromRow(), capture_move.getFromCol()));
+
+        int eval = quiescenceSearch(!max_player, move, alpha, beta, gameHistory);
+        if(max_player && eval == MAX_EVAL)
+        {
+            bestMove = move;
+            bestEval = eval;
+            break;
+        }
+        else if(!max_player && eval == MIN_EVAL)
+        {
+            bestMove = move;
+            bestEval = eval;
+            break;
+        }
+        if(max_player) {
+            if(eval > bestEval) {
+                bestEval = eval;
+                bestMove = move;
+            }
+            alpha = std::max(alpha, bestEval);
+        } else {
+            if(eval < bestEval) {
+                bestEval = eval;
+                bestMove = move;
+            }
+            beta = std::min(beta, bestEval);
+        }
+        if(beta <= alpha) {
+            break; // Alpha-beta pruning
+        }
+    }
+    return bestEval;
+}
+
 int search2(
     char depth, bool max_player, BitmaskBoard& board_layout,
     int alpha, int beta, char akel_player, char akel_depth, bool akling,
      robin_hood::unordered_map<BitmaskBoard, TTValue, BitmaskBoardHash>& transpositionTable,
       BitmaskBoard& best_move, char maxDepth, robin_hood::unordered_map<uint64_t, int>& gameHistory)
 {  
-    int total_depth = depth;
+    char total_depth = depth;
 
     // Base case remains the same
     board_layout.setTurn(max_player ? 0 : 1);
     if(depth <= 0 || board_layout.player_won()){
         movesSeen++;
-        int eval = board_layout.evaluate_board(gameHistory); // Assuming evaluate_board is defined elsewhere
-        // TTValue value = {depth, eval};
-        // transpositionTable[board_layout] = value;             
+        int eval = board_layout.evaluate_board(gameHistory);
+        // int eval = quiescenceSearch(max_player, board_layout, alpha, beta, gameHistory);
         return eval;
     }
 
     // if draw
-    // board_layout.setTurn(0); //arbitrarly
-    // if(board_layout.draw(gameHistory))
-    // {  
-    //     // save in TT
-    //     // TTValue value = {100, 0, board_layout};
-    //     // transpositionTable[board_layout] = value;
+    board_layout.setTurn(0); //arbitrarly
+    if(board_layout.draw(gameHistory))
+    {  
+        // save in TT
+        // TTValue value = {100, 0, board_layout};
+        // transpositionTable[board_layout] = value;
 
-    //     return 0;
-    // }
+        if((depth == maxDepth) && (akel_depth == 0) && ((AI_IS_WHITE && max_player) || (!AI_IS_WHITE && !max_player)))
+            best_move = board_layout;
+        return 0;
+    }
 
     // First, check if this board state is already in the transposition table
+    
     board_layout.setTurn(max_player ? 0 : 1);
-    auto it = transpositionTable.find(board_layout);
-    if(it != transpositionTable.end()) {
-        TTValue& ttValue = it->second;
+    auto it = transpositionTable.count(board_layout);
+    if((akel_depth==0) && (it > 0)) {
+        TTValue& ttValue = transpositionTable[board_layout];
         // Ensure that the depth stored in the transposition table is at least as deep as the current search depth
         if(ttValue.depth >= total_depth) {
             // If so, use the stored evaluation and potentially best move
             cacheHits++; // Assuming cacheHits is a metric you're tracking
 
-            if((depth == maxDepth) && (akel_depth == 0) && ((AI_IS_WHITE && max_player) || (!AI_IS_WHITE && !max_player)))
-                best_move = ttValue.bestMove;
+            // if(ttValue.eval > 100)
+            // {
+                // printBoard(board_layout);
+                // std::cout<<"Turn: "<<int(board_layout.getTurn())<<"\n";
+                // std::cout<<"------------------\n";
+                // std::cout<<int(ttValue.eval)<<"\n";
+                // std::cout<<int(ttValue.depth)<<"\n";
+                // Sleep(500);
+            // }
+            
+
+            // if((depth == maxDepth) && (akel_depth == 0) && ((AI_IS_WHITE && max_player) || (!AI_IS_WHITE && !max_player)))
+            //     best_move = ttValue.bestMove;
             
             return ttValue.eval;
         }
     }
+    
 
     bool isEmptyForceList;
     // counter++;
@@ -228,10 +282,19 @@ int search2(
     // auto all_valid_moves = get_all_valid_moves(board_layout, max_player ? 1 : 2, isEmptyForceList, main_parent_list);
 
     // Order moves
-    order_moves2(board_layout, moves, transpositionTable, total_depth - 1, max_player, maxDepth);
+    // order_moves2(board_layout, moves, transpositionTable, total_depth - 1, max_player, maxDepth);
 
     int bestEval = max_player ? MIN_EVAL : MAX_EVAL;
-    BitmaskBoard bestMove;
+    // No valid moves available
+    if(moves.size() == 0)
+    {
+        // Ohter side wins
+        if(max_player)
+            return MIN_EVAL;
+        else
+            return MAX_EVAL;
+    }
+    BitmaskBoard bestMove = moves[0];
     for(auto move : moves) {
     // for(Move valid_move : all_valid_moves) {
 
@@ -254,8 +317,8 @@ int search2(
         else
         {
             // mimic playing the move
-            // if(isEmptyForceList)
-            //     addMoveToHistory(gameHistory, move, max_player);
+            if(isEmptyForceList)
+                addMoveToHistory(gameHistory, move, max_player);
             
             // if(move.draw(gameHistory)) // if no more akels and a single piece each
             //     eval = 0;
@@ -267,8 +330,8 @@ int search2(
         }
 
         // remove the move from the game history
-        // if(isEmptyForceList)
-        //     removeMoveFromHistory(gameHistory, move, max_player);
+        if(isEmptyForceList)
+            removeMoveFromHistory(gameHistory, move, max_player);
 
         if(max_player && eval == MAX_EVAL)
         {
@@ -276,6 +339,7 @@ int search2(
             bestEval = eval;
             // save in TT
             TTValue value = {100, eval, bestMove};
+            bestMove.setTurn(max_player ? 1 : 0);
             board_layout.setTurn(max_player ? 0 : 1);
             transpositionTable[board_layout] = value;
             break;
@@ -285,6 +349,7 @@ int search2(
             bestMove = move;
             bestEval = eval;
             // save in TT
+            bestMove.setTurn(max_player ? 1 : 0);
             TTValue value = {100, eval, bestMove};
             board_layout.setTurn(max_player ? 0 : 1);
             transpositionTable[board_layout] = value;
@@ -313,16 +378,16 @@ int search2(
     }
 
     // Update transposition table if needed
-    if(!(bestEval == MAX_EVAL || bestEval == MIN_EVAL) && !transpositionTable.count(board_layout) || transpositionTable[board_layout].depth < total_depth) {
+    if((akel_depth == 0) && !(bestEval == MAX_EVAL || bestEval == MIN_EVAL) ) {
         bestMove.setTurn(max_player ? 1 : 0);
         board_layout.setTurn(max_player ? 0 : 1);
         // if equal depth take the higher akel depth
-        TTValue value = {total_depth, bestEval, bestMove};
+        TTValue value(total_depth, bestEval, bestMove);
         transpositionTable[board_layout] = value;
     }
 
     // store the final best move
-    if((depth == maxDepth) && (akel_depth == 0) && !akling && ((AI_IS_WHITE && max_player) || (!AI_IS_WHITE && !max_player)))
+    if((depth == maxDepth) && (akel_depth == 0) && ((AI_IS_WHITE && max_player) || (!AI_IS_WHITE && !max_player)))
     {   
         // std::cout<<int(maxDepth)<<"\n";  
         best_move = bestMove;

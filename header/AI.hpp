@@ -15,7 +15,9 @@ void order_moves2(
     BitmaskBoard& board, 
     std::vector<BitmaskBoard>& moves, 
     robin_hood::unordered_map<BitmaskBoard, TTValue, BitmaskBoardHash>& transpositionTable, 
-    char previousDepth, bool isMaxPlayer, int maxDepth) ;
+    char previousDepth, bool isMaxPlayer, int maxDepth);
+
+int quiescenceSearch(bool max_player, BitmaskBoard& board_layout, int alpha, int beta, robin_hood::unordered_map<uint64_t, int>& gameHistory);
 
 int search2(
     char depth, bool max_player, BitmaskBoard& board_layout,
